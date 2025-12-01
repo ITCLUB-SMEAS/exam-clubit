@@ -1,45 +1,214 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Offline - Ujian Online</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #1a56db 0%, #1e40af 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            text-align: center;
-            padding: 20px;
-        }
-        .container { max-width: 400px; }
-        .icon { font-size: 80px; margin-bottom: 20px; }
-        h1 { font-size: 24px; margin-bottom: 10px; }
-        p { opacity: 0.9; margin-bottom: 20px; }
-        button {
-            background: white;
-            color: #1a56db;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        button:hover { opacity: 0.9; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="icon">📡</div>
-        <h1>Tidak Ada Koneksi Internet</h1>
-        <p>Periksa koneksi internet Anda dan coba lagi.</p>
-        <button onclick="location.reload()">Coba Lagi</button>
-    </div>
-</body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Offline - No Connection</title>
+        <!-- Tailwind CSS CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- Font Pixel -->
+        <link
+            href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+            rel="stylesheet"
+        />
+
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            pixel: ['"Press Start 2P"', "cursive"],
+                        },
+                        colors: {
+                            retro: {
+                                bg: "#0f172a" /* Dark Slate */,
+                                text: "#cbd5e1" /* Light Slate */,
+                                accent: "#ef4444" /* Red Error */,
+                                green: "#22c55e" /* Green Success */,
+                                yellow: "#facc15" /* Yellow Warning */,
+                            },
+                        },
+                        boxShadow: {
+                            hard: "4px 4px 0px 0px rgba(0,0,0,1)",
+                            "hard-sm": "2px 2px 0px 0px rgba(0,0,0,1)",
+                        },
+                        animation: {
+                            hop: "hop 1s steps(2, start) infinite",
+                            blink: "blink 0.2s infinite",
+                            scroll: "scroll 2s linear infinite",
+                        },
+                        keyframes: {
+                            hop: {
+                                "0%, 100%": { transform: "translateY(0)" },
+                                "50%": { transform: "translateY(-10px)" },
+                            },
+                            blink: {
+                                "0%, 100%": { opacity: "1" },
+                                "50%": { opacity: "0.5" },
+                            },
+                            scroll: {
+                                "0%": { backgroundPosition: "0 0" },
+                                "100%": { backgroundPosition: "-20px 0" },
+                            },
+                        },
+                    },
+                },
+            };
+        </script>
+
+        <style>
+            /* Efek CRT Scanline */
+            .scanlines::before {
+                content: " ";
+                display: block;
+                position: absolute;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                right: 0;
+                background:
+                    linear-gradient(
+                        rgba(18, 16, 16, 0) 50%,
+                        rgba(0, 0, 0, 0.25) 50%
+                    ),
+                    linear-gradient(
+                        90deg,
+                        rgba(255, 0, 0, 0.06),
+                        rgba(0, 255, 0, 0.02),
+                        rgba(0, 0, 255, 0.06)
+                    );
+                z-index: 50;
+                background-size:
+                    100% 2px,
+                    3px 100%;
+                pointer-events: none;
+            }
+
+            /* Glitch Text Effect */
+            .glitch-text {
+                text-shadow:
+                    2px 2px 0px #ef4444,
+                    -2px -2px 0px #22c55e;
+            }
+
+            /* Pattern Tanah Berjalan */
+            .ground-pattern {
+                background-image: repeating-linear-gradient(
+                    90deg,
+                    #475569,
+                    #475569 10px,
+                    transparent 10px,
+                    transparent 20px
+                );
+                background-size: 20px 4px;
+            }
+        </style>
+    </head>
+    <body
+        class="h-screen w-full bg-retro-bg font-pixel text-retro-text flex flex-col items-center justify-center relative overflow-hidden scanlines"
+    >
+        <!-- Container Utama -->
+        <div class="z-10 text-center px-4 max-w-lg w-full">
+            <!-- Ikon Dino Pixel (SVG) -->
+            <div class="mb-8 inline-block animate-hop">
+                <svg
+                    width="120"
+                    height="120"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                >
+                    <!-- Badan Dino -->
+                    <path d="M4 4H20V20H4V4Z" fill="transparent" />
+                    <!-- Spacer -->
+                    <path
+                        fill-rule="evenodd"
+                        clip-rule="evenodd"
+                        d="M10 2H18V10H16V12H18V14H16V16H14V14H10V12H8V14H6V12H8V10H6V8H4V6H6V4H10V2ZM16 4H14V6H16V4Z"
+                        fill="#cbd5e1"
+                    />
+                    <!-- Mata Merah (Error) -->
+                    <rect
+                        x="14"
+                        y="4"
+                        width="2"
+                        height="2"
+                        fill="#ef4444"
+                        class="animate-blink"
+                    />
+                </svg>
+            </div>
+
+            <!-- Garis Tanah Berjalan -->
+            <div
+                class="w-full h-1 bg-transparent ground-pattern animate-scroll mb-8 opacity-50"
+            ></div>
+
+            <!-- Judul Glitch -->
+            <h1
+                class="text-4xl md:text-6xl mb-4 font-bold glitch-text tracking-widest text-white"
+            >
+                OFFLINE
+            </h1>
+
+            <!-- Status Box -->
+            <div
+                class="bg-slate-800 border-2 border-slate-900 p-4 mb-8 shadow-hard inline-block w-full"
+            >
+                <div
+                    class="flex justify-between text-[10px] md:text-xs text-retro-yellow mb-2 border-b-2 border-slate-700 pb-2"
+                >
+                    <span>ERR_INTERNET_DISCONNECTED</span>
+                    <span>CODE: 000</span>
+                </div>
+                <p class="text-xs md:text-sm leading-6 text-slate-400">
+                    Koneksi ke server terputus. Silakan periksa kabel LAN,
+                    modem, atau kuota internet Anda.
+                </p>
+            </div>
+
+            <!-- Tombol Aksi -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <!-- Tombol Coba Lagi (Primary) -->
+                <button
+                    onclick="window.location.reload()"
+                    class="group relative inline-block focus:outline-none"
+                >
+                    <div
+                        class="absolute inset-0 bg-retro-green translate-x-1 translate-y-1 transition-transform group-hover:translate-x-2 group-hover:translate-y-2"
+                    ></div>
+                    <div
+                        class="relative bg-slate-900 text-white border-2 border-white px-6 py-4 hover:-translate-x-1 hover:-translate-y-1 hover:bg-slate-800 transition-all active:translate-x-0 active:translate-y-0 cursor-pointer"
+                    >
+                        <span class="text-xs uppercase flex items-center gap-2">
+                            <span>↻</span> COBA LAGI
+                        </span>
+                    </div>
+                </button>
+
+                <!-- Tombol Dino Game (Secondary) -->
+                <a
+                    href="chrome://dino"
+                    class="group relative inline-block focus:outline-none opacity-50 hover:opacity-100 transition-opacity"
+                >
+                    <div
+                        class="absolute inset-0 bg-retro-yellow translate-x-1 translate-y-1"
+                    ></div>
+                    <div
+                        class="relative bg-slate-900 text-white border-2 border-white px-6 py-4 hover:-translate-x-1 hover:-translate-y-1 hover:bg-slate-800 transition-all active:translate-x-0 active:translate-y-0 cursor-not-allowed"
+                    >
+                        <span class="text-xs uppercase"> MAIN DINO 🦖 </span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Dekorasi Sudut -->
+        <div class="absolute top-4 left-4 text-[10px] text-slate-600">
+            SYS.NET // DOWN
+        </div>
+        <div class="absolute bottom-4 right-4 text-[10px] text-slate-600">
+            PING: TIMEOUT
+        </div>
+    </body>
 </html>
