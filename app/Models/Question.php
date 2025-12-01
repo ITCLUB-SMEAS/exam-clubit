@@ -1,0 +1,56 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Question extends Model
+{
+    public const TYPE_MULTIPLE_CHOICE_SINGLE = "multiple_choice_single";
+    public const TYPE_MULTIPLE_CHOICE_MULTIPLE = "multiple_choice_multiple";
+    public const TYPE_SHORT_ANSWER = "short_answer";
+    public const TYPE_ESSAY = "essay";
+    public const TYPE_TRUE_FALSE = "true_false";
+    public const TYPE_MATCHING = "matching";
+
+    /**
+     * fillable
+     *
+     * @var array
+     */
+    protected $fillable = [
+        "exam_id",
+        "question",
+        "question_type",
+        "points",
+        "option_1",
+        "option_2",
+        "option_3",
+        "option_4",
+        "option_5",
+        "answer",
+        "correct_answers",
+        "matching_pairs",
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        "points" => "float",
+        "correct_answers" => "array",
+        "matching_pairs" => "array",
+    ];
+
+    /**
+     * exam
+     *
+     * @return void
+     */
+    public function exam()
+    {
+        return $this->belongsTo(Exam::class);
+    }
+}

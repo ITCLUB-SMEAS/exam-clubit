@@ -1,0 +1,378 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Exam;
+use App\Models\ExamViolation;
+use App\Models\Grade;
+use App\Models\Student;
+use Illuminate\Support\Facades\Log;
+
+class AntiCheatService
+{
+    /**
+     * Record a violation
+     *
+     * @param Student $student
+     * @param Exam $exam
+     * @param int $examSessionId
+     * @param Grade $grade
+     * @param string $violationType
+     * @param string|null $description
+     * @param array|null $metadata
+     * @return ExamViolation
+     */
+    public static function recordViolation(
+        Student $student,
+        Exam $exam,
+        int $examSessionId,
+        Grade $grade,
+        string $violationType,
+        ?string $description = null,
+        ?array $metadata = null
+    ): ExamViolation {
+        // Create the violation record
+        $violation = ExamViolation::create([
+            'student_id' => $student->id,
+            'exam_id' => $exam->id,
+            'exam_session_id' => $examSessionId,
+            'grade_id' => $grade->id,
+            'violation_type' => $violationType,
+            'description' => $description ?? self::getDefaultDescription($violationType),
+            'metadata' => $metadata,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+
+        // Increment violation counter on grade
+        $grade->incrementViolation($violationType);
+
+        // Log the violation for activity tracking
+        ActivityLogService::log(
+            action: 'violation',
+            module: 'anticheat',
+            description: "Pelanggaran: " . self::getViolationLabel($violationType),
+            subject: $violation,
+            metadata: [
+                'violation_type' => $violationType,
+                'exam_id' => $exam->id,
+                'exam_title' => $exam->title,
+                'total_violations' => $grade->violation_count,
+            ]
+        );
+
+        // Check if auto-flag should be applied
+        self::checkAndFlagIfNeeded($grade, $exam);
+
+        // Log for monitoring
+        Log::channel('daily')->info('Anti-Cheat Violation', [
+            'student_id' => $student->id,
+            'student_name' => $student->name,
+            'exam_id' => $exam->id,
+            'exam_title' => $exam->title,
+            'violation_type' => $violationType,
+            'total_violations' => $grade->violation_count,
+        ]);
+
+        return $violation;
+    }
+
+    /**
+     * Record multiple violations at once (batch)
+     *
+     * @param Student $student
+     * @param Exam $exam
+     * @param int $examSessionId
+     * @param Grade $grade
+     * @param array $violations Array of ['type' => string, 'description' => string|null, 'metadata' => array|null]
+     * @return array
+     */
+    public static function recordBatchViolations(
+        Student $student,
+        Exam $exam,
+        int $examSessionId,
+        Grade $grade,
+        array $violations
+    ): array {
+        $results = [];
+
+        foreach ($violations as $violation) {
+            $results[] = self::recordViolation(
+                $student,
+                $exam,
+                $examSessionId,
+                $grade,
+                $violation['type'],
+                $violation['description'] ?? null,
+                $violation['metadata'] ?? null
+            );
+        }
+
+        return $results;
+    }
+
+    /**
+     * Get violations for a specific exam attempt
+     *
+     * @param int $gradeId
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public static function getViolationsForGrade(int $gradeId)
+    {
+        return ExamViolation::byGrade($gradeId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    /**
+     * Get violation summary for a grade
+     *
+     * @param Grade $grade
+     * @return array
+     */
+    public static function getViolationSummary(Grade $grade): array
+    {
+        $violations = ExamViolation::byGrade($grade->id)
+            ->selectRaw('violation_type, COUNT(*) as count')
+            ->groupBy('violation_type')
+            ->pluck('count', 'violation_type')
+            ->toArray();
+
+        return [
+            'total' => $grade->violation_count,
+            'by_type' => $violations,
+            'is_flagged' => $grade->is_flagged,
+            'flag_reason' => $grade->flag_reason,
+            'details' => [
+                'tab_switch' => $violations[ExamViolation::TYPE_TAB_SWITCH] ?? 0,
+                'fullscreen_exit' => $violations[ExamViolation::TYPE_FULLSCREEN_EXIT] ?? 0,
+                'copy_paste' => $violations[ExamViolation::TYPE_COPY_PASTE] ?? 0,
+                'right_click' => $violations[ExamViolation::TYPE_RIGHT_CLICK] ?? 0,
+                'blur' => $violations[ExamViolation::TYPE_BLUR] ?? 0,
+                'devtools' => $violations[ExamViolation::TYPE_DEVTOOLS] ?? 0,
+                'keyboard_shortcut' => $violations[ExamViolation::TYPE_KEYBOARD_SHORTCUT] ?? 0,
+            ],
+        ];
+    }
+
+    /**
+     * Check if violation limit has been exceeded
+     *
+     * @param Grade $grade
+     * @param Exam $exam
+     * @return bool
+     */
+    public static function hasExceededLimit(Grade $grade, Exam $exam): bool
+    {
+        $maxViolations = $exam->max_violations ?? 10;
+        return $grade->violation_count >= $maxViolations;
+    }
+
+    /**
+     * Check if warning threshold has been reached
+     *
+     * @param Grade $grade
+     * @param Exam $exam
+     * @return bool
+     */
+    public static function hasReachedWarningThreshold(Grade $grade, Exam $exam): bool
+    {
+        $warningThreshold = $exam->warning_threshold ?? 3;
+        return $grade->violation_count >= $warningThreshold;
+    }
+
+    /**
+     * Get remaining violations before limit
+     *
+     * @param Grade $grade
+     * @param Exam $exam
+     * @return int
+     */
+    public static function getRemainingViolations(Grade $grade, Exam $exam): int
+    {
+        $maxViolations = $exam->max_violations ?? 10;
+        return max(0, $maxViolations - $grade->violation_count);
+    }
+
+    /**
+     * Check and flag the grade if violation threshold is met
+     *
+     * @param Grade $grade
+     * @param Exam $exam
+     * @return void
+     */
+    protected static function checkAndFlagIfNeeded(Grade $grade, Exam $exam): void
+    {
+        $warningThreshold = $exam->warning_threshold ?? 3;
+        $maxViolations = $exam->max_violations ?? 10;
+
+        // Flag if exceeded warning threshold but not yet flagged
+        if ($grade->violation_count >= $warningThreshold && !$grade->is_flagged) {
+            $grade->flagAsSuspicious(
+                "Melebihi batas peringatan ({$grade->violation_count} pelanggaran)"
+            );
+        }
+
+        // Update flag reason if max violations exceeded
+        if ($grade->violation_count >= $maxViolations) {
+            $grade->update([
+                'flag_reason' => "Melebihi batas maksimal pelanggaran ({$grade->violation_count}/{$maxViolations})",
+            ]);
+        }
+    }
+
+    /**
+     * Get the anti-cheat configuration for an exam
+     *
+     * @param Exam $exam
+     * @return array
+     */
+    public static function getAntiCheatConfig(Exam $exam): array
+    {
+        return [
+            'enabled' => $exam->anticheat_enabled ?? true,
+            'fullscreen_required' => $exam->fullscreen_required ?? true,
+            'block_tab_switch' => $exam->block_tab_switch ?? true,
+            'block_copy_paste' => $exam->block_copy_paste ?? true,
+            'block_right_click' => $exam->block_right_click ?? true,
+            'detect_devtools' => $exam->detect_devtools ?? true,
+            'max_violations' => $exam->max_violations ?? 10,
+            'warning_threshold' => $exam->warning_threshold ?? 3,
+            'auto_submit_on_max_violations' => $exam->auto_submit_on_max_violations ?? false,
+        ];
+    }
+
+    /**
+     * Get default description for a violation type
+     *
+     * @param string $type
+     * @return string
+     */
+    public static function getDefaultDescription(string $type): string
+    {
+        $descriptions = [
+            ExamViolation::TYPE_TAB_SWITCH => 'Siswa berpindah ke tab atau window lain',
+            ExamViolation::TYPE_FULLSCREEN_EXIT => 'Siswa keluar dari mode fullscreen',
+            ExamViolation::TYPE_COPY_PASTE => 'Siswa mencoba melakukan copy atau paste',
+            ExamViolation::TYPE_RIGHT_CLICK => 'Siswa mencoba klik kanan',
+            ExamViolation::TYPE_DEVTOOLS => 'Siswa mencoba membuka Developer Tools',
+            ExamViolation::TYPE_BLUR => 'Window ujian kehilangan fokus',
+            ExamViolation::TYPE_SCREENSHOT => 'Siswa mencoba mengambil screenshot',
+            ExamViolation::TYPE_KEYBOARD_SHORTCUT => 'Siswa mencoba menggunakan shortcut keyboard terlarang',
+            ExamViolation::TYPE_MULTIPLE_MONITORS => 'Terdeteksi penggunaan multiple monitor',
+            ExamViolation::TYPE_REMOTE_DESKTOP => 'Terdeteksi penggunaan remote desktop',
+            ExamViolation::TYPE_VIRTUAL_MACHINE => 'Terdeteksi penggunaan virtual machine',
+        ];
+
+        return $descriptions[$type] ?? 'Pelanggaran tidak diketahui';
+    }
+
+    /**
+     * Get violation type label
+     *
+     * @param string $type
+     * @return string
+     */
+    public static function getViolationLabel(string $type): string
+    {
+        $labels = ExamViolation::getViolationTypes();
+        return $labels[$type] ?? $type;
+    }
+
+    /**
+     * Get statistics for an exam session
+     *
+     * @param int $examId
+     * @param int $examSessionId
+     * @return array
+     */
+    public static function getExamSessionStats(int $examId, int $examSessionId): array
+    {
+        $violations = ExamViolation::where('exam_id', $examId)
+            ->where('exam_session_id', $examSessionId)
+            ->get();
+
+        $byType = $violations->groupBy('violation_type')
+            ->map(fn($group) => $group->count())
+            ->toArray();
+
+        $byStudent = $violations->groupBy('student_id')
+            ->map(fn($group) => $group->count())
+            ->toArray();
+
+        $flaggedGrades = Grade::where('exam_id', $examId)
+            ->where('exam_session_id', $examSessionId)
+            ->where('is_flagged', true)
+            ->count();
+
+        return [
+            'total_violations' => $violations->count(),
+            'unique_students' => count($byStudent),
+            'flagged_students' => $flaggedGrades,
+            'by_type' => $byType,
+            'most_common' => $violations->isNotEmpty()
+                ? $violations->groupBy('violation_type')->sortByDesc(fn($group) => $group->count())->keys()->first()
+                : null,
+        ];
+    }
+
+    /**
+     * Clear all violations for a grade (admin function)
+     *
+     * @param Grade $grade
+     * @param string $reason
+     * @return void
+     */
+    public static function clearViolations(Grade $grade, string $reason = ''): void
+    {
+        // Log the action
+        ActivityLogService::log(
+            action: 'clear_violations',
+            module: 'anticheat',
+            description: "Pelanggaran dihapus: {$reason}",
+            subject: $grade,
+            metadata: [
+                'previous_violation_count' => $grade->violation_count,
+                'reason' => $reason,
+            ]
+        );
+
+        // Delete violation records
+        ExamViolation::byGrade($grade->id)->delete();
+
+        // Reset counters
+        $grade->update([
+            'violation_count' => 0,
+            'tab_switch_count' => 0,
+            'fullscreen_exit_count' => 0,
+            'copy_paste_count' => 0,
+            'right_click_count' => 0,
+            'blur_count' => 0,
+            'is_flagged' => false,
+            'flag_reason' => null,
+        ]);
+    }
+
+    /**
+     * Validate if a violation type is valid
+     *
+     * @param string $type
+     * @return bool
+     */
+    public static function isValidViolationType(string $type): bool
+    {
+        return in_array($type, [
+            ExamViolation::TYPE_TAB_SWITCH,
+            ExamViolation::TYPE_FULLSCREEN_EXIT,
+            ExamViolation::TYPE_COPY_PASTE,
+            ExamViolation::TYPE_RIGHT_CLICK,
+            ExamViolation::TYPE_DEVTOOLS,
+            ExamViolation::TYPE_BLUR,
+            ExamViolation::TYPE_SCREENSHOT,
+            ExamViolation::TYPE_KEYBOARD_SHORTCUT,
+            ExamViolation::TYPE_MULTIPLE_MONITORS,
+            ExamViolation::TYPE_REMOTE_DESKTOP,
+            ExamViolation::TYPE_VIRTUAL_MACHINE,
+        ]);
+    }
+}
