@@ -47,6 +47,12 @@ Route::prefix("admin")->group(function () {
             "storeImport",
         ])->name("admin.students.storeImport");
 
+        //route toggle block student
+        Route::post("/students/{student}/toggle-block", [
+            \App\Http\Controllers\Admin\StudentController::class,
+            "toggleBlock",
+        ])->name("admin.students.toggleBlock");
+
         //route resource students
         Route::resource(
             "/students",
@@ -308,8 +314,15 @@ Route::get("/", function () {
     }
 
     //return view login
-    return \Inertia\Inertia::render("Student/Login/Index");
+    return \Inertia\Inertia::render("Student/Login/Index", [
+        'turnstileSiteKey' => config('services.turnstile.site_key'),
+    ]);
 });
+
+//override fortify login with turnstile middleware
+Route::post('/admin/login', [\Laravel\Fortify\Http\Controllers\AuthenticatedSessionController::class, 'store'])
+    ->middleware(['guest:web', 'turnstile'])
+    ->name('login.store');
 
 //redirect /login to admin login
 Route::redirect('/login', '/admin/login');
@@ -318,7 +331,7 @@ Route::redirect('/login', '/admin/login');
 Route::post(
     "/students/login",
     \App\Http\Controllers\Student\LoginController::class,
-)->name("student.login");
+)->middleware('turnstile')->name("student.login");
 
 //prefix "student"
 Route::prefix("student")->group(function () {
@@ -400,34 +413,34 @@ Route::prefix("student")->group(function () {
             "resultExam",
         ])->name("student.exams.resultExam");
 
-        //route anti-cheat violation
+        //route anti-cheat violation (rate limited: 30 per minute)
         Route::post("/anticheat/violation", [
             App\Http\Controllers\Student\AntiCheatController::class,
             "recordViolation",
-        ])->name("student.anticheat.violation");
+        ])->middleware('throttle:30,1')->name("student.anticheat.violation");
 
-        //route anti-cheat batch violations
+        //route anti-cheat batch violations (rate limited: 10 per minute)
         Route::post("/anticheat/violations", [
             App\Http\Controllers\Student\AntiCheatController::class,
             "recordBatchViolations",
-        ])->name("student.anticheat.violations");
+        ])->middleware('throttle:10,1')->name("student.anticheat.violations");
 
-        //route anti-cheat status
+        //route anti-cheat status (rate limited: 60 per minute)
         Route::get("/anticheat/status", [
             App\Http\Controllers\Student\AntiCheatController::class,
             "getViolationStatus",
-        ])->name("student.anticheat.status");
+        ])->middleware('throttle:60,1')->name("student.anticheat.status");
 
-        //route anti-cheat config
+        //route anti-cheat config (rate limited: 20 per minute)
         Route::get("/anticheat/config/{examId}", [
             App\Http\Controllers\Student\AntiCheatController::class,
             "getConfig",
-        ])->name("student.anticheat.config");
+        ])->middleware('throttle:20,1')->name("student.anticheat.config");
 
-        //route anti-cheat heartbeat
+        //route anti-cheat heartbeat (rate limited: 60 per minute)
         Route::post("/anticheat/heartbeat", [
             App\Http\Controllers\Student\AntiCheatController::class,
             "heartbeat",
-        ])->name("student.anticheat.heartbeat");
+        ])->middleware('throttle:60,1')->name("student.anticheat.heartbeat");
     });
 });

@@ -34,13 +34,18 @@
 <script src="{{ asset('assets/js/simplebar.min.js') }}"></script>
 <script src="{{ asset('assets/js/volt.js') }}"></script>
 
-<!-- Service Worker Registration -->
+<!-- Service Worker Registration - Disabled -->
 <script>
+// Unregister any existing service workers
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then((reg) => console.log('SW registered'))
-            .catch((err) => console.log('SW registration failed'));
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+            registration.unregister();
+        }
+    });
+    // Clear all caches
+    caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
     });
 }
 </script>

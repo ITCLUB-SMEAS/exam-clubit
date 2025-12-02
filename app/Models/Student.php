@@ -21,6 +21,9 @@ class Student extends Authenticatable
         "name",
         "password",
         "gender",
+        "is_blocked",
+        "blocked_at",
+        "blocked_reason",
         "session_id",
         "last_login_at",
         "last_login_ip",
@@ -43,7 +46,34 @@ class Student extends Authenticatable
         return [
             "password" => "hashed",
             "last_login_at" => "datetime",
+            "blocked_at" => "datetime",
+            "is_blocked" => "boolean",
         ];
+    }
+
+    /**
+     * Block the student account
+     */
+    public function block(string $reason): bool
+    {
+        return $this->update([
+            "is_blocked" => true,
+            "blocked_at" => now(),
+            "blocked_reason" => $reason,
+            "session_id" => null,
+        ]);
+    }
+
+    /**
+     * Unblock the student account
+     */
+    public function unblock(): bool
+    {
+        return $this->update([
+            "is_blocked" => false,
+            "blocked_at" => null,
+            "blocked_reason" => null,
+        ]);
     }
 
     /**

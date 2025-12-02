@@ -38,9 +38,11 @@
                                             <td style="width:20%" class="fw-bold">Soal</td>
                                             <td>
                                                 <Editor
-                                                    :api-key="TinyMCEApiKey"
+                                                    tinymce-script-src="/tinymce/tinymce.min.js"
                                                     v-model="form.question"
                                                     :init="{
+                                                        
+                                                        
                                                         menubar: false,
                                                         plugins: 'lists link image emoticons',
                                                         toolbar: 'styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link image emoticons'
@@ -53,7 +55,7 @@
                                             <tr v-for="(label, idx) in optionLabels" :key="idx">
                                                 <td class="fw-bold">Pilihan {{ label }}</td>
                                                 <td>
-                                                    <Editor :api-key="TinyMCEApiKey" v-model="form['option_'+(idx+1)]" :init="editorConfig" />
+                                                    <Editor tinymce-script-src="/tinymce/tinymce.min.js" v-model="form['option_'+(idx+1)]" :init="editorConfig" />
                                                 </td>
                                             </tr>
                                         </template>
@@ -172,6 +174,7 @@ export default {
         });
 
         const editorConfig = {
+            
             height: 130,
             menubar: false,
             plugins: 'lists link image emoticons',

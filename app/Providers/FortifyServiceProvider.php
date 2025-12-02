@@ -46,7 +46,9 @@ class FortifyServiceProvider extends ServiceProvider
 
         //login
         Fortify::loginView(function () {
-            return Inertia::render('Auth/Login');
+            return Inertia::render('Auth/Login', [
+                'turnstileSiteKey' => config('services.turnstile.site_key'),
+            ]);
         });
 
         /**

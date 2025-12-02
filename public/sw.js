@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ujian-online-v1';
+const CACHE_NAME = 'ujian-online-v2';
 const STATIC_ASSETS = [
     '/',
     '/assets/css/volt.css',
@@ -34,6 +34,9 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     // Skip non-GET requests
     if (event.request.method !== 'GET') return;
+
+    // Skip non-http(s) schemes (chrome-extension, etc)
+    if (!event.request.url.startsWith('http')) return;
 
     // Skip API requests
     if (event.request.url.includes('/api/')) return;

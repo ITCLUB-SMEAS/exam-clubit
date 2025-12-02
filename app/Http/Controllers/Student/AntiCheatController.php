@@ -83,6 +83,10 @@ class AntiCheatController extends Controller
             $shouldAutoSubmit = true;
         }
 
+        // Check if student got blocked
+        $student->refresh();
+        $isBlocked = $student->is_blocked;
+
         // Get current violation status
         $remainingViolations = AntiCheatService::getRemainingViolations($grade, $exam);
         $warningReached = AntiCheatService::hasReachedWarningThreshold($grade, $exam);
@@ -97,6 +101,7 @@ class AntiCheatController extends Controller
                 'warning_reached' => $warningReached,
                 'should_auto_submit' => $shouldAutoSubmit,
                 'max_violations' => $exam->max_violations ?? 10,
+                'is_blocked' => $isBlocked,
             ],
         ]);
     }

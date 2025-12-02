@@ -81,7 +81,7 @@
                                     <tr v-for="exam in recentExams" :key="exam.id">
                                         <td>{{ exam.title }}</td>
                                         <td>{{ exam.completed_count || 0 }}</td>
-                                        <td>{{ (exam.avg_grade || 0).toFixed(1) }}</td>
+                                        <td>{{ Number(exam.avg_grade || 0).toFixed(1) }}</td>
                                         <td>
                                             <Link :href="`/admin/analytics/exam/${exam.id}`" class="btn btn-sm btn-info">
                                                 <i class="fa fa-eye"></i>

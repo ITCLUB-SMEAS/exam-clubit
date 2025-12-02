@@ -8,6 +8,7 @@ use App\Models\Answer;
 use App\Models\Question;
 use App\Models\ExamGroup;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Services\ActivityLogService;
 use App\Services\AntiCheatService;
@@ -202,60 +203,52 @@ class ExamController extends Controller
             );
         }
 
-        //cek apakah questions / soal ujian di random
-        if ($exam_group->exam->random_question == "Y") {
-            //get questions / soal ujian
-            $query = Question::where("exam_id", $exam_group->exam->id)
-                ->inRandomOrder();
-        } else {
-            //get questions / soal ujian
-            $query = Question::where("exam_id", $exam_group->exam->id);
-        }
+        // Check if answers already exist (to preserve question selection on refresh)
+        $existingAnswers = Answer::where("student_id", auth()->guard("student")->user()->id)
+            ->where("exam_id", $exam_group->exam->id)
+            ->where("exam_session_id", $exam_group->exam_session->id)
+            ->exists();
 
-        // Apply question limit if set
-        if ($exam_group->exam->question_limit) {
-            $query->limit($exam_group->exam->question_limit);
-        }
-
-        $questions = $query->get();
-
-        //define pilihan jawaban default
-        $question_order = 1;
-
-        foreach ($questions as $question) {
-            //buat array jawaban / answer
-            $options = [1, 2];
-            if (!empty($question->option_3)) {
-                $options[] = 3;
-            }
-            if (!empty($question->option_4)) {
-                $options[] = 4;
-            }
-            if (!empty($question->option_5)) {
-                $options[] = 5;
-            }
-
-            //acak jawaban / answer
-            if ($exam_group->exam->random_answer == "Y") {
-                shuffle($options);
-            }
-
-            //cek apakah sudah ada data jawaban
-            $answer = Answer::where(
-                "student_id",
-                auth()->guard("student")->user()->id,
-            )
-                ->where("exam_id", $exam_group->exam->id)
-                ->where("exam_session_id", $exam_group->exam_session->id)
-                ->where("question_id", $question->id)
-                ->first();
-
-            //jika sudah ada jawaban / answer
-            if ($answer) {
-                //update urutan question / soal
-                $answer->question_order = $question_order;
-                $answer->update();
+        // Only generate new questions if no answers exist yet
+        if (!$existingAnswers) {
+            //cek apakah questions / soal ujian di random
+            if ($exam_group->exam->random_question == "Y") {
+                //get questions / soal ujian
+                $query = Question::where("exam_id", $exam_group->exam->id)
+                    ->inRandomOrder();
             } else {
+                //get questions / soal ujian
+                $query = Question::where("exam_id", $exam_group->exam->id);
+            }
+
+            // Apply question limit if set
+            if ($exam_group->exam->question_limit) {
+                $query->limit($exam_group->exam->question_limit);
+            }
+
+            $questions = $query->get();
+
+            //define pilihan jawaban default
+            $question_order = 1;
+
+            foreach ($questions as $question) {
+                //buat array jawaban / answer
+                $options = [1, 2];
+                if (!empty($question->option_3)) {
+                    $options[] = 3;
+                }
+                if (!empty($question->option_4)) {
+                    $options[] = 4;
+                }
+                if (!empty($question->option_5)) {
+                    $options[] = 5;
+                }
+
+                //acak jawaban / answer
+                if ($exam_group->exam->random_answer == "Y") {
+                    shuffle($options);
+                }
+
                 $isEssay = $question->question_type === Question::TYPE_ESSAY;
                 $isMultiple =
                     $question->question_type ===
@@ -280,8 +273,8 @@ class ExamController extends Controller
                     "points_awarded" => 0,
                     "needs_manual_review" => $isEssay,
                 ]);
+                $question_order++;
             }
-            $question_order++;
         }
 
         //redirect ke ujian halaman 1
@@ -785,52 +778,54 @@ class ExamController extends Controller
             return;
         }
 
-        $studentId = auth()->guard("student")->user()->id;
+        DB::transaction(function () use ($exam_group, $grade) {
+            $studentId = auth()->guard("student")->user()->id;
 
-        $questions = Question::where("exam_id", $exam_group->exam_id)->get();
-        $answers = Answer::where("exam_id", $exam_group->exam_id)
-            ->where("exam_session_id", $exam_group->exam_session_id)
-            ->where("student_id", $studentId)
-            ->get();
+            $questions = Question::where("exam_id", $exam_group->exam_id)->get();
+            $answers = Answer::where("exam_id", $exam_group->exam_id)
+                ->where("exam_session_id", $exam_group->exam_session_id)
+                ->where("student_id", $studentId)
+                ->get();
 
-        $totalPoints = $questions->sum(function ($q) {
-            return $q->points ?? 1;
+            $totalPoints = $questions->sum(function ($q) {
+                return $q->points ?? 1;
+            });
+
+            $earnedPoints = $answers->sum(function ($answer) {
+                return $answer->points_awarded ?? 0;
+            });
+
+            $count_correct_answer = $answers->where("is_correct", "Y")->count();
+
+            $grade_exam =
+                $totalPoints > 0
+                    ? round(($earnedPoints / $totalPoints) * 100, 2)
+                    : 0;
+
+            // Determine pass/fail status based on passing_grade
+            $passingGrade = $exam_group->exam->passing_grade ?? 0;
+            $status = 'pending';
+            if ($passingGrade > 0) {
+                $status = $grade_exam >= $passingGrade ? 'passed' : 'failed';
+            }
+
+            $grade->end_time = Carbon::now();
+            $grade->duration = 0;
+            $grade->total_correct = $count_correct_answer;
+            $grade->grade = $grade_exam;
+            $grade->points_possible = $totalPoints;
+            $grade->points_earned = $earnedPoints;
+            $grade->attempt_status = "completed";
+            $grade->status = $status;
+            $grade->save();
+
+            // Log exam end activity
+            ActivityLogService::logExamEnd(
+                auth()->guard("student")->user(),
+                $exam_group->exam,
+                $grade,
+            );
         });
-
-        $earnedPoints = $answers->sum(function ($answer) {
-            return $answer->points_awarded ?? 0;
-        });
-
-        $count_correct_answer = $answers->where("is_correct", "Y")->count();
-
-        $grade_exam =
-            $totalPoints > 0
-                ? round(($earnedPoints / $totalPoints) * 100, 2)
-                : 0;
-
-        // Determine pass/fail status based on passing_grade
-        $passingGrade = $exam_group->exam->passing_grade ?? 0;
-        $status = 'pending';
-        if ($passingGrade > 0) {
-            $status = $grade_exam >= $passingGrade ? 'passed' : 'failed';
-        }
-
-        $grade->end_time = Carbon::now();
-        $grade->duration = 0;
-        $grade->total_correct = $count_correct_answer;
-        $grade->grade = $grade_exam;
-        $grade->points_possible = $totalPoints;
-        $grade->points_earned = $earnedPoints;
-        $grade->attempt_status = "completed";
-        $grade->status = $status;
-        $grade->save();
-
-        // Log exam end activity
-        ActivityLogService::logExamEnd(
-            auth()->guard("student")->user(),
-            $exam_group->exam,
-            $grade,
-        );
     }
 
     /**

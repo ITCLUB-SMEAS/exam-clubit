@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             "student" => \App\Http\Middleware\AuthStudent::class,
             "admin.only" => \App\Http\Middleware\AdminOnly::class,
             "ability" => \App\Http\Middleware\CheckApiAbility::class,
+            "turnstile" => \App\Http\Middleware\ValidateTurnstile::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

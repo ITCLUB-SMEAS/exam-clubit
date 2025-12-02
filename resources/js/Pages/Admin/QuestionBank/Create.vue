@@ -35,7 +35,7 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Soal</label>
-                                <Editor v-model="form.question" api-key="no-api-key" :init="editorConfig" />
+                                <Editor v-model="form.question" tinymce-script-src="/tinymce/tinymce.min.js" :init="editorConfig" />
                             </div>
 
                             <!-- Multiple Choice Options -->
@@ -46,7 +46,7 @@
                                         <input v-if="form.question_type === 'multiple_choice_single'" type="radio" :value="i" v-model="form.answer">
                                         <input v-else type="checkbox" :value="i" v-model="form.correct_answers">
                                     </span>
-                                    <input type="text" class="form-control" v-model="form[`option_${i}`]" :placeholder="`Opsi ${i}`">
+                                    <input type="text" class="form-control" v-model="form['option_' + i]" :placeholder="'Opsi ' + i">
                                 </div>
                             </div>
 

@@ -91,7 +91,7 @@
     import Swal from 'sweetalert2';
 
     //import datepicker
-    import Datepicker from '@vuepic/vue-datepicker';
+    import { VueDatePicker } from '@vuepic/vue-datepicker';
     import '@vuepic/vue-datepicker/dist/main.css';
 
     export default {
@@ -103,7 +103,7 @@
         components: {
             Head,
             Link,
-            Datepicker
+            Datepicker: VueDatePicker
         },
 
         //props

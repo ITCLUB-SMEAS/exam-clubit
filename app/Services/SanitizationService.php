@@ -95,18 +95,27 @@ class SanitizationService
         // Remove null bytes
         $input = str_replace("\0", '', $input);
 
-        // Remove dangerous patterns first
+        // Preserve content inside <code> and <pre> tags by encoding it
+        $input = preg_replace_callback(
+            '/<(code|pre)([^>]*)>(.*?)<\/\1>/is',
+            function ($matches) {
+                $tag = $matches[1];
+                $attrs = $matches[2];
+                $content = htmlspecialchars($matches[3], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                return "<{$tag}{$attrs}>{$content}</{$tag}>";
+            },
+            $input
+        );
+
+        // Remove dangerous patterns
         foreach (self::$dangerousPatterns as $pattern) {
             $input = preg_replace($pattern, '', $input);
         }
 
-        // Build allowed tags string
-        $allowedTagsStr = '<' . implode('><', self::$allowedTags) . '>';
-
-        // Strip disallowed tags
-        $input = strip_tags($input, $allowedTagsStr);
-
-        // Clean attributes
+        // Don't use strip_tags - it removes unknown tags completely
+        // Instead, just remove dangerous tags and keep everything else
+        
+        // Clean attributes on allowed tags
         $input = self::cleanAttributes($input);
 
         return trim($input);

@@ -192,4 +192,20 @@ class StudentController extends Controller
         //redirect
         return redirect()->route('admin.students.index');
     }
+
+    /**
+     * Toggle block status of a student
+     */
+    public function toggleBlock(Student $student)
+    {
+        if ($student->is_blocked) {
+            $student->unblock();
+            $message = 'Siswa berhasil di-unblock.';
+        } else {
+            $student->block('Diblokir manual oleh admin');
+            $message = 'Siswa berhasil diblokir.';
+        }
+
+        return redirect()->back()->with('success', $message);
+    }
 }

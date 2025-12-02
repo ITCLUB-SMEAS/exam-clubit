@@ -84,7 +84,7 @@
                         <input class="form-check-input" type="radio" :name="'q'+activeQuestion.id" disabled>
                         <label class="form-check-label ms-2">
                             <span class="badge bg-secondary me-2">{{ String.fromCharCode(65 + idx) }}</span>
-                            <span v-html="opt.text"></span>
+                            {{ opt.text }}
                         </label>
                         <span v-if="opt.number == activeQuestion.answer" class="badge bg-success ms-2">
                             <i class="fa fa-check"></i> Jawaban Benar
@@ -99,7 +99,7 @@
                         <input class="form-check-input" type="checkbox" disabled>
                         <label class="form-check-label ms-2">
                             <span class="badge bg-secondary me-2">{{ String.fromCharCode(65 + idx) }}</span>
-                            <span v-html="opt.text"></span>
+                            {{ opt.text }}
                         </label>
                         <span v-if="activeQuestion.correct_answers?.includes(opt.number)" class="badge bg-success ms-2">
                             <i class="fa fa-check"></i> Benar

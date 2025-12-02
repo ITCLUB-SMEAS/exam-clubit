@@ -32,7 +32,7 @@ class LoginController extends Controller
     public function __invoke(Request $request)
     {
         $request->validate([
-            "nisn" => "required|string",
+            "nisn" => "required",
             "password" => "required|string",
         ]);
 
@@ -74,6 +74,15 @@ class LoginController extends Controller
                 ->back()
                 ->with("error", $errorMessage)
                 ->with("attempts_left", $attemptsLeft)
+                ->withInput($request->only("nisn"));
+        }
+
+        // Check if student is blocked
+        if ($student->is_blocked) {
+            ActivityLogService::logLogin("student", $student, "blocked");
+            return redirect()
+                ->back()
+                ->with("error", "Akun Anda telah diblokir karena pelanggaran. Hubungi admin untuk informasi lebih lanjut.")
                 ->withInput($request->only("nisn"));
         }
 

@@ -1,5 +1,4 @@
 <template>
-
     <Head>
         <title>Login Administrator - Aplikasi Ujian Online</title>
     </Head>
@@ -35,6 +34,14 @@
                     </div>
                 </div>
 
+                <!-- Turnstile Widget -->
+                <div class="mb-4">
+                    <div ref="turnstileRef"></div>
+                    <div v-if="errors.cf_turnstile_response" class="alert alert-danger mt-2">
+                        {{ errors.cf_turnstile_response }}
+                    </div>
+                </div>
+
                 <div class="d-flex justify-content-between align-items-top mb-4">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" value="" id="remember">
@@ -43,75 +50,69 @@
                         </label>
                     </div>
                 </div>
-
             </div>
             <div class="d-grid">
-                <button type="submit" class="btn btn-gray-800">LOGIN</button>
+                <button type="submit" class="btn btn-gray-800" :disabled="!turnstileToken">LOGIN</button>
             </div>
         </form>
     </div>
 </template>
 
 <script>
-    //import layout
-    import LayoutAuth from '../../Layouts/Auth.vue';
+import LayoutAuth from '../../Layouts/Auth.vue';
+import { Head, router } from '@inertiajs/vue3';
+import { reactive, ref, onMounted } from 'vue';
 
-    //import Inertia
-    import {
-        Head,
-        router
-    } from '@inertiajs/vue3';
+export default {
+    layout: LayoutAuth,
+    components: { Head },
+    props: {
+        errors: Object,
+        session: Object,
+        turnstileSiteKey: String
+    },
 
-    //import reactive
-    import {
-        reactive
-    } from 'vue';
+    setup(props) {
+        const form = reactive({ email: '', password: '' });
+        const turnstileToken = ref('');
+        const turnstileRef = ref(null);
 
-    export default {
+        onMounted(() => {
+            if (window.turnstile) {
+                renderTurnstile();
+            } else {
+                const script = document.createElement('script');
+                script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad';
+                script.async = true;
+                document.head.appendChild(script);
+                window.onTurnstileLoad = renderTurnstile;
+            }
+        });
 
-        //layout
-        layout: LayoutAuth,
-
-        //register component
-        components: {
-            Head
-        },
-
-        //props
-        props: {
-            errors: Object,
-            session: Object
-        },
-
-        //define composition API
-        setup() {
-
-            //define form state
-            const form = reactive({
-                email: '',
-                password: '',
-            });
-
-            //submit method
-            const submit = () => {
-
-                //send data to server
-                router.post('/login', {
-
-                    //data
-                    email: form.email,
-                    password: form.password,
+        const renderTurnstile = () => {
+            if (turnstileRef.value && window.turnstile) {
+                window.turnstile.render(turnstileRef.value, {
+                    sitekey: props.turnstileSiteKey,
+                    callback: (token) => { turnstileToken.value = token; },
+                    'expired-callback': () => { turnstileToken.value = ''; }
                 });
             }
+        };
 
-            //return form state and submit method
-            return {
-                form,
-                submit,
-            };
+        const submit = () => {
+            router.post('/admin/login', {
+                email: form.email,
+                password: form.password,
+                cf_turnstile_response: turnstileToken.value
+            }, {
+                onFinish: () => {
+                    if (window.turnstile) window.turnstile.reset();
+                    turnstileToken.value = '';
+                }
+            });
+        };
 
-        }
-
+        return { form, submit, turnstileToken, turnstileRef, turnstileSiteKey: props.turnstileSiteKey };
     }
-
+}
 </script>

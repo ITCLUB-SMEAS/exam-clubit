@@ -22,11 +22,16 @@ class SanitizeInput
         'option_5',
         'description',
         'content',
+        'correct_answer',
+        'answer',
+        'short_answer',
+        'left_option',
+        'right_option',
     ];
 
     /**
      * Fields that should be excluded from sanitization.
-     * Passwords and tokens should not be modified.
+     * Passwords, tokens, questions and answer options should not be modified.
      */
     protected array $excludedFields = [
         'password',
@@ -35,6 +40,15 @@ class SanitizeInput
         'new_password',
         '_token',
         '_method',
+        'question',
+        'option_1',
+        'option_2',
+        'option_3',
+        'option_4',
+        'option_5',
+        'answer',
+        'correct_answer',
+        'short_answer',
     ];
 
     /**
@@ -46,6 +60,11 @@ class SanitizeInput
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Skip sanitization for admin routes - protected by auth
+        if ($request->is('admin/*')) {
+            return $next($request);
+        }
+
         // Only sanitize for POST, PUT, PATCH requests
         if (in_array($request->method(), ['POST', 'PUT', 'PATCH'])) {
             $input = $request->all();

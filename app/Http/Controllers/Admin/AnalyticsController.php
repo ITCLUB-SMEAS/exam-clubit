@@ -55,19 +55,28 @@ class AnalyticsController extends Controller
             ->orderByRaw("MIN(grade) DESC")
             ->get();
 
-        // Performance by classroom
-        $classroomPerformance = Classroom::withCount('students')
+        // Performance by classroom - optimized single query
+        $classroomPerformance = DB::table('classrooms')
+            ->leftJoin('students', 'classrooms.id', '=', 'students.classroom_id')
+            ->leftJoin('grades', function($join) {
+                $join->on('students.id', '=', 'grades.student_id')
+                     ->whereNotNull('grades.end_time');
+            })
+            ->select(
+                'classrooms.id',
+                'classrooms.title as name',
+                DB::raw('COUNT(DISTINCT students.id) as students_count'),
+                DB::raw('COALESCE(ROUND(AVG(grades.grade), 1), 0) as avg_grade'),
+                DB::raw('COUNT(grades.id) as exams_taken')
+            )
+            ->groupBy('classrooms.id', 'classrooms.title')
             ->get()
-            ->map(function($classroom) {
-                $studentIds = $classroom->students->pluck('id');
-                $grades = Grade::whereIn('student_id', $studentIds)->whereNotNull('end_time');
-                return [
-                    'name' => $classroom->title,
-                    'students_count' => $classroom->students_count,
-                    'avg_grade' => round($grades->avg('grade') ?? 0, 1),
-                    'exams_taken' => $grades->count(),
-                ];
-            });
+            ->map(fn($item) => [
+                'name' => $item->name,
+                'students_count' => (int) $item->students_count,
+                'avg_grade' => (float) $item->avg_grade,
+                'exams_taken' => (int) $item->exams_taken,
+            ]);
 
         return inertia('Admin/Analytics/Index', [
             'stats' => [
@@ -100,17 +109,30 @@ class AnalyticsController extends Controller
             'failed' => $grades->where('status', 'failed')->count(),
         ];
 
-        // Question analysis
-        $questionStats = $exam->questions->map(function($question) use ($exam) {
-            $answers = Answer::where('question_id', $question->id)
-                ->where('exam_id', $exam->id)
-                ->get();
-            
-            $total = $answers->count();
-            $correct = $answers->where('is_correct', 'Y')->count();
+        // Question analysis - optimized
+        $answerStats = DB::table('answers')
+            ->where('exam_id', $exam->id)
+            ->select(
+                'question_id',
+                DB::raw('COUNT(*) as total'),
+                DB::raw("SUM(CASE WHEN is_correct = 'Y' THEN 1 ELSE 0 END) as correct")
+            )
+            ->groupBy('question_id')
+            ->pluck('correct', 'question_id')
+            ->toArray();
+        
+        $answerTotals = DB::table('answers')
+            ->where('exam_id', $exam->id)
+            ->select('question_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('question_id')
+            ->pluck('total', 'question_id')
+            ->toArray();
+
+        $questionStats = $exam->questions->map(function($question) use ($answerStats, $answerTotals) {
+            $total = $answerTotals[$question->id] ?? 0;
+            $correct = $answerStats[$question->id] ?? 0;
             $difficulty = $total > 0 ? round(($correct / $total) * 100, 1) : 0;
 
-            // Difficulty level
             $level = 'Sedang';
             if ($difficulty >= 70) $level = 'Mudah';
             elseif ($difficulty < 40) $level = 'Sulit';

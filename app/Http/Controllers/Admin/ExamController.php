@@ -411,7 +411,7 @@ class ExamController extends Controller
         ]);
 
         // import data
-        Excel::import(new QuestionsImport(), $request->file("file"));
+        Excel::import(new QuestionsImport($exam->id), $request->file("file"));
 
         //redirect
         return redirect()->route("admin.exams.show", $exam->id);

@@ -29,11 +29,7 @@
                             Waktu tunggu: <strong>{{ formatTime(countdown) }}</strong>
                         </small>
                         <div class="progress mt-2" style="height: 5px;">
-                            <div
-                                class="progress-bar bg-danger"
-                                role="progressbar"
-                                :style="{ width: progressWidth + '%' }"
-                            ></div>
+                            <div class="progress-bar bg-danger" role="progressbar" :style="{ width: progressWidth + '%' }"></div>
                         </div>
                     </div>
                 </div>
@@ -45,25 +41,15 @@
                 </div>
 
                 <form @submit.prevent="submit" class="mt-4">
-
                     <div class="form-group mb-4">
                         <label for="nisn">NISN</label>
                         <div class="input-group">
                             <span class="input-group-text" id="basic-addon1">
                                 <i class="fa fa-id-card"></i>
                             </span>
-                            <input
-                                type="number"
-                                class="form-control"
-                                v-model="form.nisn"
-                                placeholder="Masukkan NISN"
-                                :disabled="isLocked || isLoading"
-                                required
-                            >
+                            <input type="number" class="form-control" v-model="form.nisn" placeholder="Masukkan NISN" :disabled="isLocked || isLoading" required>
                         </div>
-                        <div v-if="errors.nisn" class="alert alert-danger mt-2">
-                            {{ errors.nisn }}
-                        </div>
+                        <div v-if="errors.nisn" class="alert alert-danger mt-2">{{ errors.nisn }}</div>
                     </div>
 
                     <div class="form-group">
@@ -73,73 +59,40 @@
                                 <span class="input-group-text" id="basic-addon2">
                                     <i class="fa fa-lock"></i>
                                 </span>
-                                <input
-                                    :type="showPassword ? 'text' : 'password'"
-                                    placeholder="Masukkan Password"
-                                    class="form-control"
-                                    v-model="form.password"
-                                    :disabled="isLocked || isLoading"
-                                    required
-                                >
-                                <button
-                                    type="button"
-                                    class="btn btn-outline-secondary"
-                                    @click="showPassword = !showPassword"
-                                    :disabled="isLocked || isLoading"
-                                >
+                                <input :type="showPassword ? 'text' : 'password'" placeholder="Masukkan Password" class="form-control" v-model="form.password" :disabled="isLocked || isLoading" required>
+                                <button type="button" class="btn btn-outline-secondary" @click="showPassword = !showPassword" :disabled="isLocked || isLoading">
                                     <i :class="showPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
                                 </button>
                             </div>
-                            <div v-if="errors.password" class="alert alert-danger mt-2">
-                                {{ errors.password }}
-                            </div>
+                            <div v-if="errors.password" class="alert alert-danger mt-2">{{ errors.password }}</div>
+                        </div>
+
+                        <!-- Turnstile Widget -->
+                        <div class="mb-4">
+                            <div ref="turnstileRef" class="cf-turnstile"></div>
+                            <div v-if="errors.cf_turnstile_response" class="alert alert-danger mt-2">{{ errors.cf_turnstile_response }}</div>
                         </div>
 
                         <div class="d-flex justify-content-between align-items-top mb-4">
                             <div class="form-check">
-                                <input
-                                    class="form-check-input"
-                                    type="checkbox"
-                                    v-model="form.remember"
-                                    id="remember"
-                                    :disabled="isLocked || isLoading"
-                                >
-                                <label class="form-check-label mb-0" for="remember">
-                                    Ingat saya
-                                </label>
+                                <input class="form-check-input" type="checkbox" v-model="form.remember" id="remember" :disabled="isLocked || isLoading">
+                                <label class="form-check-label mb-0" for="remember">Ingat saya</label>
                             </div>
                         </div>
-
                     </div>
 
                     <div class="d-grid">
-                        <button
-                            type="submit"
-                            class="btn btn-gray-800"
-                            :disabled="isLocked || isLoading"
-                        >
-                            <span v-if="isLoading">
-                                <i class="fa fa-spinner fa-spin me-2"></i>
-                                Memproses...
-                            </span>
-                            <span v-else-if="isLocked">
-                                <i class="fa fa-lock me-2"></i>
-                                Terkunci ({{ formatTime(countdown) }})
-                            </span>
-                            <span v-else>
-                                <i class="fa fa-sign-in-alt me-2"></i>
-                                LOGIN
-                            </span>
+                        <button type="submit" class="btn btn-gray-800" :disabled="isLocked || isLoading || !turnstileToken">
+                            <span v-if="isLoading"><i class="fa fa-spinner fa-spin me-2"></i>Memproses...</span>
+                            <span v-else-if="isLocked"><i class="fa fa-lock me-2"></i>Terkunci ({{ formatTime(countdown) }})</span>
+                            <span v-else><i class="fa fa-sign-in-alt me-2"></i>LOGIN</span>
                         </button>
                     </div>
                 </form>
 
                 <!-- Security Info -->
                 <div class="mt-4 text-center">
-                    <small class="text-muted">
-                        <i class="fa fa-shield-alt me-1"></i>
-                        Maksimal 5 percobaan login dalam 5 menit
-                    </small>
+                    <small class="text-muted"><i class="fa fa-shield-alt me-1"></i>Maksimal 5 percobaan login dalam 5 menit</small>
                 </div>
             </div>
         </div>
@@ -147,185 +100,100 @@
 </template>
 
 <script>
-    //import layout
-    import LayoutStudent from '../../../Layouts/Student.vue';
+import LayoutStudent from '../../../Layouts/Student.vue';
+import { Head, router, usePage } from '@inertiajs/vue3';
+import { reactive, ref, computed, onMounted, onUnmounted, watch } from 'vue';
 
-    //import Head from Inertia
-    import {
-        Head,
-        router,
-        usePage
-    } from '@inertiajs/vue3';
+export default {
+    layout: LayoutStudent,
+    components: { Head },
+    props: {
+        errors: Object,
+        turnstileSiteKey: String
+    },
 
-    //import reactive and ref
-    import {
-        reactive,
-        ref,
-        computed,
-        onMounted,
-        onUnmounted,
-        watch
-    } from 'vue';
+    setup(props) {
+        const form = reactive({ nisn: '', password: '', remember: false });
+        const isLoading = ref(false);
+        const showPassword = ref(false);
+        const countdown = ref(0);
+        const initialCountdown = ref(0);
+        const turnstileToken = ref('');
+        const turnstileRef = ref(null);
+        let countdownInterval = null;
 
-    export default {
+        const page = usePage();
+        const isLocked = computed(() => countdown.value > 0);
+        const progressWidth = computed(() => initialCountdown.value === 0 ? 0 : (countdown.value / initialCountdown.value) * 100);
 
-        //layout
-        layout: LayoutStudent,
+        const formatTime = (seconds) => {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+        };
 
-        //register component
-        components: {
-            Head
-        },
+        const startCountdown = (seconds) => {
+            countdown.value = seconds;
+            initialCountdown.value = seconds;
+            if (countdownInterval) clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                if (countdown.value > 0) countdown.value--;
+                else { clearInterval(countdownInterval); countdownInterval = null; }
+            }, 1000);
+        };
 
-        //props
-        props: {
-            errors: Object,
-        },
-
-        //inisialisasi composition API
-        setup(props) {
-
-            //define form state
-            const form = reactive({
-                nisn: '',
-                password: '',
-                remember: false,
-            });
-
-            //loading state
-            const isLoading = ref(false);
-
-            //show password toggle
-            const showPassword = ref(false);
-
-            //countdown for rate limiting
-            const countdown = ref(0);
-            const initialCountdown = ref(0);
-            let countdownInterval = null;
-
-            //get page props
-            const page = usePage();
-
-            //check if rate limited
-            const isLocked = computed(() => countdown.value > 0);
-
-            //progress width for countdown bar
-            const progressWidth = computed(() => {
-                if (initialCountdown.value === 0) return 0;
-                return (countdown.value / initialCountdown.value) * 100;
-            });
-
-            //format time helper
-            const formatTime = (seconds) => {
-                const mins = Math.floor(seconds / 60);
-                const secs = seconds % 60;
-                if (mins > 0) {
-                    return `${mins}m ${secs}s`;
-                }
-                return `${secs}s`;
-            };
-
-            //start countdown timer
-            const startCountdown = (seconds) => {
-                countdown.value = seconds;
-                initialCountdown.value = seconds;
-
-                if (countdownInterval) {
-                    clearInterval(countdownInterval);
-                }
-
-                countdownInterval = setInterval(() => {
-                    if (countdown.value > 0) {
-                        countdown.value--;
-                    } else {
-                        clearInterval(countdownInterval);
-                        countdownInterval = null;
-                    }
-                }, 1000);
-            };
-
-            //watch for retry_after in session
-            watch(
-                () => page.props.session.retry_after,
-                (newValue) => {
-                    if (newValue && newValue > 0) {
-                        startCountdown(newValue);
-                    }
-                },
-                { immediate: true }
-            );
-
-            //submit method
-            const submit = () => {
-                if (isLocked.value || isLoading.value) {
-                    return;
-                }
-
-                isLoading.value = true;
-
-                //send data to server
-                router.post('/students/login', {
-                    nisn: form.nisn,
-                    password: form.password,
-                    remember: form.remember,
-                }, {
-                    onFinish: () => {
-                        isLoading.value = false;
-                    },
-                    onError: () => {
-                        isLoading.value = false;
-                    }
+        const renderTurnstile = () => {
+            if (turnstileRef.value && window.turnstile) {
+                window.turnstile.render(turnstileRef.value, {
+                    sitekey: props.turnstileSiteKey,
+                    callback: (token) => { turnstileToken.value = token; },
+                    'expired-callback': () => { turnstileToken.value = ''; }
                 });
-            };
-
-            //check for initial retry_after on mount
-            onMounted(() => {
-                if (page.props.session.retry_after) {
-                    startCountdown(page.props.session.retry_after);
-                }
-            });
-
-            //cleanup on unmount
-            onUnmounted(() => {
-                if (countdownInterval) {
-                    clearInterval(countdownInterval);
-                }
-            });
-
-            //return
-            return {
-                form,
-                submit,
-                isLoading,
-                showPassword,
-                countdown,
-                isLocked,
-                progressWidth,
-                formatTime,
             }
-        }
+        };
 
+        watch(() => page.props.session.retry_after, (newValue) => {
+            if (newValue && newValue > 0) startCountdown(newValue);
+        }, { immediate: true });
+
+        const submit = () => {
+            if (isLocked.value || isLoading.value) return;
+            isLoading.value = true;
+            router.post('/students/login', {
+                nisn: form.nisn,
+                password: form.password,
+                remember: form.remember,
+                cf_turnstile_response: turnstileToken.value
+            }, {
+                onFinish: () => {
+                    isLoading.value = false;
+                    if (window.turnstile) window.turnstile.reset();
+                    turnstileToken.value = '';
+                }
+            });
+        };
+
+        onMounted(() => {
+            if (page.props.session.retry_after) startCountdown(page.props.session.retry_after);
+            if (window.turnstile) {
+                renderTurnstile();
+            } else {
+                const script = document.createElement('script');
+                script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad';
+                script.async = true;
+                document.head.appendChild(script);
+                window.onTurnstileLoad = renderTurnstile;
+            }
+        });
+
+        onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval); });
+
+        return { form, submit, isLoading, showPassword, countdown, isLocked, progressWidth, formatTime, turnstileToken, turnstileRef };
     }
-
+}
 </script>
 
 <style scoped>
-.progress {
-    background-color: #e9ecef;
-    border-radius: 3px;
-}
-
-.progress-bar {
-    transition: width 1s linear;
-}
-
-.btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-
-.form-control:disabled {
-    background-color: #f8f9fa;
-    cursor: not-allowed;
-}
+.progress { background-color: #e9ecef; border-radius: 3px; }
+.progress-bar { transition: width 1s linear; }
 </style>

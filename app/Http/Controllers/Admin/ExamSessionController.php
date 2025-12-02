@@ -263,6 +263,11 @@ class ExamSessionController extends Controller
 
         $exam = $exam_session->exam;
         
+        // Verify classroom is allowed for this exam (must match exam's classroom)
+        if ($exam->classroom_id && $exam->classroom_id != $request->classroom_id) {
+            return back()->withErrors(['classroom_id' => 'Kelas tidak sesuai dengan ujian ini.']);
+        }
+        
         // Get students already enrolled
         $enrolledIds = ExamGroup::where('exam_id', $exam->id)
             ->where('exam_session_id', $exam_session->id)

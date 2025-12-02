@@ -49,7 +49,7 @@
                             <div class="mb-4">
                                 <label>Deskripsi</label>
                                 <Editor
-                                    :api-key="TinyMCEApiKey"
+                                    tinymce-script-src="/tinymce/tinymce.min.js"
                                     v-model="form.description"
                                     :init="{
                                         menubar: false,

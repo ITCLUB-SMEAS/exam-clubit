@@ -55,7 +55,7 @@
 
                                         </td>
                                         <td style="padding: 10px;">
-                                            <p v-html="question_active.question['option_'+answer]"></p>
+                                            {{ question_active.question['option_'+answer] }}
                                         </td>
                                     </tr>
                                 </tbody>
@@ -67,7 +67,7 @@
                                 <label v-for="(answer, index) in answer_order" :key="index" class="list-group-item d-flex align-items-center">
                                     <input class="form-check-input me-2" type="checkbox" :value="answer" v-model="selectedOptions">
                                     <span class="badge bg-secondary me-2">{{ options[index] }}</span>
-                                    <span v-html="question_active.question['option_'+answer]"></span>
+                                    {{ question_active.question['option_'+answer] }}
                                 </label>
                             </div>
                             <button @click.prevent="submitAnswerMultiple" class="btn btn-info btn-sm mt-3">Simpan Jawaban</button>
@@ -393,9 +393,9 @@
                     block_copy_paste: true,
                     block_right_click: true,
                     detect_devtools: true,
-                    max_violations: 10,
-                    warning_threshold: 3,
-                    auto_submit_on_max_violations: false,
+                    max_violations: 3,
+                    warning_threshold: 2,
+                    auto_submit_on_max_violations: true,
                 })
             },
             initial_violations: {

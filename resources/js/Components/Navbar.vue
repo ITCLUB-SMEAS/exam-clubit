@@ -17,7 +17,7 @@
                             </div>
                         </a>
                         <div class="dropdown-menu dashboard-dropdown dropdown-menu-end mt-2 py-1 border-0 shadow">
-                            <Link class="dropdown-item d-flex align-items-center" href="/logout" method="POST" as="button">
+                            <Link class="dropdown-item d-flex align-items-center" href="/admin/logout" method="POST" as="button">
                                 <svg class="dropdown-icon text-danger me-2" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

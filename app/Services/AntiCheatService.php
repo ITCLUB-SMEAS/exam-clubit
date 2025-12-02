@@ -219,6 +219,46 @@ class AntiCheatService
                 'flag_reason' => "Melebihi batas maksimal pelanggaran ({$grade->violation_count}/{$maxViolations})",
             ]);
         }
+
+        // Auto-block student after 3 violations
+        self::checkAndBlockStudent($grade);
+    }
+
+    /**
+     * Check and block student if they have 3 or more violations
+     */
+    public static function checkAndBlockStudent(Grade $grade): bool
+    {
+        $student = Student::find($grade->student_id);
+        
+        if (!$student || $student->is_blocked) {
+            return false;
+        }
+
+        if ($grade->violation_count >= 3) {
+            $student->block("Akun diblokir otomatis: {$grade->violation_count} pelanggaran anti-cheat");
+            
+            ActivityLogService::log(
+                action: 'block',
+                module: 'anticheat',
+                description: "Akun siswa diblokir otomatis karena {$grade->violation_count} pelanggaran",
+                subject: $student,
+                metadata: [
+                    'grade_id' => $grade->id,
+                    'violation_count' => $grade->violation_count,
+                ]
+            );
+
+            Log::channel('daily')->warning('Student Auto-Blocked', [
+                'student_id' => $student->id,
+                'student_name' => $student->name,
+                'violation_count' => $grade->violation_count,
+            ]);
+
+            return true;
+        }
+
+        return false;
     }
 
     /**

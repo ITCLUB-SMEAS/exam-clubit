@@ -47,8 +47,8 @@
                                         <th class="border-0">Nama</th>
                                         <th class="border-0">Kelas</th>
                                         <th class="border-0">Jenis Kelamin</th>
-                                        <th class="border-0">Password</th>
-                                        <th class="border-0 rounded-end" style="width:15%">Aksi</th>
+                                        <th class="border-0">Status</th>
+                                        <th class="border-0 rounded-end" style="width:18%">Aksi</th>
                                     </tr>
                                 </thead>
                                 <div class="mt-2"></div>
@@ -60,8 +60,16 @@
                                         <td>{{ student.name }}</td>
                                         <td class="text-center">{{ student.classroom.title }}</td>
                                         <td class="text-center">{{ student.gender }}</td>
-                                        <td>{{ student.password }}</td>
                                         <td class="text-center">
+                                            <span v-if="student.is_blocked" class="badge bg-danger">Diblokir</span>
+                                            <span v-else class="badge bg-success">Aktif</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <button @click.prevent="toggleBlock(student)" 
+                                                :class="student.is_blocked ? 'btn btn-sm btn-success border-0 shadow me-2' : 'btn btn-sm btn-warning border-0 shadow me-2'" 
+                                                type="button" :title="student.is_blocked ? 'Unblock' : 'Block'">
+                                                <i :class="student.is_blocked ? 'fa fa-unlock' : 'fa fa-ban'"></i>
+                                            </button>
                                             <Link :href="`/admin/students/${student.id}/edit`" class="btn btn-sm btn-info border-0 shadow me-2" type="button"><i class="fa fa-pencil-alt"></i></Link>
                                             <button @click.prevent="destroy(student.id)" class="btn btn-sm btn-danger border-0"><i class="fa fa-trash"></i></button>
                                         </td>
@@ -157,11 +165,38 @@
                     })
             }
 
+            //define method toggleBlock
+            const toggleBlock = (student) => {
+                const action = student.is_blocked ? 'unblock' : 'blokir';
+                Swal.fire({
+                        title: `${student.is_blocked ? 'Unblock' : 'Blokir'} siswa?`,
+                        text: `Apakah Anda yakin ingin ${action} ${student.name}?`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: student.is_blocked ? '#28a745' : '#d33',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: `Ya, ${action}!`
+                    })
+                    .then((result) => {
+                        if (result.isConfirmed) {
+                            router.post(`/admin/students/${student.id}/toggle-block`);
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: `Siswa berhasil di-${action}.`,
+                                icon: 'success',
+                                timer: 2000,
+                                showConfirmButton: false,
+                            });
+                        }
+                    })
+            }
+
             //return
             return {
                 search,
                 handleSearch,
                 destroy,
+                toggleBlock,
             }
 
         }

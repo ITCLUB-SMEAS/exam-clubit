@@ -38,7 +38,7 @@
                                             <td style="width:20%" class="fw-bold">Soal</td>
                                             <td>
                                                 <Editor
-                                                    :api-key="TinyMCEApiKey"
+                                                    tinymce-script-src="/tinymce/tinymce.min.js"
                                                     v-model="form.question"
                                                     :init="{
                                                         menubar: false,
@@ -53,7 +53,7 @@
                                             <tr v-for="(label, idx) in optionLabels" :key="idx">
                                                 <td class="fw-bold">Pilihan {{ label }}</td>
                                                 <td>
-                                                    <Editor :api-key="TinyMCEApiKey" v-model="form['option_'+(idx+1)]" :init="editorConfig" />
+                                                    <Editor tinymce-script-src="/tinymce/tinymce.min.js" v-model="form['option_'+(idx+1)]" :init="editorConfig" />
                                                 </td>
                                             </tr>
                                         </template>

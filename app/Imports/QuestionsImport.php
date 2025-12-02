@@ -8,6 +8,13 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
 class QuestionsImport implements ToModel, WithHeadingRow
 {
+    protected int $examId;
+
+    public function __construct(int $examId)
+    {
+        $this->examId = $examId;
+    }
+
     /**
     * @param array $row
     *
@@ -16,7 +23,7 @@ class QuestionsImport implements ToModel, WithHeadingRow
     public function model(array $row)
     {
         return new Question([
-            'exam_id'   => (int) $row['exam_id'],
+            'exam_id'   => $this->examId,
             'question'  => $row['question'],
             'option_1'  => $row['option_1'],
             'option_2'  => $row['option_2'],

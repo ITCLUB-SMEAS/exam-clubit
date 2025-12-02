@@ -123,7 +123,7 @@ export function useAntiCheat(options = {}) {
         // Send to server if credentials are provided
         if (config.value.examId && config.value.examSessionId && config.value.gradeId) {
             try {
-                await axios.post('/student/anticheat/violation', {
+                const response = await axios.post('/student/anticheat/violation', {
                     exam_id: config.value.examId,
                     exam_session_id: config.value.examSessionId,
                     grade_id: config.value.gradeId,
@@ -131,6 +131,11 @@ export function useAntiCheat(options = {}) {
                     description: description,
                     metadata: metadata,
                 });
+
+                // Check if student got blocked
+                if (response.data?.data?.is_blocked && config.value.onBlocked) {
+                    config.value.onBlocked();
+                }
             } catch (error) {
                 console.error('Failed to record violation:', error);
                 // Queue for retry
