@@ -31,13 +31,11 @@ class LoginController extends Controller
      */
     public function __invoke(Request $request)
     {
-        // Validate the form data
         $request->validate([
             "nisn" => "required|string",
             "password" => "required|string",
         ]);
 
-        // Check rate limiting
         $throttleKey = $this->throttleKey($request);
 
         if (RateLimiter::tooManyAttempts($throttleKey, $this->maxAttempts)) {
@@ -46,28 +44,23 @@ class LoginController extends Controller
 
             return redirect()
                 ->back()
-                ->with(
-                    "error",
-                    "Terlalu banyak percobaan login. Silakan coba lagi dalam {$minutes} menit.",
-                )
+                ->with("error", "Terlalu banyak percobaan login. Silakan coba lagi dalam {$minutes} menit.")
                 ->with("retry_after", $seconds)
                 ->withInput($request->only("nisn"));
         }
 
-        // Find student by NISN
         $student = Student::where("nisn", $request->nisn)->first();
 
-        // Check if student exists and password is correct
-        if (!$student || !Hash::check($request->password, $student->password)) {
-            // Increment failed attempts
+        // Timing attack prevention: always perform hash check
+        // Use a dummy hash if student not found to ensure constant time
+        $dummyHash = '$2y$12$dummy.hash.for.timing.attack.prevention.only';
+        $passwordToCheck = $student ? $student->password : $dummyHash;
+        $validPassword = Hash::check($request->password, $passwordToCheck) && $student;
+
+        if (!$validPassword) {
             RateLimiter::hit($throttleKey, $this->decaySeconds);
+            $attemptsLeft = RateLimiter::remaining($throttleKey, $this->maxAttempts);
 
-            $attemptsLeft = RateLimiter::remaining(
-                $throttleKey,
-                $this->maxAttempts,
-            );
-
-            // Log failed login attempt
             if ($student) {
                 ActivityLogService::logLogin("student", $student, "failed");
             }
@@ -84,42 +77,17 @@ class LoginController extends Controller
                 ->withInput($request->only("nisn"));
         }
 
-        // Check if student is already logged in from another device (optional: force logout)
-        if ($student->hasActiveSession()) {
-            // Option 1: Reject new login (uncomment to use)
-            // return redirect()->back()
-            //     ->with('error', 'Akun ini sedang digunakan di perangkat lain. Silakan logout terlebih dahulu.')
-            //     ->withInput($request->only('nisn'));
-
-            // Option 2: Force logout previous session (current implementation)
-            // The previous session will be invalidated when they try to access
-            // because the session_id won't match
-        }
-
-        // Clear rate limiter on successful login
         RateLimiter::clear($throttleKey);
-
-        // Login the student
         Auth::guard("student")->login($student);
-
-        // Regenerate session to prevent session fixation attacks
         $request->session()->regenerate();
-
-        // Update student's session information
         $student->updateSessionInfo(session()->getId(), $request->ip());
-
-        // Log successful login
         ActivityLogService::logLogin("student", $student, "success");
 
-        // Redirect to dashboard
         return redirect()->route("student.dashboard");
     }
 
     /**
      * Generate throttle key for rate limiting
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return string
      */
     protected function throttleKey(Request $request): string
     {

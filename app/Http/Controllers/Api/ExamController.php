@@ -22,6 +22,17 @@ class ExamController extends Controller
 
     public function show(Exam $exam)
     {
+        $user = request()->user();
+        
+        // Non-admin: hide questions with answers
+        if (!$user->isAdmin()) {
+            return response()->json($exam->load('lesson', 'classroom')->only([
+                'id', 'title', 'description', 'duration', 'lesson_id', 'classroom_id',
+                'random_question', 'random_answer', 'show_answer', 'passing_grade',
+                'lesson', 'classroom'
+            ]));
+        }
+
         return response()->json($exam->load('lesson', 'classroom', 'questions'));
     }
 

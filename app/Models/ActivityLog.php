@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Prunable;
 
 /**
  * ActivityLog Model
@@ -42,6 +43,8 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class ActivityLog extends Model
 {
+    use Prunable;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -77,6 +80,14 @@ class ActivityLog extends Model
             "new_values" => "array",
             "metadata" => "array",
         ];
+    }
+
+    /**
+     * Get the prunable model query - delete logs older than 90 days
+     */
+    public function prunable(): Builder
+    {
+        return static::where('created_at', '<', now()->subDays(90));
     }
 
     /**

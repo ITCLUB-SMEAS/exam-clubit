@@ -7,18 +7,18 @@ use App\Http\Controllers\Api\ExamController;
 use App\Http\Controllers\Api\GradeController;
 
 Route::middleware(['api'])->group(function () {
-    // Public routes (with rate limiting)
+    // Public routes - strict rate limiting for login
     Route::middleware(['throttle:5,1'])->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
     });
 
-    // Protected routes
-    Route::middleware('auth:sanctum')->group(function () {
-        // Auth - semua authenticated user
+    // Protected routes with rate limiting
+    Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+        // Auth
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
 
-        // Read-only untuk semua authenticated user
+        // Read-only endpoints
         Route::get('/exams', [ExamController::class, 'index']);
         Route::get('/exams/{exam}', [ExamController::class, 'show']);
         Route::get('/exam-sessions', [ExamController::class, 'sessions']);
@@ -26,8 +26,8 @@ Route::middleware(['api'])->group(function () {
         Route::get('/grades/{grade}', [GradeController::class, 'show']);
         Route::get('/grades-statistics', [GradeController::class, 'statistics']);
 
-        // Admin only - Student management
-        Route::middleware(['ability:admin'])->group(function () {
+        // Admin only - stricter rate limit for write operations
+        Route::middleware(['ability:admin', 'throttle:30,1'])->group(function () {
             Route::apiResource('students', StudentController::class);
         });
     });

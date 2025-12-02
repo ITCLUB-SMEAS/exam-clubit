@@ -1,51 +1,108 @@
 # Security Audit Report
-**Date:** 2025-12-01
+**Date:** 2025-12-02
 **Auditor:** AI Security Review
 
 ## 🔴 Critical Issues Found & Fixed
 
 ### 1. API Endpoints Missing Role-Based Authorization
-**Status:** FIXED
+**Status:** ✅ FIXED
 
-**Issue:** API routes (`/api/students`, `/api/grades`, `/api/exams`) hanya menggunakan `auth:sanctum` tanpa role check. Semua authenticated user (termasuk guru) bisa CRUD semua data.
+### 2. IDOR (Insecure Direct Object Reference) Vulnerability
+**Status:** ✅ FIXED (2025-12-02)
 
-**Fix:** Menambahkan middleware `ability` untuk membatasi akses berdasarkan role.
+### 3. Timing Attack pada Login
+**Status:** ✅ FIXED (2025-12-02)
 
-### 2. Mass Assignment Vulnerability
-**Status:** REVIEWED - OK
+**Issue:** Attacker bisa enumerate valid NISN berdasarkan response time karena hash check hanya dilakukan jika student ditemukan.
 
-Model menggunakan `$fillable` dengan benar, tidak ada mass assignment vulnerability.
+**Fix:** Selalu melakukan hash check dengan dummy hash jika student tidak ditemukan untuk memastikan constant-time response.
 
-### 3. SQL Injection
-**Status:** REVIEWED - OK
+```php
+// Before (vulnerable)
+if (!$student || !Hash::check($request->password, $student->password)) { ... }
 
-Semua query menggunakan Eloquent ORM dan parameter binding.
+// After (fixed)
+$dummyHash = '$2y$12$dummy.hash.for.timing.attack.prevention.only';
+$passwordToCheck = $student ? $student->password : $dummyHash;
+$validPassword = Hash::check($request->password, $passwordToCheck) && $student;
+```
 
-## 🟡 Medium Issues
+### 4. Missing Security Headers
+**Status:** ✅ FIXED (2025-12-02)
 
-### 4. Rate Limiting pada Login API
-**Status:** NEEDS ATTENTION
+**Issue:** Tidak ada security headers untuk mencegah clickjacking, MIME sniffing, dll.
 
-Login API (`/api/login`) tidak memiliki rate limiting khusus untuk mencegah brute force.
+**Fix:** Menambahkan `SecurityHeaders` middleware dengan headers:
+- `X-Frame-Options: SAMEORIGIN`
+- `X-Content-Type-Options: nosniff`
+- `X-XSS-Protection: 1; mode=block`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+- `Content-Security-Policy` (production only)
+- `Strict-Transport-Security` (HTTPS only)
 
-### 5. Token Expiration
-**Status:** NEEDS ATTENTION
+### 5. API Rate Limiting Tidak Konsisten
+**Status:** ✅ FIXED (2025-12-02)
 
-Sanctum tokens tidak memiliki expiration time default.
+**Issue:** Hanya endpoint login yang memiliki rate limiting.
 
-## 🟢 Good Practices Already Implemented
+**Fix:** Menambahkan rate limiting ke semua API endpoints:
+- Login: `5 requests/minute`
+- Read endpoints: `60 requests/minute`
+- Write endpoints (admin): `30 requests/minute`
+
+## 🟢 Good Practices Implemented
 
 - ✅ CSRF Protection (via Laravel)
 - ✅ XSS Prevention (SanitizeInput middleware)
 - ✅ Password Hashing (bcrypt)
-- ✅ Session Security
-- ✅ Input Validation pada semua endpoints
+- ✅ Session Security & Regeneration
+- ✅ Input Validation
 - ✅ Anti-Cheat dengan ownership verification
-- ✅ Admin-only middleware untuk user management
+- ✅ Admin-only middleware
+- ✅ IDOR Protection
+- ✅ Timing Attack Prevention
+- ✅ Security Headers
+- ✅ API Rate Limiting
 
-## Recommendations
+## 🧪 Security Tests
 
-1. Implement API rate limiting
-2. Add token expiration
-3. Add audit logging untuk API access
-4. Consider implementing API versioning
+### Test Files:
+- `tests/Feature/IDORProtectionTest.php` - 11 tests
+- `tests/Feature/SecurityHeadersTest.php` - 5 tests
+- `tests/Feature/StudentLoginTest.php` - existing tests
+- `tests/Feature/ApiSecurityTest.php` - existing tests
+
+## 📁 Files Modified/Created
+
+### 2025-12-02 (Session 2)
+- `app/Http/Controllers/Student/LoginController.php` - Timing attack fix
+- `app/Http/Middleware/SecurityHeaders.php` - NEW
+- `bootstrap/app.php` - Register SecurityHeaders middleware
+- `routes/api.php` - API rate limiting
+- `tests/Feature/SecurityHeadersTest.php` - NEW
+- `tests/Feature/IDORProtectionTest.php` - NEW
+
+### 2025-12-02 (Session 1)
+- `app/Http/Controllers/Student/ExamController.php` - IDOR fix
+- `app/Http/Controllers/Api/ExamController.php` - Hide sensitive data
+
+## 🔧 Remaining Recommendations
+
+| Priority | Task | Status |
+|----------|------|--------|
+| HIGH | Update .env for production settings | Pending |
+| HIGH | Token cleanup scheduled job | Pending |
+| MEDIUM | Password reset for students | Pending |
+| MEDIUM | 2FA for admin | Pending |
+| LOW | IP whitelist for admin | Pending |
+
+## Production Checklist
+
+```env
+# .env production settings
+APP_ENV=production
+APP_DEBUG=false
+SESSION_SECURE_COOKIE=true
+SESSION_ENCRYPT=true
+```

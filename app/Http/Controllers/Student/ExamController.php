@@ -22,7 +22,7 @@ class ExamController extends Controller
      */
     public function confirmation($id)
     {
-        //get exam group
+        //get exam group with ownership check
         $exam_group = ExamGroup::with(
             "exam.lesson",
             "exam_session",
@@ -32,7 +32,12 @@ class ExamController extends Controller
             ->where("id", $id)
             ->first();
 
-        //get grade / nilai
+        if (!$exam_group) {
+            return redirect()->route("student.dashboard")
+                ->with("error", "Ujian tidak ditemukan.");
+        }
+
+        //get grade / nilai with ownership check
         $grade = Grade::where("exam_id", $exam_group->exam->id)
             ->where("exam_session_id", $exam_group->exam_session->id)
             ->where("student_id", auth()->guard("student")->user()->id)
@@ -675,7 +680,7 @@ class ExamController extends Controller
      */
     public function resultExam($exam_group_id)
     {
-        //get exam group
+        //get exam group with ownership check
         $exam_group = ExamGroup::with(
             "exam.lesson",
             "exam_session",
@@ -685,15 +690,25 @@ class ExamController extends Controller
             ->where("id", $exam_group_id)
             ->first();
 
-        //get grade / nilai
+        if (!$exam_group) {
+            return redirect()->route("student.dashboard")
+                ->with("error", "Hasil ujian tidak ditemukan.");
+        }
+
+        //get grade / nilai with ownership check
         $grade = Grade::where("exam_id", $exam_group->exam->id)
             ->where("exam_session_id", $exam_group->exam_session->id)
             ->where("student_id", auth()->guard("student")->user()->id)
             ->first();
 
+        if (!$grade) {
+            return redirect()->route("student.dashboard")
+                ->with("error", "Data nilai tidak ditemukan.");
+        }
+
         // Get violation summary if anti-cheat was enabled
         $violation_summary = null;
-        if ($grade && $grade->violation_count > 0) {
+        if ($grade->violation_count > 0) {
             $violation_summary = $grade->getViolationsSummary();
         }
 
