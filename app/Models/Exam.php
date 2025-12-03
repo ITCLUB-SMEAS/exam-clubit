@@ -6,9 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Exam extends Model
 {
+    use SoftDeletes;
     /**
      * fillable
      *
@@ -29,6 +31,7 @@ class Exam extends Model
         "time_per_question",
         // Anti-cheat settings
         "anticheat_enabled",
+        "face_detection_enabled",
         "fullscreen_required",
         "block_tab_switch",
         "block_copy_paste",
@@ -52,6 +55,7 @@ class Exam extends Model
         "question_limit" => "integer",
         "time_per_question" => "integer",
         "anticheat_enabled" => "boolean",
+        "face_detection_enabled" => "boolean",
         "fullscreen_required" => "boolean",
         "block_tab_switch" => "boolean",
         "block_copy_paste" => "boolean",

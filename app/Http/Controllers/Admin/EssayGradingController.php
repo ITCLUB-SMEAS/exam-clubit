@@ -74,7 +74,7 @@ class EssayGradingController extends Controller
     public function bulkGrade(Request $request)
     {
         $request->validate([
-            'grades' => 'required|array',
+            'grades' => 'required|array|max:50', // Limit 50 items per request
             'grades.*.answer_id' => 'required|exists:answers,id',
             'grades.*.points' => 'required|numeric|min:0',
         ]);

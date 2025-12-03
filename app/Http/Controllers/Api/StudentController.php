@@ -5,15 +5,18 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Student;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class StudentController extends Controller
 {
     public function index(Request $request)
     {
+        $perPage = min($request->per_page ?? 15, 100); // Max 100 per page
+        
         $students = Student::with('classroom')
             ->when($request->classroom_id, fn($q) => $q->where('classroom_id', $request->classroom_id))
             ->when($request->search, fn($q) => $q->where('name', 'like', "%{$request->search}%"))
-            ->paginate($request->per_page ?? 15);
+            ->paginate($perPage);
 
         return response()->json($students);
     }
@@ -27,13 +30,13 @@ class StudentController extends Controller
     {
         $validated = $request->validate([
             'nisn' => 'required|unique:students,nisn',
-            'name' => 'required|string',
+            'name' => 'required|string|max:255',
             'classroom_id' => 'required|exists:classrooms,id',
-            'password' => 'required|min:6',
+            'password' => 'required|min:8',
             'gender' => 'required|in:L,P',
         ]);
 
-        $validated['password'] = bcrypt($validated['password']);
+        $validated['password'] = Hash::make($validated['password']);
         $student = Student::create($validated);
 
         return response()->json($student, 201);
@@ -43,13 +46,14 @@ class StudentController extends Controller
     {
         $validated = $request->validate([
             'nisn' => 'required|unique:students,nisn,' . $student->id,
-            'name' => 'required|string',
+            'name' => 'required|string|max:255',
             'classroom_id' => 'required|exists:classrooms,id',
             'gender' => 'required|in:L,P',
         ]);
 
         if ($request->filled('password')) {
-            $validated['password'] = bcrypt($request->password);
+            $request->validate(['password' => 'min:8']);
+            $validated['password'] = Hash::make($request->password);
         }
 
         $student->update($validated);

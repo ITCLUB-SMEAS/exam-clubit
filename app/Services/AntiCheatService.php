@@ -6,6 +6,8 @@ use App\Models\Exam;
 use App\Models\ExamViolation;
 use App\Models\Grade;
 use App\Models\Student;
+use App\Models\User;
+use App\Notifications\ExamViolationNotification;
 use Illuminate\Support\Facades\Log;
 
 class AntiCheatService
@@ -64,6 +66,11 @@ class AntiCheatService
         // Check if auto-flag should be applied
         self::checkAndFlagIfNeeded($grade, $exam);
 
+        // Notify admins (only for serious violations or when threshold reached)
+        if ($grade->violation_count >= 2) {
+            self::notifyAdmins($student, $exam, $violationType, $grade->violation_count);
+        }
+
         // Log for monitoring
         Log::channel('daily')->info('Anti-Cheat Violation', [
             'student_id' => $student->id,
@@ -75,6 +82,22 @@ class AntiCheatService
         ]);
 
         return $violation;
+    }
+
+    /**
+     * Notify all admins about violation
+     */
+    protected static function notifyAdmins(Student $student, Exam $exam, string $violationType, int $totalViolations): void
+    {
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new ExamViolationNotification(
+                $student->name,
+                $exam->title,
+                self::getViolationLabel($violationType),
+                $totalViolations
+            ));
+        }
     }
 
     /**
@@ -413,6 +436,11 @@ class AntiCheatService
             ExamViolation::TYPE_MULTIPLE_MONITORS,
             ExamViolation::TYPE_REMOTE_DESKTOP,
             ExamViolation::TYPE_VIRTUAL_MACHINE,
+            ExamViolation::TYPE_NO_FACE,
+            ExamViolation::TYPE_MULTIPLE_FACES,
+            ExamViolation::TYPE_MULTIPLE_TABS,
+            ExamViolation::TYPE_POPUP_BLOCKED,
+            ExamViolation::TYPE_EXTERNAL_LINK,
         ]);
     }
 }

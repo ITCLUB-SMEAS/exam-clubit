@@ -6,12 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Lesson extends Model
 {
-    /**
-     * fillable
-     *
-     * @var array
-     */
-    protected $fillable = [
-        'title',
-    ];
+    protected $fillable = ['title'];
+
+    public function exams()
+    {
+        return $this->hasMany(Exam::class);
+    }
 }

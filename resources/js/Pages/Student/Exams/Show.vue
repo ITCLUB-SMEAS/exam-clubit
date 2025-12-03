@@ -19,6 +19,17 @@
         </span>
     </div>
 
+    <!-- Face Detection Camera Preview -->
+    <div v-if="faceDetectionActive" class="position-fixed" style="bottom: 10px; right: 10px; z-index: 1050;">
+        <div class="card border-0 shadow" style="width: 160px;">
+            <video ref="faceVideoRef" autoplay muted playsinline style="width: 100%; border-radius: 4px;"></video>
+            <div class="text-center small text-muted py-1">
+                <i class="fa fa-video me-1"></i> Kamera Aktif
+            </div>
+        </div>
+    </div>
+    <video v-else-if="face_detection_enabled" ref="faceVideoRef" style="display: none;"></video>
+
     <div class="row mb-5">
         <div class="col-md-7">
             <div class="card border-0 shadow">
@@ -27,7 +38,14 @@
                         <div>
                             <h5 class="mb-0">Soal No. <strong class="fw-bold">{{ page }}</strong></h5>
                         </div>
-                        <div>
+                        <div class="d-flex gap-2">
+                            <!-- Timer per soal (jika aktif) -->
+                            <VueCountdown v-if="questionTimeLimit > 0" :time="questionTimeRemaining" @end="handleQuestionTimeEnd" v-slot="{ minutes, seconds }">
+                                <span class="badge bg-warning text-dark p-2">
+                                    <i class="fa fa-stopwatch"></i> Soal: {{ minutes }}:{{ String(seconds).padStart(2, '0') }}
+                                </span>
+                            </VueCountdown>
+                            <!-- Timer total ujian -->
                             <VueCountdown :time="duration" @progress="handleChangeDuration" @end="showModalEndTimeExam = true" v-slot="{ hours, minutes, seconds }">
                                 <span class="badge bg-info p-2"> <i class="fa fa-clock"></i> {{ hours }} jam,
                                     {{ minutes }} menit, {{ seconds }} detik.</span>
@@ -363,6 +381,9 @@
     //import useAntiCheat composable
     import { useAntiCheat } from '../../../composables/useAntiCheat.js';
 
+    //import useFaceDetection composable
+    import { useFaceDetection } from '../../../composables/useFaceDetection.js';
+
     export default {
         //layout
         layout: LayoutStudent,
@@ -401,6 +422,10 @@
             initial_violations: {
                 type: Number,
                 default: 0
+            },
+            face_detection_enabled: {
+                type: Boolean,
+                default: false
             }
         },
 
@@ -420,6 +445,10 @@
             const selectedOptions = ref([]);
             const textAnswer = ref('');
 
+            // Time per question
+            const questionTimeLimit = ref(props.exam_group.exam.time_per_question || 0);
+            const questionTimeRemaining = ref(questionTimeLimit.value * 1000); // Convert to ms
+
             // Anti-cheat config
             const antiCheatConfig = ref(props.anticheat_config);
 
@@ -434,6 +463,19 @@
             // Blocked environment state
             const showBlockedModal = ref(false);
             const blockedMessage = ref('');
+
+            // Face detection
+            const faceVideoRef = ref(null);
+            const faceDetectionActive = ref(false);
+            const faceDetection = props.face_detection_enabled ? useFaceDetection({
+                checkInterval: 30000, // Check every 30 seconds
+                onNoFace: () => {
+                    antiCheat.recordViolation('no_face', 'Wajah tidak terdeteksi di kamera');
+                },
+                onMultipleFaces: (count) => {
+                    antiCheat.recordViolation('multiple_faces', `Terdeteksi ${count} wajah di kamera`);
+                },
+            }) : null;
 
             // Initialize anti-cheat
             const antiCheat = useAntiCheat({
@@ -491,6 +533,16 @@
                     blockedMessage.value = data.message;
                     showBlockedModal.value = true;
                 },
+
+                onDuplicateTab: () => {
+                    Swal.fire({
+                        title: 'Tab Duplikat Terdeteksi!',
+                        text: 'Ujian sudah dibuka di tab lain. Tutup tab ini dan kembali ke tab ujian yang asli.',
+                        icon: 'error',
+                        confirmButtonText: 'Mengerti',
+                        allowOutsideClick: false,
+                    });
+                },
             });
 
             // Set initial violation count
@@ -513,6 +565,11 @@
                     'multiple_monitors': 'Penggunaan multiple monitor terdeteksi!',
                     'virtual_machine': 'Penggunaan Virtual Machine terdeteksi!',
                     'remote_desktop': 'Penggunaan Remote Desktop terdeteksi!',
+                    'no_face': 'Wajah tidak terdeteksi di kamera!',
+                    'multiple_faces': 'Terdeteksi lebih dari satu wajah!',
+                    'multiple_tabs': 'Ujian dibuka di multiple tab!',
+                    'popup_blocked': 'Mencoba membuka popup/window baru!',
+                    'external_link': 'Mencoba membuka link eksternal!',
                 };
                 return messages[type] || 'Pelanggaran terdeteksi!';
             };
@@ -679,6 +736,21 @@
 
             });
 
+            // Handle question time end - auto move to next question
+            const handleQuestionTimeEnd = () => {
+                if (props.page < props.all_questions.length) {
+                    Swal.fire({
+                        title: 'Waktu Soal Habis!',
+                        text: 'Pindah ke soal berikutnya...',
+                        icon: 'warning',
+                        timer: 1500,
+                        showConfirmButton: false,
+                    }).then(() => {
+                        nextPage();
+                    });
+                }
+            };
+
             //metohd prevPage
             const prevPage = (() => {
 
@@ -809,6 +881,20 @@
                 if (autoSubmitTimer) {
                     clearInterval(autoSubmitTimer);
                 }
+                if (faceDetection) {
+                    faceDetection.cleanup();
+                }
+            });
+
+            // Initialize face detection after mount
+            onMounted(async () => {
+                if (props.face_detection_enabled && faceDetection && faceVideoRef.value) {
+                    const initialized = await faceDetection.initialize(faceVideoRef.value);
+                    if (initialized) {
+                        faceDetection.start();
+                        faceDetectionActive.value = true;
+                    }
+                }
             });
 
             //return
@@ -816,6 +902,9 @@
                 options,
                 duration,
                 handleChangeDuration,
+                handleQuestionTimeEnd,
+                questionTimeLimit,
+                questionTimeRemaining,
                 prevPage,
                 nextPage,
                 clickQuestion,
@@ -856,6 +945,10 @@
                 dismissViolationWarning,
                 dismissWarningBanner,
                 requestFullscreen,
+
+                // Face detection
+                faceVideoRef,
+                faceDetectionActive,
             }
 
         }

@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             "student" => \App\Http\Middleware\AuthStudent::class,
             "admin.only" => \App\Http\Middleware\AdminOnly::class,
+            "admin.or.guru" => \App\Http\Middleware\AdminOrGuru::class,
             "ability" => \App\Http\Middleware\CheckApiAbility::class,
             "turnstile" => \App\Http\Middleware\ValidateTurnstile::class,
         ]);

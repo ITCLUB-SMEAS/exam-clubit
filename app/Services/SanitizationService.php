@@ -51,8 +51,10 @@ class SanitizationService
         '/<script[^>]*>.*?<\/script>/is',
         // Style tags with expressions
         '/<style[^>]*>.*?<\/style>/is',
-        // iframe, object, embed
-        '/<(iframe|object|embed|applet)[^>]*>.*?<\/\1>/is',
+        // iframe, object, embed, applet (with closing tags)
+        '/<(iframe|object|applet)[^>]*>.*?<\/\1>/is',
+        // Self-closing dangerous tags
+        '/<(iframe|object|embed|applet)[^>]*\/?>/i',
         // Meta refresh
         '/<meta[^>]*http-equiv[^>]*refresh/i',
         // SVG with scripts
@@ -95,9 +97,21 @@ class SanitizationService
         // Remove null bytes
         $input = str_replace("\0", '', $input);
 
-        // Preserve content inside <code> and <pre> tags by encoding it
+        // Handle nested <pre><code> first - preserve the structure
         $input = preg_replace_callback(
-            '/<(code|pre)([^>]*)>(.*?)<\/\1>/is',
+            '/<pre([^>]*)>\s*<code([^>]*)>(.*?)<\/code>\s*<\/pre>/is',
+            function ($matches) {
+                $preAttrs = $matches[1];
+                $codeAttrs = $matches[2];
+                $content = htmlspecialchars($matches[3], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                return "<pre{$preAttrs}><code{$codeAttrs}>{$content}</code></pre>";
+            },
+            $input
+        );
+
+        // Then handle standalone <code> and <pre> tags
+        $input = preg_replace_callback(
+            '/<(code|pre)([^>]*)>([^<]*)<\/\1>/is',
             function ($matches) {
                 $tag = $matches[1];
                 $attrs = $matches[2];

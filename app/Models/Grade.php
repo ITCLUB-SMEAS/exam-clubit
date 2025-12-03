@@ -30,6 +30,10 @@ class Grade extends Model
         "attempt_count",
         "attempt_number",
         "status",
+        // Pause feature
+        "is_paused",
+        "paused_at",
+        "pause_reason",
         // Anti-cheat fields
         "violation_count",
         "tab_switch_count",
@@ -50,6 +54,8 @@ class Grade extends Model
     protected $casts = [
         "start_time" => "datetime",
         "end_time" => "datetime",
+        "paused_at" => "datetime",
+        "is_paused" => "boolean",
         "is_flagged" => "boolean",
         "anticheat_metadata" => "array",
         "attempt_count" => "integer",

@@ -52,8 +52,8 @@ class LoginController extends Controller
         $student = Student::where("nisn", $request->nisn)->first();
 
         // Timing attack prevention: always perform hash check
-        // Use a dummy hash if student not found to ensure constant time
-        $dummyHash = '$2y$12$dummy.hash.for.timing.attack.prevention.only';
+        // Use a properly generated dummy hash if student not found
+        $dummyHash = '$2y$12$K4o0hLJLfLKJfLKJfLKJfOK4o0hLJLfLKJfLKJfLKJfOK4o0hLJLf';
         $passwordToCheck = $student ? $student->password : $dummyHash;
         $validPassword = Hash::check($request->password, $passwordToCheck) && $student;
 

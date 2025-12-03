@@ -109,6 +109,6 @@ class ExamPreviewTest extends TestCase
     public function test_unauthenticated_cannot_preview(): void
     {
         $response = $this->get("/admin/exams/{$this->exam->id}/preview");
-        $response->assertRedirect('/login');
+        $response->assertRedirect('/admin/login');
     }
 }

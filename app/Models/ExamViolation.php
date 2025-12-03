@@ -47,6 +47,11 @@ class ExamViolation extends Model
     public const TYPE_MULTIPLE_MONITORS = 'multiple_monitors';
     public const TYPE_REMOTE_DESKTOP = 'remote_desktop';
     public const TYPE_VIRTUAL_MACHINE = 'virtual_machine';
+    public const TYPE_NO_FACE = 'no_face';
+    public const TYPE_MULTIPLE_FACES = 'multiple_faces';
+    public const TYPE_MULTIPLE_TABS = 'multiple_tabs';
+    public const TYPE_POPUP_BLOCKED = 'popup_blocked';
+    public const TYPE_EXTERNAL_LINK = 'external_link';
 
     /**
      * Get all violation types
@@ -67,6 +72,11 @@ class ExamViolation extends Model
             self::TYPE_MULTIPLE_MONITORS => 'Multiple Monitor',
             self::TYPE_REMOTE_DESKTOP => 'Remote Desktop',
             self::TYPE_VIRTUAL_MACHINE => 'Virtual Machine',
+            self::TYPE_NO_FACE => 'Wajah Tidak Terdeteksi',
+            self::TYPE_MULTIPLE_FACES => 'Multiple Wajah',
+            self::TYPE_MULTIPLE_TABS => 'Multiple Tab',
+            self::TYPE_POPUP_BLOCKED => 'Popup Diblokir',
+            self::TYPE_EXTERNAL_LINK => 'Link Eksternal',
         ];
     }
 

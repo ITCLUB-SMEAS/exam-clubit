@@ -50,9 +50,10 @@
                                         <td class="text-center">{{ exam.classroom.title }}</td>
                                         <td class="text-center">{{ exam.questions.length }}</td>
                                         <td class="text-center">
-                                            <Link :href="`/admin/exams/${exam.id}`" class="btn btn-sm btn-primary border-0 shadow me-2" type="button"><i class="fa fa-plus-circle"></i></Link>
-                                            <Link :href="`/admin/exams/${exam.id}/edit`" class="btn btn-sm btn-info border-0 shadow me-2" type="button"><i class="fa fa-pencil-alt"></i></Link>
-                                            <button @click.prevent="destroy(exam.id)" class="btn btn-sm btn-danger border-0"><i class="fa fa-trash"></i></button>
+                                            <Link :href="`/admin/exams/${exam.id}`" class="btn btn-sm btn-primary border-0 shadow me-2" type="button" title="Detail"><i class="fa fa-plus-circle"></i></Link>
+                                            <Link :href="`/admin/exams/${exam.id}/edit`" class="btn btn-sm btn-info border-0 shadow me-2" type="button" title="Edit"><i class="fa fa-pencil-alt"></i></Link>
+                                            <button @click.prevent="duplicate(exam.id, exam.title)" class="btn btn-sm btn-success border-0 shadow me-2" type="button" title="Duplikat"><i class="fa fa-copy"></i></button>
+                                            <button @click.prevent="destroy(exam.id)" class="btn btn-sm btn-danger border-0" title="Hapus"><i class="fa fa-trash"></i></button>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -146,11 +147,31 @@
                 })
             }
 
+            //define method duplicate
+            const duplicate = (id, title) => {
+                Swal.fire({
+                    title: 'Duplikat Ujian?',
+                    text: `Ujian "${title}" akan diduplikasi beserta semua soalnya.`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, duplikat!',
+                    cancelButtonText: 'Batal'
+                })
+                .then((result) => {
+                    if (result.isConfirmed) {
+                        router.post(`/admin/exams/${id}/duplicate`);
+                    }
+                })
+            }
+
             //return
             return {
                 search,
                 handleSearch,
                 destroy,
+                duplicate,
             }
 
         }

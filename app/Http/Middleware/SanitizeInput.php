@@ -60,8 +60,9 @@ class SanitizeInput
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Skip sanitization for admin routes - protected by auth
-        if ($request->is('admin/*')) {
+        // Skip sanitization for question-related routes (preserve code content)
+        if ($request->is('admin/exams/*/questions/*') || 
+            $request->is('admin/question-bank*')) {
             return $next($request);
         }
 

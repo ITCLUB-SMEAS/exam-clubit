@@ -20,13 +20,18 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        // Timing attack prevention
+        $dummyHash = '$2y$12$K4o0hLJLfLKJfLKJfLKJfOK4o0hLJLfLKJfLKJfLKJfOK4o0hLJLf';
+        $passwordToCheck = $user ? $user->password : $dummyHash;
+        $validPassword = Hash::check($request->password, $passwordToCheck) && $user;
+
+        if (!$validPassword) {
             throw ValidationException::withMessages([
                 'email' => ['Kredensial tidak valid.'],
             ]);
         }
 
-        // Revoke old tokens (optional: keep only last 5)
+        // Revoke old tokens (keep only last 5)
         $user->tokens()->orderBy('created_at', 'desc')->skip(5)->take(100)->delete();
 
         // Create token with expiration (24 hours)

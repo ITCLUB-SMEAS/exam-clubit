@@ -12,9 +12,17 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Services\ActivityLogService;
 use App\Services\AntiCheatService;
+use App\Services\ExamScoringService;
+use App\Services\ExamTimerService;
+use App\Services\ExamCompletionService;
 
 class ExamController extends Controller
 {
+    public function __construct(
+        protected ExamScoringService $scoringService,
+        protected ExamTimerService $timerService,
+        protected ExamCompletionService $completionService
+    ) {}
     /**
      * confirmation
      *
@@ -211,70 +219,56 @@ class ExamController extends Controller
 
         // Only generate new questions if no answers exist yet
         if (!$existingAnswers) {
-            //cek apakah questions / soal ujian di random
-            if ($exam_group->exam->random_question == "Y") {
-                //get questions / soal ujian
-                $query = Question::where("exam_id", $exam_group->exam->id)
-                    ->inRandomOrder();
-            } else {
-                //get questions / soal ujian
-                $query = Question::where("exam_id", $exam_group->exam->id);
-            }
-
-            // Apply question limit if set
-            if ($exam_group->exam->question_limit) {
-                $query->limit($exam_group->exam->question_limit);
-            }
-
-            $questions = $query->get();
-
-            //define pilihan jawaban default
-            $question_order = 1;
-
-            foreach ($questions as $question) {
-                //buat array jawaban / answer
-                $options = [1, 2];
-                if (!empty($question->option_3)) {
-                    $options[] = 3;
-                }
-                if (!empty($question->option_4)) {
-                    $options[] = 4;
-                }
-                if (!empty($question->option_5)) {
-                    $options[] = 5;
+            DB::transaction(function () use ($exam_group) {
+                //cek apakah questions / soal ujian di random
+                if ($exam_group->exam->random_question == "Y") {
+                    $query = Question::where("exam_id", $exam_group->exam->id)
+                        ->inRandomOrder();
+                } else {
+                    $query = Question::where("exam_id", $exam_group->exam->id);
                 }
 
-                //acak jawaban / answer
-                if ($exam_group->exam->random_answer == "Y") {
-                    shuffle($options);
+                // Apply question limit if set
+                if ($exam_group->exam->question_limit) {
+                    $query->limit($exam_group->exam->question_limit);
                 }
 
-                $isEssay = $question->question_type === Question::TYPE_ESSAY;
-                $isMultiple =
-                    $question->question_type ===
-                        Question::TYPE_MULTIPLE_CHOICE_SINGLE ||
-                    $question->question_type ===
-                        Question::TYPE_MULTIPLE_CHOICE_MULTIPLE;
+                $questions = $query->get();
+                $question_order = 1;
 
-                $answerOrderValue = $isMultiple ? implode(",", $options) : "1";
+                foreach ($questions as $question) {
+                    $options = [1, 2];
+                    if (!empty($question->option_3)) $options[] = 3;
+                    if (!empty($question->option_4)) $options[] = 4;
+                    if (!empty($question->option_5)) $options[] = 5;
 
-                //buat jawaban default baru
-                Answer::create([
-                    "exam_id" => $exam_group->exam->id,
-                    "exam_session_id" => $exam_group->exam_session->id,
-                    "question_id" => $question->id,
-                    "student_id" => auth()->guard("student")->user()->id,
-                    "question_order" => $question_order,
-                    "answer_order" => $answerOrderValue,
-                    "answer" => 0,
-                    "is_correct" => "N",
-                    "answer_text" => null,
-                    "answer_options" => null,
-                    "points_awarded" => 0,
-                    "needs_manual_review" => $isEssay,
-                ]);
-                $question_order++;
-            }
+                    if ($exam_group->exam->random_answer == "Y") {
+                        shuffle($options);
+                    }
+
+                    $isEssay = $question->question_type === Question::TYPE_ESSAY;
+                    $isMultiple = in_array($question->question_type, [
+                        Question::TYPE_MULTIPLE_CHOICE_SINGLE,
+                        Question::TYPE_MULTIPLE_CHOICE_MULTIPLE
+                    ]);
+
+                    Answer::create([
+                        "exam_id" => $exam_group->exam->id,
+                        "exam_session_id" => $exam_group->exam_session->id,
+                        "question_id" => $question->id,
+                        "student_id" => auth()->guard("student")->user()->id,
+                        "question_order" => $question_order,
+                        "answer_order" => $isMultiple ? implode(",", $options) : "1",
+                        "answer" => 0,
+                        "is_correct" => "N",
+                        "answer_text" => null,
+                        "answer_options" => null,
+                        "points_awarded" => 0,
+                        "needs_manual_review" => $isEssay,
+                    ]);
+                    $question_order++;
+                }
+            });
         }
 
         //redirect ke ujian halaman 1
@@ -328,6 +322,15 @@ class ExamController extends Controller
                 "student.exams.resultExam",
                 $exam_group->id,
             );
+        }
+
+        // Check if exam is paused
+        if ($grade->is_paused) {
+            return inertia("Student/Exams/Paused", [
+                "exam_group" => $exam_group,
+                "grade" => $grade,
+                "pause_reason" => $grade->pause_reason,
+            ]);
         }
 
         // Guard: session window must be active
@@ -418,6 +421,7 @@ class ExamController extends Controller
             "duration" => $duration,
             "anticheat_config" => $anticheat_config,
             "initial_violations" => $initial_violations,
+            "face_detection_enabled" => $exam_group->exam->face_detection_enabled ?? false,
         ]);
     }
 
@@ -719,117 +723,46 @@ class ExamController extends Controller
      */
     private function guardExamSchedule(ExamGroup $exam_group, Grade $grade)
     {
-        $now = Carbon::now();
-        $session = $exam_group->exam_session;
-
-        if ($now->lt($session->start_time)) {
-            return redirect()
-                ->route("student.dashboard")
-                ->with(
-                    "error",
-                    "Ujian belum dapat dimulai. Silakan cek jadwal.",
-                );
+        $error = $this->timerService->validateSessionWindow($exam_group);
+        
+        if ($error === 'Ujian belum dapat dimulai. Silakan cek jadwal.') {
+            return redirect()->route("student.dashboard")->with("error", $error);
         }
 
-        if ($now->gte($session->end_time)) {
-            $this->finalizeExam($exam_group, $grade);
-            return redirect()->route(
-                "student.exams.resultExam",
-                $exam_group->id,
+        if ($error === 'Sesi ujian telah berakhir.') {
+            $this->completionService->finalizeExam(
+                $exam_group, 
+                $grade, 
+                auth()->guard("student")->user()->id
             );
+            return redirect()->route("student.exams.resultExam", $exam_group->id);
         }
 
         return null;
     }
 
     /**
-     * Hitung sisa waktu ujian (ms) berdasarkan start_time, durasi ujian,
-     * time_extension, dan batas akhir sesi.
+     * Hitung sisa waktu ujian (ms) - delegated to service
      */
-    private function calculateRemainingDurationMs(
-        ExamGroup $exam_group,
-        Grade $grade,
-    ): int {
-        $examDurationMs = $exam_group->exam->duration * 60000;
-        
-        // Add time extension (stored in minutes, convert to ms)
-        $extensionMs = ($grade->time_extension ?? 0) * 60000;
-        $totalDurationMs = $examDurationMs + $extensionMs;
-        
-        $startTime = $grade->start_time ?? Carbon::now();
-
-        $elapsedMs = $startTime->diffInMilliseconds(Carbon::now());
-        $remainingByDuration = max(0, $totalDurationMs - $elapsedMs);
-
-        $sessionEnd = $exam_group->exam_session->end_time;
-        $sessionRemainingMs = Carbon::now()->lt($sessionEnd)
-            ? Carbon::now()->diffInMilliseconds($sessionEnd)
-            : 0;
-
-        return (int) min($remainingByDuration, $sessionRemainingMs);
+    private function calculateRemainingDurationMs(ExamGroup $exam_group, Grade $grade): int
+    {
+        return $this->timerService->calculateRemainingDurationMs($exam_group, $grade);
     }
 
     /**
-     * Akhiri ujian dan hitung nilai jika belum selesai.
+     * Akhiri ujian dan hitung nilai jika belum selesai - delegated to service
      */
     private function finalizeExam(ExamGroup $exam_group, Grade $grade): void
     {
-        if ($grade->end_time !== null) {
-            return;
-        }
-
-        DB::transaction(function () use ($exam_group, $grade) {
-            $studentId = auth()->guard("student")->user()->id;
-
-            $questions = Question::where("exam_id", $exam_group->exam_id)->get();
-            $answers = Answer::where("exam_id", $exam_group->exam_id)
-                ->where("exam_session_id", $exam_group->exam_session_id)
-                ->where("student_id", $studentId)
-                ->get();
-
-            $totalPoints = $questions->sum(function ($q) {
-                return $q->points ?? 1;
-            });
-
-            $earnedPoints = $answers->sum(function ($answer) {
-                return $answer->points_awarded ?? 0;
-            });
-
-            $count_correct_answer = $answers->where("is_correct", "Y")->count();
-
-            $grade_exam =
-                $totalPoints > 0
-                    ? round(($earnedPoints / $totalPoints) * 100, 2)
-                    : 0;
-
-            // Determine pass/fail status based on passing_grade
-            $passingGrade = $exam_group->exam->passing_grade ?? 0;
-            $status = 'pending';
-            if ($passingGrade > 0) {
-                $status = $grade_exam >= $passingGrade ? 'passed' : 'failed';
-            }
-
-            $grade->end_time = Carbon::now();
-            $grade->duration = 0;
-            $grade->total_correct = $count_correct_answer;
-            $grade->grade = $grade_exam;
-            $grade->points_possible = $totalPoints;
-            $grade->points_earned = $earnedPoints;
-            $grade->attempt_status = "completed";
-            $grade->status = $status;
-            $grade->save();
-
-            // Log exam end activity
-            ActivityLogService::logExamEnd(
-                auth()->guard("student")->user(),
-                $exam_group->exam,
-                $grade,
-            );
-        });
+        $this->completionService->finalizeExam(
+            $exam_group,
+            $grade,
+            auth()->guard("student")->user()->id
+        );
     }
 
     /**
-     * Skoring jawaban berdasarkan tipe soal.
+     * Skoring jawaban berdasarkan tipe soal - delegated to service
      */
     private function scoreAnswer(
         Question $question,
@@ -838,108 +771,12 @@ class ExamController extends Controller
         $submittedOptions,
         $matchingAnswers = null,
     ): array {
-        $type = $question->question_type ?? Question::TYPE_MULTIPLE_CHOICE_SINGLE;
-
-        $pointsAvailable = $question->points ?? 1;
-        $isCorrect = "N";
-        $pointsAwarded = 0;
-        $needsReview = false;
-
-        if ($type === Question::TYPE_MULTIPLE_CHOICE_SINGLE) {
-            $isCorrect = (string) $question->answer === (string) $submittedAnswer ? "Y" : "N";
-            $pointsAwarded = $isCorrect === "Y" ? $pointsAvailable : 0;
-        } elseif ($type === Question::TYPE_MULTIPLE_CHOICE_MULTIPLE) {
-            $correct = $this->normalizeOptionArray($question->correct_answers);
-            $submitted = $this->normalizeOptionArray($submittedOptions ?? $submittedAnswer);
-
-            if (!empty($correct) && $correct === $submitted) {
-                $isCorrect = "Y";
-                $pointsAwarded = $pointsAvailable;
-            }
-        } elseif ($type === Question::TYPE_SHORT_ANSWER) {
-            $normalizedSubmitted = $this->normalizeText($submittedText ?? $submittedAnswer);
-            $correctAnswers = array_map(
-                fn($text) => $this->normalizeText($text),
-                $question->correct_answers ?? [],
-            );
-
-            if ($normalizedSubmitted !== null && in_array($normalizedSubmitted, $correctAnswers, true)) {
-                $isCorrect = "Y";
-                $pointsAwarded = $pointsAvailable;
-            }
-        } elseif ($type === Question::TYPE_ESSAY) {
-            $needsReview = true;
-            $pointsAwarded = 0;
-            $isCorrect = "N";
-        } elseif ($type === Question::TYPE_TRUE_FALSE) {
-            // True/False: answer = 1 (True) or 2 (False)
-            $isCorrect = (string) $question->answer === (string) $submittedAnswer ? "Y" : "N";
-            $pointsAwarded = $isCorrect === "Y" ? $pointsAvailable : 0;
-        } elseif ($type === Question::TYPE_MATCHING) {
-            // Matching: compare submitted pairs with correct pairs
-            $correctPairs = $question->matching_pairs ?? [];
-            $submittedPairs = $matchingAnswers ?? [];
-
-            if (!empty($correctPairs) && !empty($submittedPairs)) {
-                $correctCount = 0;
-                $totalPairs = count($correctPairs);
-
-                foreach ($correctPairs as $pair) {
-                    $leftKey = $pair['left'] ?? '';
-                    $correctRight = $pair['right'] ?? '';
-
-                    if (isset($submittedPairs[$leftKey]) && $submittedPairs[$leftKey] === $correctRight) {
-                        $correctCount++;
-                    }
-                }
-
-                // Partial scoring for matching
-                if ($correctCount === $totalPairs) {
-                    $isCorrect = "Y";
-                    $pointsAwarded = $pointsAvailable;
-                } elseif ($correctCount > 0) {
-                    $isCorrect = "N";
-                    $pointsAwarded = round(($correctCount / $totalPairs) * $pointsAvailable, 2);
-                }
-            }
-        } else {
-            // fallback ke pilihan ganda tunggal
-            $isCorrect = (string) $question->answer === (string) $submittedAnswer ? "Y" : "N";
-            $pointsAwarded = $isCorrect === "Y" ? $pointsAvailable : 0;
-        }
-
-        return [$isCorrect, $pointsAwarded, $needsReview];
-    }
-
-    /**
-     * Normalisasi array jawaban (untuk pilihan ganda berganda).
-     */
-    private function normalizeOptionArray($value): array
-    {
-        if (is_null($value)) {
-            return [];
-        }
-
-        $array = is_array($value) ? $value : explode(",", (string) $value);
-        $array = array_filter(array_map("trim", $array), function ($v) {
-            return $v !== "";
-        });
-        sort($array);
-
-        return array_values(array_map("strval", $array));
-    }
-
-    /**
-     * Normalisasi teks untuk perbandingan jawaban singkat.
-     */
-    private function normalizeText($text): ?string
-    {
-        if ($text === null) {
-            return null;
-        }
-
-        $normalized = trim(strtolower((string) $text));
-
-        return $normalized === "" ? null : $normalized;
+        return $this->scoringService->scoreAnswer(
+            $question,
+            $submittedAnswer,
+            $submittedText,
+            $submittedOptions,
+            $matchingAnswers
+        );
     }
 }

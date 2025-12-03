@@ -153,6 +153,17 @@
                                 <strong>Anti-Cheat Otomatis Aktif:</strong> Deteksi pindah tab, fullscreen, copy-paste, multiple monitor, dan virtual machine otomatis aktif.
                             </div>
 
+                            <!-- Face Detection Option -->
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="faceDetection" v-model="form.face_detection_enabled">
+                                    <label class="form-check-label" for="faceDetection">
+                                        <i class="fa fa-video me-1"></i> Aktifkan Face Detection
+                                    </label>
+                                </div>
+                                <small class="text-muted">Deteksi wajah siswa via webcam (memerlukan izin kamera)</small>
+                            </div>
+
                             <button type="submit" class="btn btn-md btn-primary border-0 shadow me-2">Update</button>
                             <button type="reset" class="btn btn-md btn-warning border-0 shadow">Reset</button>
                         </form>
@@ -221,6 +232,7 @@
                 max_attempts: props.exam.max_attempts || 1,
                 question_limit: props.exam.question_limit || '',
                 time_per_question: props.exam.time_per_question || '',
+                face_detection_enabled: props.exam.face_detection_enabled || false,
             });
 
             //method "submit"
@@ -241,6 +253,7 @@
                     max_attempts: form.max_attempts || 1,
                     question_limit: form.question_limit || null,
                     time_per_question: form.time_per_question || null,
+                    face_detection_enabled: form.face_detection_enabled,
                 }, {
                     onSuccess: () => {
                         //show success alert

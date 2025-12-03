@@ -22,6 +22,7 @@ Aplikasi Ujian Online berbasis web untuk sekolah/institusi pendidikan. Dibangun 
 - Chart.js & Vue-ChartJS
 - Vue Datepicker
 - Vue Countdown
+- face-api.js (Face Detection)
 
 ## ✨ Fitur
 
@@ -102,10 +103,12 @@ Sistem anti-kecurangan komprehensif yang **otomatis aktif** untuk semua ujian:
 | Deteksi Virtual Machine | ✅ Aktif |
 | Deteksi Remote Desktop | ✅ Aktif |
 | Single Device Login | ✅ Aktif |
+| Face Detection (No Face/Multiple Faces) | ✅ Aktif |
 
 **Konfigurasi Default:**
 - Max Violations: 3 (auto-submit setelah 3 pelanggaran)
 - Warning Threshold: 2 (peringatan setelah 2 pelanggaran)
+- Face Check Interval: 30 detik
 
 **Keyboard Shortcuts yang Diblokir:**
 - Ctrl+C, Ctrl+V, Ctrl+X (copy/paste)
@@ -153,6 +156,7 @@ Sistem anti-kecurangan komprehensif yang **otomatis aktif** untuk semua ujian:
 - Login dengan NISN & password
 - Session management (single device login)
 - Rate limiting (5 percobaan/menit)
+- Cloudflare Turnstile CAPTCHA
 
 #### Dashboard
 - Daftar ujian yang tersedia
@@ -167,6 +171,7 @@ Sistem anti-kecurangan komprehensif yang **otomatis aktif** untuk semua ujian:
 - Submit ujian
 - Remedial/retry (jika diizinkan)
 - Anti-cheat protection aktif
+- Face detection monitoring
 
 #### Hasil Ujian
 - Lihat nilai
@@ -176,6 +181,24 @@ Sistem anti-kecurangan komprehensif yang **otomatis aktif** untuk semua ujian:
 #### Profil
 - Update profil
 - Ganti password
+
+### 📱 Progressive Web App (PWA)
+
+Aplikasi mendukung PWA untuk pengalaman seperti aplikasi native:
+
+| Fitur | Deskripsi |
+|-------|-----------|
+| Installable | Dapat diinstall di desktop/mobile |
+| Offline Support | Halaman offline dengan UI retro pixel art |
+| Service Worker | Caching assets untuk performa optimal |
+| App Icons | Icon berbagai ukuran (72x72 - 512x512) |
+| Standalone Mode | Berjalan tanpa address bar browser |
+
+**Service Worker Features:**
+- Network-first strategy dengan fallback ke cache
+- Auto-update cache saat versi baru tersedia
+- Filter request non-HTTP (chrome-extension, dll)
+- Offline page dengan desain retro/pixel art
 
 ## 📦 Instalasi
 
@@ -241,19 +264,36 @@ php artisan serve
 ```
 ujian-online/
 ├── app/
-│   ├── Http/Controllers/
-│   │   ├── Admin/          # Controller untuk panel admin
-│   │   └── Student/        # Controller untuk panel siswa
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── Admin/          # Controller untuk panel admin
+│   │   │   └── Student/        # Controller untuk panel siswa
+│   │   └── Middleware/
+│   │       ├── SecurityHeaders.php    # HTTP Security Headers
+│   │       ├── SanitizeInput.php      # XSS Input Sanitization
+│   │       ├── StudentSingleSession.php
+│   │       ├── ThrottleStudentLogin.php
+│   │       └── ValidateTurnstile.php  # Cloudflare Turnstile
 │   ├── Models/             # Eloquent models
-│   └── Services/           # Business logic services
+│   └── Services/
+│       └── SanitizationService.php    # HTML Sanitization
 ├── database/
 │   ├── migrations/         # Database migrations
 │   └── seeders/            # Database seeders
+├── public/
+│   ├── sw.js               # Service Worker
+│   ├── manifest.json       # PWA Manifest
+│   ├── offline.html        # Offline page (retro pixel art)
+│   ├── icons/              # PWA icons
+│   └── models/             # Face detection models
 ├── resources/
 │   ├── js/
 │   │   ├── Components/     # Vue components
 │   │   ├── Layouts/        # Layout components
-│   │   ├── composables/    # Vue composables (useAntiCheat)
+│   │   ├── composables/
+│   │   │   ├── useAntiCheat.js      # Anti-cheat system
+│   │   │   ├── useFaceDetection.js  # Face detection
+│   │   │   └── usePWA.js            # PWA install prompt
 │   │   └── Pages/          # Inertia pages
 │   │       ├── Admin/      # Admin pages
 │   │       └── Student/    # Student pages
@@ -265,15 +305,41 @@ ujian-online/
 
 ## 🛡️ Security Features
 
+### HTTP Security Headers
+Middleware `SecurityHeaders` menambahkan header keamanan:
+- `X-Frame-Options: SAMEORIGIN` - Mencegah clickjacking
+- `X-Content-Type-Options: nosniff` - Mencegah MIME sniffing
+- `X-XSS-Protection: 1; mode=block` - XSS protection (legacy)
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy` - Kontrol akses kamera/mikrofon
+- `Content-Security-Policy` - CSP untuk production
+- `Strict-Transport-Security` - HSTS untuk HTTPS
+
+### Input Sanitization
+Middleware `SanitizeInput` membersihkan input:
+- Sanitasi otomatis untuk semua POST/PUT/PATCH request
+- Rich text fields (question, options) menggunakan HTML Purifier
+- Plain text fields di-strip dari HTML tags
+- Excluded fields: password, tokens
+
+### Authentication & Session
 - CSRF Protection
-- XSS Prevention (Input Sanitization)
-- SQL Injection Prevention (Eloquent ORM)
 - Password Hashing (Bcrypt/Argon2)
 - Session Security
-- API Rate Limiting
+- Single Device Login (siswa)
+- Rate Limiting (5 login attempts/minute)
 - Token Expiration (24 jam)
+- Cloudflare Turnstile CAPTCHA
+
+### Anti-Cheat Protection
+- Comprehensive browser-based detection
+- Face detection (no face/multiple faces)
+- Server-side violation logging
+- Auto-submit on max violations
+
+### Other Security
+- SQL Injection Prevention (Eloquent ORM)
 - Role-based Authorization
-- Comprehensive Anti-Cheat System
 - Activity Logging
 - IP Logging
 

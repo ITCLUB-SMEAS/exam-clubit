@@ -46,9 +46,14 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="mb-0"><i class="fa fa-question-circle"></i> Soal Ujian</h5>
-                            <Link :href="`/admin/exams/${exam.id}/preview`" class="btn btn-outline-primary btn-sm">
-                                <i class="fa fa-eye me-1"></i> Preview Ujian
-                            </Link>
+                            <div>
+                                <Link :href="`/admin/exams/${exam.id}/analysis`" class="btn btn-outline-success btn-sm me-2">
+                                    <i class="fa fa-chart-bar me-1"></i> Analisis Soal
+                                </Link>
+                                <Link :href="`/admin/exams/${exam.id}/preview`" class="btn btn-outline-primary btn-sm">
+                                    <i class="fa fa-eye me-1"></i> Preview Ujian
+                                </Link>
+                            </div>
                         </div>
                         <hr>
                         

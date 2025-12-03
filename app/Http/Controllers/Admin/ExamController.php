@@ -12,10 +12,27 @@ use App\Models\QuestionBank;
 use App\Models\QuestionCategory;
 use App\Http\Controllers\Controller;
 use App\Services\DuplicateQuestionService;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ExamController extends Controller
 {
+    /**
+     * Get cached lessons
+     */
+    private function getLessons()
+    {
+        return Cache::remember('lessons_all', 3600, fn() => Lesson::all());
+    }
+
+    /**
+     * Get cached classrooms
+     */
+    private function getClassrooms()
+    {
+        return Cache::remember('classrooms_all', 3600, fn() => Classroom::all());
+    }
     /**
      * Display a listing of the resource.
      *
@@ -23,18 +40,15 @@ class ExamController extends Controller
      */
     public function index()
     {
-        //get exams
         $exams = Exam::when(request()->q, function ($exams) {
             $exams = $exams->where("title", "like", "%" . request()->q . "%");
         })
             ->with("lesson", "classroom", "questions")
             ->latest()
-            ->paginate(5);
+            ->paginate(10);
 
-        //append query string to pagination links
         $exams->appends(["q" => request()->q]);
 
-        //render with inertia
         return inertia("Admin/Exams/Index", [
             "exams" => $exams,
         ]);
@@ -47,16 +61,9 @@ class ExamController extends Controller
      */
     public function create()
     {
-        //get lessons
-        $lessons = Lesson::all();
-
-        //get classrooms
-        $classrooms = Classroom::all();
-
-        //render with inertia
         return inertia("Admin/Exams/Create", [
-            "lessons" => $lessons,
-            "classrooms" => $classrooms,
+            "lessons" => $this->getLessons(),
+            "classrooms" => $this->getClassrooms(),
         ]);
     }
 
@@ -136,20 +143,12 @@ class ExamController extends Controller
      */
     public function edit($id)
     {
-        //get exam
         $exam = Exam::findOrFail($id);
 
-        //get lessons
-        $lessons = Lesson::all();
-
-        //get classrooms
-        $classrooms = Classroom::all();
-
-        //render with inertia
         return inertia("Admin/Exams/Edit", [
             "exam" => $exam,
-            "lessons" => $lessons,
-            "classrooms" => $classrooms,
+            "lessons" => $this->getLessons(),
+            "classrooms" => $this->getClassrooms(),
         ]);
     }
 
@@ -198,6 +197,29 @@ class ExamController extends Controller
 
         //redirect
         return redirect()->route("admin.exams.index");
+    }
+
+    /**
+     * Duplicate exam with all questions
+     */
+    public function duplicate(Exam $exam)
+    {
+        return DB::transaction(function () use ($exam) {
+            // Clone exam
+            $newExam = $exam->replicate();
+            $newExam->title = $exam->title . ' (Copy)';
+            $newExam->save();
+
+            // Clone questions
+            foreach ($exam->questions as $question) {
+                $newQuestion = $question->replicate();
+                $newQuestion->exam_id = $newExam->id;
+                $newQuestion->save();
+            }
+
+            return redirect()->route("admin.exams.show", $newExam->id)
+                ->with('success', 'Ujian berhasil diduplikasi dengan ' . $exam->questions->count() . ' soal.');
+        });
     }
 
     /**
@@ -372,24 +394,54 @@ class ExamController extends Controller
 
     /**
      * destroyQuestion
-     *
-     * @param  mixed $exam
-     * @param  mixed $question
-     * @return void
      */
     public function destroyQuestion(Exam $exam, Question $question)
     {
-        //delete question
         $question->delete();
-
-        //redirect
         return redirect()->route("admin.exams.show", $exam->id);
     }
 
     /**
+     * Bulk update question points
+     */
+    public function bulkUpdatePoints(Request $request, Exam $exam)
+    {
+        $request->validate([
+            'questions' => 'required|array|max:100',
+            'questions.*.id' => 'required|exists:questions,id',
+            'questions.*.points' => 'required|numeric|min:0',
+        ]);
+
+        $updated = 0;
+        foreach ($request->questions as $q) {
+            Question::where('id', $q['id'])
+                ->where('exam_id', $exam->id)
+                ->update(['points' => $q['points']]);
+            $updated++;
+        }
+
+        return back()->with('success', "{$updated} soal berhasil diupdate.");
+    }
+
+    /**
+     * Bulk delete questions
+     */
+    public function bulkDeleteQuestions(Request $request, Exam $exam)
+    {
+        $request->validate([
+            'question_ids' => 'required|array|max:100',
+            'question_ids.*' => 'exists:questions,id',
+        ]);
+
+        $deleted = Question::whereIn('id', $request->question_ids)
+            ->where('exam_id', $exam->id)
+            ->delete();
+
+        return back()->with('success', "{$deleted} soal berhasil dihapus.");
+    }
+
+    /**
      * import
-     *
-     * @return void
      */
     public function import(Exam $exam)
     {

@@ -1,6 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+
+// Offline page for PWA
+Route::get('/offline', fn() => Inertia::render('Offline'))->name('offline');
 
 //prefix "admin"
 Route::prefix("admin")->group(function () {
@@ -12,15 +16,49 @@ Route::prefix("admin")->group(function () {
             App\Http\Controllers\Admin\DashboardController::class,
         )->name("admin.dashboard");
 
-        // User Management (Admin Only)
+        // ============================================
+        // ADMIN ONLY ROUTES (User & Student Management)
+        // ============================================
         Route::middleware(['admin.only'])->group(function () {
+            // User Management
             Route::resource(
                 "/users",
                 \App\Http\Controllers\Admin\UserController::class,
                 ["as" => "admin"]
             );
+
+            // Student Management (sensitive data)
+            Route::get("/students/import", [
+                \App\Http\Controllers\Admin\StudentController::class,
+                "import",
+            ])->name("admin.students.import");
+
+            Route::post("/students/import", [
+                \App\Http\Controllers\Admin\StudentController::class,
+                "storeImport",
+            ])->name("admin.students.storeImport");
+
+            Route::post("/students/{student}/toggle-block", [
+                \App\Http\Controllers\Admin\StudentController::class,
+                "toggleBlock",
+            ])->name("admin.students.toggleBlock");
+
+            Route::resource(
+                "/students",
+                \App\Http\Controllers\Admin\StudentController::class,
+                ["as" => "admin"],
+            );
+
+            // Activity Logs Cleanup (destructive action)
+            Route::delete("/activity-logs-cleanup", [
+                \App\Http\Controllers\Admin\ActivityLogController::class,
+                "cleanup",
+            ])->name("admin.activity-logs.cleanup");
         });
 
+        // ============================================
+        // ADMIN & GURU ROUTES (Teaching related)
+        // ============================================
         //route resource lessons
         Route::resource(
             "/lessons",
@@ -32,31 +70,6 @@ Route::prefix("admin")->group(function () {
         Route::resource(
             "/classrooms",
             \App\Http\Controllers\Admin\ClassroomController::class,
-            ["as" => "admin"],
-        );
-
-        //route student import
-        Route::get("/students/import", [
-            \App\Http\Controllers\Admin\StudentController::class,
-            "import",
-        ])->name("admin.students.import");
-
-        //route student store import
-        Route::post("/students/import", [
-            \App\Http\Controllers\Admin\StudentController::class,
-            "storeImport",
-        ])->name("admin.students.storeImport");
-
-        //route toggle block student
-        Route::post("/students/{student}/toggle-block", [
-            \App\Http\Controllers\Admin\StudentController::class,
-            "toggleBlock",
-        ])->name("admin.students.toggleBlock");
-
-        //route resource students
-        Route::resource(
-            "/students",
-            \App\Http\Controllers\Admin\StudentController::class,
             ["as" => "admin"],
         );
 
@@ -97,11 +110,34 @@ Route::prefix("admin")->group(function () {
             "destroyQuestion",
         ])->name("admin.exams.destroyQuestion");
 
+        // Bulk question operations
+        Route::post("/exams/{exam}/questions/bulk-update-points", [
+            \App\Http\Controllers\Admin\ExamController::class,
+            "bulkUpdatePoints",
+        ])->name("admin.exams.bulkUpdatePoints");
+
+        Route::delete("/exams/{exam}/questions/bulk-delete", [
+            \App\Http\Controllers\Admin\ExamController::class,
+            "bulkDeleteQuestions",
+        ])->name("admin.exams.bulkDeleteQuestions");
+
         //route exam preview
         Route::get("/exams/{exam}/preview", [
             \App\Http\Controllers\Admin\ExamController::class,
             "preview",
         ])->name("admin.exams.preview");
+
+        //route exam duplicate
+        Route::post("/exams/{exam}/duplicate", [
+            \App\Http\Controllers\Admin\ExamController::class,
+            "duplicate",
+        ])->name("admin.exams.duplicate");
+
+        //route item analysis
+        Route::get("/exams/{exam}/analysis", [
+            \App\Http\Controllers\Admin\ItemAnalysisController::class,
+            "show",
+        ])->name("admin.exams.analysis");
 
         //route question import
         Route::get("/exams/{exam}/questions/import", [
@@ -196,12 +232,6 @@ Route::prefix("admin")->group(function () {
             "export",
         ])->name("admin.activity-logs.export");
 
-        //route activity logs cleanup
-        Route::delete("/activity-logs-cleanup", [
-            \App\Http\Controllers\Admin\ActivityLogController::class,
-            "cleanup",
-        ])->name("admin.activity-logs.cleanup");
-
         // Violation Logs (Anti-Cheat)
         Route::get("/violation-logs", [
             \App\Http\Controllers\Admin\ViolationLogController::class,
@@ -223,6 +253,19 @@ Route::prefix("admin")->group(function () {
             \App\Http\Controllers\Admin\AnalyticsController::class,
             "studentPerformance",
         ])->name("admin.analytics.students");
+
+        // Leaderboard
+        Route::get("/leaderboard", [
+            \App\Http\Controllers\Admin\LeaderboardController::class,
+            "index",
+        ])->name("admin.leaderboard.index");
+
+        // Notifications
+        Route::get("/notifications", [\App\Http\Controllers\Admin\NotificationController::class, "index"])->name("admin.notifications.index");
+        Route::get("/notifications/unread", [\App\Http\Controllers\Admin\NotificationController::class, "unread"])->name("admin.notifications.unread");
+        Route::post("/notifications/mark-read", [\App\Http\Controllers\Admin\NotificationController::class, "markAsRead"])->name("admin.notifications.markAsRead");
+        Route::delete("/notifications/{id}", [\App\Http\Controllers\Admin\NotificationController::class, "destroy"])->name("admin.notifications.destroy");
+        Route::delete("/notifications", [\App\Http\Controllers\Admin\NotificationController::class, "destroyAll"])->name("admin.notifications.destroyAll");
 
         // Question Categories
         Route::resource(
@@ -261,27 +304,55 @@ Route::prefix("admin")->group(function () {
             "extend",
         ])->name("admin.time-extension.extend");
 
+        // Exam Pause/Resume
+        Route::get("/exam-pause", [
+            \App\Http\Controllers\Admin\ExamPauseController::class,
+            "index",
+        ])->name("admin.exam-pause.index");
+
+        Route::post("/exam-pause/{grade}", [
+            \App\Http\Controllers\Admin\ExamPauseController::class,
+            "pause",
+        ])->name("admin.exam-pause.pause");
+
+        Route::post("/exam-resume/{grade}", [
+            \App\Http\Controllers\Admin\ExamPauseController::class,
+            "resume",
+        ])->name("admin.exam-pause.resume");
+
+        Route::post("/exam-pause-all/{examSession}", [
+            \App\Http\Controllers\Admin\ExamPauseController::class,
+            "pauseAll",
+        ])->name("admin.exam-pause.pauseAll");
+
+        Route::post("/exam-resume-all/{examSession}", [
+            \App\Http\Controllers\Admin\ExamPauseController::class,
+            "resumeAll",
+        ])->name("admin.exam-pause.resumeAll");
+
         // Duplicate Question Check API
         Route::post("/questions/check-duplicate", [
             \App\Http\Controllers\Admin\ExamController::class,
             "checkDuplicate",
         ])->name("admin.questions.checkDuplicate");
 
-        // PDF Export Routes
-        Route::get("/export/grade/{grade}/pdf", [
-            \App\Http\Controllers\Admin\ExportController::class,
-            "exportGradePdf",
-        ])->name("admin.export.grade.pdf");
+        // PDF Export Routes (rate limited to prevent DoS)
+        Route::middleware('throttle:10,1')->group(function () {
+            Route::get("/export/grade/{grade}/pdf", [
+                \App\Http\Controllers\Admin\ExportController::class,
+                "exportGradePdf",
+            ])->name("admin.export.grade.pdf");
 
-        Route::get("/export/exam/{exam}/pdf", [
-            \App\Http\Controllers\Admin\ExportController::class,
-            "exportExamResultsPdf",
-        ])->name("admin.export.exam.pdf");
+            Route::get("/export/exam/{exam}/pdf", [
+                \App\Http\Controllers\Admin\ExportController::class,
+                "exportExamResultsPdf",
+            ])->name("admin.export.exam.pdf");
 
-        Route::get("/export/student/{student}/pdf", [
-            \App\Http\Controllers\Admin\ExportController::class,
-            "exportStudentReportPdf",
-        ])->name("admin.export.student.pdf");
+            Route::get("/export/student/{student}/pdf", [
+                \App\Http\Controllers\Admin\ExportController::class,
+                "exportStudentReportPdf",
+            ])->name("admin.export.student.pdf");
+        });
 
         // Essay Grading Routes
         Route::get("/essay-grading", [
@@ -303,14 +374,14 @@ Route::prefix("admin")->group(function () {
 
 //route homepage (student login)
 Route::get("/", function () {
+    //cek session student dulu (prioritas)
+    if (auth()->guard("student")->check()) {
+        return redirect()->route("student.dashboard");
+    }
+
     //cek session admin
     if (auth()->check()) {
         return redirect()->route("admin.dashboard");
-    }
-
-    //cek session student
-    if (auth()->guard("student")->check()) {
-        return redirect()->route("student.dashboard");
     }
 
     //return view login

@@ -6,6 +6,11 @@
                 </div>
                 <!-- Navbar links -->
                 <ul class="navbar-nav align-items-center">
+                    <!-- Notifications -->
+                    <li class="nav-item me-2">
+                        <NotificationDropdown />
+                    </li>
+                    <!-- User dropdown -->
                     <li class="nav-item dropdown ms-lg-3">
                         <a class="nav-link dropdown-toggle pt-1 px-0" href="#" role="button" data-bs-toggle="dropdown"
                             aria-expanded="false">
@@ -35,20 +40,13 @@
 </template>
 
 <script>
+import { Link } from '@inertiajs/vue3';
+import NotificationDropdown from './NotificationDropdown.vue';
 
-    //import Link
-    import { Link } from '@inertiajs/vue3';
-
-    export default {
-
-        //register component
-        components: {
-            Link,
-        }
+export default {
+    components: {
+        Link,
+        NotificationDropdown,
     }
-
+}
 </script>
-
-<style>
-
-</style>

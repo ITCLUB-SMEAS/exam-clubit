@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Question extends Model
 {
+    use SoftDeletes;
+
     public const TYPE_MULTIPLE_CHOICE_SINGLE = "multiple_choice_single";
     public const TYPE_MULTIPLE_CHOICE_MULTIPLE = "multiple_choice_multiple";
     public const TYPE_SHORT_ANSWER = "short_answer";

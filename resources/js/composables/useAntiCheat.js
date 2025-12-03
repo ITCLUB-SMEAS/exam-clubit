@@ -35,6 +35,7 @@ export function useAntiCheat(options = {}) {
         onMaxViolations: options.onMaxViolations ?? null,
         onAutoSubmit: options.onAutoSubmit ?? null,
         onBlockedEnvironment: options.onBlockedEnvironment ?? null,
+        onDuplicateTab: options.onDuplicateTab ?? null,
     });
 
     // State
@@ -663,6 +664,90 @@ export function useAntiCheat(options = {}) {
     };
 
     /**
+     * Single Tab Enforcement using BroadcastChannel
+     * Prevents opening exam in multiple tabs
+     */
+    let broadcastChannel = null;
+    const isSingleTabViolation = ref(false);
+
+    const initSingleTabEnforcement = () => {
+        if (!config.value.examId) return;
+
+        const channelName = `exam_session_${config.value.examId}_${config.value.gradeId}`;
+        broadcastChannel = new BroadcastChannel(channelName);
+
+        // Announce this tab is active
+        broadcastChannel.postMessage({ type: 'tab_active', timestamp: Date.now() });
+
+        // Listen for other tabs
+        broadcastChannel.onmessage = (event) => {
+            if (event.data.type === 'tab_active') {
+                // Another tab opened! Send warning back
+                broadcastChannel.postMessage({ type: 'tab_exists', timestamp: Date.now() });
+                recordViolation('multiple_tabs', 'Ujian dibuka di tab lain');
+            } else if (event.data.type === 'tab_exists') {
+                // This is a duplicate tab
+                isSingleTabViolation.value = true;
+                recordViolation('multiple_tabs', 'Mencoba membuka ujian di tab baru');
+                if (config.value.onDuplicateTab) {
+                    config.value.onDuplicateTab();
+                }
+            }
+        };
+    };
+
+    const cleanupSingleTabEnforcement = () => {
+        if (broadcastChannel) {
+            broadcastChannel.close();
+            broadcastChannel = null;
+        }
+    };
+
+    /**
+     * Browser Lockdown - Block popups and new windows
+     */
+    const originalWindowOpen = window.open;
+
+    const initBrowserLockdown = () => {
+        // Block window.open
+        window.open = () => {
+            recordViolation('popup_blocked', 'Mencoba membuka popup/window baru');
+            return null;
+        };
+
+        // Block links with target="_blank"
+        document.addEventListener('click', handleLinkClick, true);
+
+        // Block beforeunload during exam (warn user)
+        window.addEventListener('beforeunload', handleBeforeUnload);
+    };
+
+    const handleLinkClick = (e) => {
+        const link = e.target.closest('a');
+        if (link && (link.target === '_blank' || link.href?.startsWith('http'))) {
+            // Allow internal navigation
+            if (link.href?.includes(window.location.hostname)) return;
+            e.preventDefault();
+            e.stopPropagation();
+            recordViolation('external_link', 'Mencoba membuka link eksternal');
+        }
+    };
+
+    const handleBeforeUnload = (e) => {
+        if (isInitialized.value) {
+            e.preventDefault();
+            e.returnValue = 'Ujian sedang berlangsung. Yakin ingin meninggalkan halaman?';
+            return e.returnValue;
+        }
+    };
+
+    const cleanupBrowserLockdown = () => {
+        window.open = originalWindowOpen;
+        document.removeEventListener('click', handleLinkClick, true);
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+
+    /**
      * Request fullscreen
      */
     const enterFullscreen = async () => {
@@ -758,6 +843,12 @@ export function useAntiCheat(options = {}) {
         // Periodic check for window movement to other monitors
         monitorCheckInterval = setInterval(handleWindowMove, 3000);
 
+        // Initialize single tab enforcement
+        initSingleTabEnforcement();
+
+        // Initialize browser lockdown
+        initBrowserLockdown();
+
         // Request fullscreen if required
         if (config.value.fullscreenRequired) {
             await enterFullscreen();
@@ -808,6 +899,8 @@ export function useAntiCheat(options = {}) {
 
         stopDevtoolsDetection();
         stopRemoteDesktopDetection();
+        cleanupSingleTabEnforcement();
+        cleanupBrowserLockdown();
 
         isInitialized.value = false;
     };

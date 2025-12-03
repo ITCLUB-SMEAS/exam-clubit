@@ -189,4 +189,14 @@
     cursor: not-allowed;
     opacity: 0.7;
 }
+
+/* Mobile navbar fix */
+@media (max-width: 991.98px) {
+    .navbar-collapse.show {
+        background-color: var(--bs-primary, #1c2540);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-top: 0.5rem;
+    }
+}
 </style>

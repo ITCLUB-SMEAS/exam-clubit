@@ -18,15 +18,12 @@ class StudentController extends Controller
      */
     public function index()
     {
-        //get students
         $students = Student::when(request()->q, function($students) {
             $students = $students->where('name', 'like', '%'. request()->q . '%');
-        })->with('classroom')->latest()->paginate(5);
+        })->with('classroom')->latest()->paginate(10);
 
-        //append query string to pagination links
         $students->appends(['q' => request()->q]);
 
-        //render with inertia
         return inertia('Admin/Students/Index', [
             'students' => $students,
         ]);

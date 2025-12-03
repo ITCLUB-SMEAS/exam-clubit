@@ -24,8 +24,8 @@ class SecurityHeaders
         // Referrer Policy
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-        // Permissions Policy
-        $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+        // Permissions Policy - allow camera for face detection
+        $response->headers->set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
 
         // Content Security Policy
         if (app()->environment('production')) {
@@ -44,11 +44,12 @@ class SecurityHeaders
     {
         return implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tiny.cloud",
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tiny.cloud",
-            "font-src 'self' https://fonts.gstatic.com data:",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tiny.cloud https://cdnjs.cloudflare.com https://challenges.cloudflare.com https://cdn.tailwindcss.com",
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tiny.cloud https://cdnjs.cloudflare.com",
+            "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:",
             "img-src 'self' data: blob: https:",
-            "connect-src 'self' https://cdn.tiny.cloud",
+            "connect-src 'self' https://cdn.tiny.cloud https://challenges.cloudflare.com",
+            "frame-src 'self' https://challenges.cloudflare.com",
             "frame-ancestors 'self'",
             "form-action 'self'",
             "base-uri 'self'",

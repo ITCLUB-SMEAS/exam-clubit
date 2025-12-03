@@ -84,6 +84,8 @@ class IDORProtectionTest extends TestCase
             'exam_session_id' => $this->session->id,
             'student_id' => $this->student1->id,
             'duration' => 3600000,
+            'total_correct' => 0,
+            'grade' => 0,
         ]);
 
         $this->grade2 = Grade::create([
@@ -92,6 +94,7 @@ class IDORProtectionTest extends TestCase
             'student_id' => $this->student2->id,
             'duration' => 3600000,
             'end_time' => now(),
+            'total_correct' => 8,
             'grade' => 80,
         ]);
     }

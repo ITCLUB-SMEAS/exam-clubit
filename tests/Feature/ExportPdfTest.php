@@ -99,7 +99,7 @@ class ExportPdfTest extends TestCase
     public function test_unauthenticated_cannot_export(): void
     {
         $response = $this->get("/admin/export/grade/{$this->grade->id}/pdf");
-        $response->assertRedirect('/login');
+        $response->assertRedirect('/admin/login');
     }
 
     public function test_export_exam_with_session_filter(): void

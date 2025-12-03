@@ -104,11 +104,19 @@ class ExamSessionController extends Controller
             ->groupBy('students.classroom_id')
             ->pluck('count', 'classroom_id');
 
+        // Check if all active exams are paused
+        $activeGrades = \App\Models\Grade::where('exam_session_id', $id)
+            ->whereNull('end_time')->count();
+        $pausedGrades = \App\Models\Grade::where('exam_session_id', $id)
+            ->whereNull('end_time')->where('is_paused', true)->count();
+        $allPaused = $activeGrades > 0 && $activeGrades === $pausedGrades;
+
         //render with inertia
         return inertia('Admin/ExamSessions/Show', [
             'exam_session' => $exam_session,
             'classrooms' => $classrooms,
             'enrolledByClass' => $enrolledByClass,
+            'allPaused' => $allPaused,
         ]);
     }
 
@@ -213,26 +221,31 @@ class ExamSessionController extends Controller
      */
     public function storeEnrolle(Request $request, ExamSession $exam_session)
     {
-        //validate request
         $request->validate([
-            'student_id'    => 'required',
+            'student_id'    => 'required|array|max:100', // Limit 100 students per request
+            'student_id.*'  => 'exists:students,id',
         ]);
         
-        //create exam_group
+        $exam = $exam_session->exam;
+        
         foreach($request->student_id as $student_id) {
-
-            //select student
             $student = Student::findOrFail($student_id);
 
-            //create exam_group
-            ExamGroup::create([
-                'exam_id'         => $request->exam_id,  
-                'exam_session_id' => $exam_session->id,
-                'student_id'      => $student->id,
-            ]);
+            // Prevent duplicate enrollment
+            $exists = ExamGroup::where('exam_id', $exam->id)
+                ->where('exam_session_id', $exam_session->id)
+                ->where('student_id', $student->id)
+                ->exists();
+                
+            if (!$exists) {
+                ExamGroup::create([
+                    'exam_id'         => $exam->id,  // Use exam from session, not from request
+                    'exam_session_id' => $exam_session->id,
+                    'student_id'      => $student->id,
+                ]);
+            }
         }
         
-        //redirect
         return redirect()->route('admin.exam_sessions.show', $exam_session->id);
     }
 

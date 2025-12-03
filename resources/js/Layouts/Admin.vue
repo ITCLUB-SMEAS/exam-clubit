@@ -17,35 +17,26 @@
     <Sidebar />
 
     <main class="content">
-
         <!-- navbar -->
         <Navbar />
-
         <!-- content -->
         <slot />
-
     </main>
 
+    <!-- PWA Install Prompt -->
+    <PwaInstall />
 </template>
 
 <script>
-    //import navbar
-    import Navbar from "../Components/Navbar.vue";
+import Navbar from "../Components/Navbar.vue";
+import Sidebar from '../Components/Sidebar.vue';
+import PwaInstall from '../Components/PwaInstall.vue';
 
-    //import sidebar
-    import Sidebar from '../Components/Sidebar.vue';
-
-    export default {
-
-        //register components
-        components: {
-            Navbar,
-            Sidebar
-        },
-    }
-
+export default {
+    components: {
+        Navbar,
+        Sidebar,
+        PwaInstall
+    },
+}
 </script>
-
-<style>
-
-</style>

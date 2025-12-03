@@ -13,7 +13,27 @@
                 <!-- Session Info -->
                 <div class="card border-0 shadow mb-4">
                     <div class="card-body">
-                        <h5><i class="fa fa-stopwatch"></i> Detail Sesi Ujian</h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fa fa-stopwatch"></i> Detail Sesi Ujian</h5>
+                            <div>
+                                <button 
+                                    v-if="!allPaused"
+                                    @click="pauseAll" 
+                                    class="btn btn-warning btn-sm"
+                                    :disabled="pauseForm.processing"
+                                >
+                                    <i class="fa fa-pause me-1"></i> Pause Semua Ujian
+                                </button>
+                                <button 
+                                    v-else
+                                    @click="resumeAll" 
+                                    class="btn btn-success btn-sm"
+                                    :disabled="pauseForm.processing"
+                                >
+                                    <i class="fa fa-play me-1"></i> Resume Semua Ujian
+                                </button>
+                            </div>
+                        </div>
                         <hr>
                         <div class="table-responsive">
                             <table class="table table-bordered mb-0">
@@ -166,11 +186,70 @@ const props = defineProps({
     exam_session: Object,
     classrooms: Array,
     enrolledByClass: Object,
+    allPaused: Boolean,
 });
 
 const bulkForm = useForm({
     classroom_id: null,
 });
+
+const pauseForm = useForm({
+    reason: 'Ujian di-pause oleh admin',
+});
+
+const pauseAll = () => {
+    Swal.fire({
+        title: 'Pause Semua Ujian?',
+        text: 'Semua siswa yang sedang mengerjakan ujian akan di-pause.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ffc107',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, Pause!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            pauseForm.post(`/admin/exam-pause/session/${props.exam_session.id}/pause-all`, {
+                onSuccess: () => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'Semua ujian telah di-pause.',
+                        timer: 2000,
+                        showConfirmButton: false,
+                    });
+                },
+            });
+        }
+    });
+};
+
+const resumeAll = () => {
+    Swal.fire({
+        title: 'Resume Semua Ujian?',
+        text: 'Semua siswa dapat melanjutkan ujian.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, Resume!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            pauseForm.post(`/admin/exam-pause/session/${props.exam_session.id}/resume-all`, {
+                onSuccess: () => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'Semua ujian telah dilanjutkan.',
+                        timer: 2000,
+                        showConfirmButton: false,
+                    });
+                },
+            });
+        }
+    });
+};
 
 const bulkEnroll = (classroomId, classroomTitle) => {
     Swal.fire({
