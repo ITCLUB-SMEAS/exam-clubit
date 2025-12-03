@@ -1,13 +1,13 @@
 import { ref, onUnmounted } from 'vue';
-import * as faceapi from 'face-api.js';
 
 /**
  * Face Detection Composable for Anti-Cheat
  * Detects: no face, multiple faces
+ * face-api.js is lazy loaded only when needed
  */
 export function useFaceDetection(options = {}) {
     const config = {
-        checkInterval: options.checkInterval ?? 30000, // 30 seconds
+        checkInterval: options.checkInterval ?? 30000,
         onNoFace: options.onNoFace ?? null,
         onMultipleFaces: options.onMultipleFaces ?? null,
         onFaceDetected: options.onFaceDetected ?? null,
@@ -23,12 +23,13 @@ export function useFaceDetection(options = {}) {
     const consecutiveNoFace = ref(0);
 
     let checkIntervalId = null;
+    let faceapi = null;
 
-    /**
-     * Load face-api models
-     */
     const loadModels = async () => {
         try {
+            // Lazy load face-api.js
+            const module = await import('face-api.js');
+            faceapi = module;
             await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
             return true;
         } catch (error) {
@@ -38,9 +39,6 @@ export function useFaceDetection(options = {}) {
         }
     };
 
-    /**
-     * Start webcam
-     */
     const startCamera = async (videoEl) => {
         try {
             videoElement.value = videoEl;
@@ -57,11 +55,8 @@ export function useFaceDetection(options = {}) {
         }
     };
 
-    /**
-     * Detect faces in current frame
-     */
     const detectFaces = async () => {
-        if (!videoElement.value || !isRunning.value) return;
+        if (!videoElement.value || !isRunning.value || !faceapi) return;
 
         try {
             const detections = await faceapi.detectAllFaces(
@@ -74,30 +69,22 @@ export function useFaceDetection(options = {}) {
 
             if (detections.length === 0) {
                 consecutiveNoFace.value++;
-                // Only trigger after 2 consecutive no-face detections
                 if (consecutiveNoFace.value >= 2 && config.onNoFace) {
                     config.onNoFace();
                     consecutiveNoFace.value = 0;
                 }
             } else if (detections.length > 1) {
                 consecutiveNoFace.value = 0;
-                if (config.onMultipleFaces) {
-                    config.onMultipleFaces(detections.length);
-                }
+                if (config.onMultipleFaces) config.onMultipleFaces(detections.length);
             } else {
                 consecutiveNoFace.value = 0;
-                if (config.onFaceDetected) {
-                    config.onFaceDetected();
-                }
+                if (config.onFaceDetected) config.onFaceDetected();
             }
         } catch (error) {
             console.error('Face detection error:', error);
         }
     };
 
-    /**
-     * Initialize face detection
-     */
     const initialize = async (videoEl) => {
         const modelsLoaded = await loadModels();
         if (!modelsLoaded) return false;
@@ -109,22 +96,13 @@ export function useFaceDetection(options = {}) {
         return true;
     };
 
-    /**
-     * Start periodic face detection
-     */
     const start = () => {
         if (!isInitialized.value) return;
-        
         isRunning.value = true;
-        // Initial check after 5 seconds
         setTimeout(detectFaces, 5000);
-        // Then check every interval
         checkIntervalId = setInterval(detectFaces, config.checkInterval);
     };
 
-    /**
-     * Stop face detection
-     */
     const stop = () => {
         isRunning.value = false;
         if (checkIntervalId) {
@@ -133,18 +111,13 @@ export function useFaceDetection(options = {}) {
         }
     };
 
-    /**
-     * Cleanup resources
-     */
     const cleanup = () => {
         stop();
         if (stream.value) {
             stream.value.getTracks().forEach(track => track.stop());
             stream.value = null;
         }
-        if (videoElement.value) {
-            videoElement.value.srcObject = null;
-        }
+        if (videoElement.value) videoElement.value.srcObject = null;
         isInitialized.value = false;
     };
 

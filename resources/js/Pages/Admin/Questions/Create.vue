@@ -37,17 +37,7 @@
                                         <tr>
                                             <td style="width:20%" class="fw-bold">Soal</td>
                                             <td>
-                                                <Editor
-                                                    tinymce-script-src="/tinymce/tinymce.min.js"
-                                                    v-model="form.question"
-                                                    :init="{
-                                                        
-                                                        
-                                                        menubar: false,
-                                                        plugins: 'lists link image emoticons',
-                                                        toolbar: 'styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link image emoticons'
-                                                    }"
-                                                />
+                                                <TiptapEditor v-model="form.question" :height="200" />
                                             </td>
                                         </tr>
                                         <!-- Multiple Choice Options -->
@@ -55,7 +45,7 @@
                                             <tr v-for="(label, idx) in optionLabels" :key="idx">
                                                 <td class="fw-bold">Pilihan {{ label }}</td>
                                                 <td>
-                                                    <Editor tinymce-script-src="/tinymce/tinymce.min.js" v-model="form['option_'+(idx+1)]" :init="editorConfig" />
+                                                    <TiptapEditor v-model="form['option_'+(idx+1)]" :height="130" />
                                                 </td>
                                             </tr>
                                         </template>
@@ -147,15 +137,14 @@ import LayoutAdmin from '../../../Layouts/Admin.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { reactive, computed } from 'vue';
 import Swal from 'sweetalert2';
-import Editor from '@tinymce/tinymce-vue';
+import TiptapEditor from '../../../Components/TiptapEditor.vue';
 
 export default {
     layout: LayoutAdmin,
-    components: { Head, Link, Editor },
+    components: { Head, Link, TiptapEditor },
     props: {
         errors: Object,
         exam: Object,
-        TinyMCEApiKey: String,
     },
     setup(props) {
         const form = reactive({
@@ -172,14 +161,6 @@ export default {
             correct_answers_text: '',
             matching_pairs: [{ left: '', right: '' }, { left: '', right: '' }],
         });
-
-        const editorConfig = {
-            
-            height: 130,
-            menubar: false,
-            plugins: 'lists link image emoticons',
-            toolbar: 'styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link image emoticons'
-        };
 
         const optionLabels = ["A", "B", "C", "D", "E"];
 
@@ -217,7 +198,7 @@ export default {
             });
         };
 
-        return { form, isMultipleChoice, optionLabels, editorConfig, submit, addPair, removePair };
+        return { form, isMultipleChoice, optionLabels, submit, addPair, removePair };
     }
 }
 </script>

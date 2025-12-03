@@ -35,7 +35,7 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Soal</label>
-                                <Editor v-model="form.question" tinymce-script-src="/tinymce/tinymce.min.js" :init="editorConfig" />
+                                <TiptapEditor v-model="form.question" :height="200" />
                             </div>
 
                             <!-- Multiple Choice Options -->
@@ -98,11 +98,11 @@
 import LayoutAdmin from '../../../Layouts/Admin.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
-import Editor from '@tinymce/tinymce-vue';
+import TiptapEditor from '../../../Components/TiptapEditor.vue';
 
 export default {
     layout: LayoutAdmin,
-    components: { Head, Link, Editor },
+    components: { Head, Link, TiptapEditor },
     props: { categories: Array, errors: Object },
     setup() {
         const form = useForm({
@@ -128,11 +128,9 @@ export default {
         const addPair = () => form.matching_pairs.push({ left: '', right: '' });
         const removePair = (idx) => form.matching_pairs.splice(idx, 1);
 
-        const editorConfig = { height: 200, menubar: false, plugins: 'lists', toolbar: 'bold italic | bullist numlist' };
-
         const submit = () => form.post('/admin/question-bank');
 
-        return { form, shortAnswerText, isMultipleChoice, addPair, removePair, editorConfig, submit };
+        return { form, shortAnswerText, isMultipleChoice, addPair, removePair, submit };
     }
 }
 </script>

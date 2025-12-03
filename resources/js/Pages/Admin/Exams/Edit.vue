@@ -48,15 +48,7 @@
 
                             <div class="mb-4">
                                 <label>Deskripsi</label>
-                                <Editor
-                                    :api-key="TinymceApiKey"
-                                    v-model="form.description"
-                                    :init="{
-                                        menubar: false,
-                                        plugins: 'lists link image emoticons',
-                                        toolbar: 'styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link image emoticons'
-                                    }"
-                                />
+                                <TiptapEditor v-model="form.description" :height="200" />
                                 <div v-if="errors.description" class="alert alert-danger mt-2">
                                     {{ errors.description }}
                                 </div>
@@ -191,8 +183,8 @@
     //import sweet alert2
     import Swal from 'sweetalert2';
 
-    //import tinyMCE
-    import Editor from '@tinymce/tinymce-vue';
+    //import Tiptap
+    import TiptapEditor from '../../../Components/TiptapEditor.vue';
 
     export default {
 
@@ -203,7 +195,7 @@
         components: {
             Head,
             Link,
-            Editor
+            TiptapEditor
         },
 
         //props
@@ -212,7 +204,6 @@
             exam: Object,
             lessons: Array,
             classrooms: Array,
-            TinyMCEApiKey: String,
         },
 
         //inisialisasi composition API

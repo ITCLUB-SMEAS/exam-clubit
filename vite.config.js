@@ -20,13 +20,18 @@ export default defineConfig({
         })
     ],
     build: {
+        chunkSizeWarningLimit: 500,
         rollupOptions: {
             output: {
-                manualChunks: {
-                    'vendor-vue': ['vue', '@inertiajs/vue3'],
-                    'vendor-ui': ['sweetalert2', '@chenfengyuan/vue-countdown'],
-                    'vendor-charts': ['chart.js', 'vue-chartjs'],
-                    'vendor-editor': ['@tinymce/tinymce-vue'],
+                manualChunks(id) {
+                    if (id.includes('node_modules')) {
+                        if (id.includes('vue') || id.includes('@inertiajs')) return 'vendor-vue';
+                        if (id.includes('sweetalert2')) return 'vendor-ui';
+                        if (id.includes('chart.js') || id.includes('vue-chartjs')) return 'vendor-charts';
+                        if (id.includes('@tiptap') || id.includes('prosemirror')) return 'vendor-editor';
+                        if (id.includes('face-api')) return 'vendor-face';
+                        if (id.includes('@vuepic/vue-datepicker')) return 'vendor-datepicker';
+                    }
                 },
             },
         },
