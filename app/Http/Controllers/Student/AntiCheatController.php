@@ -320,4 +320,18 @@ class AntiCheatController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Get server time for time anomaly detection
+     *
+     * @return JsonResponse
+     */
+    public function serverTime(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'server_time' => (int) (microtime(true) * 1000), // milliseconds
+            'timestamp' => now()->toIso8601String(),
+        ]);
+    }
 }

@@ -98,6 +98,17 @@ class AntiCheatService
                 $totalViolations
             ));
         }
+
+        // Send Telegram notification
+        app(TelegramService::class)->sendViolationAlert([
+            'student_name' => $student->name,
+            'student_nisn' => $student->nisn,
+            'exam_title' => $exam->title,
+            'violation_type' => self::getViolationLabel($violationType),
+            'description' => self::getDefaultDescription($violationType),
+            'violation_count' => $totalViolations,
+            'ip_address' => request()->ip(),
+        ]);
     }
 
     /**
@@ -259,7 +270,8 @@ class AntiCheatService
         }
 
         if ($grade->violation_count >= 3) {
-            $student->block("Akun diblokir otomatis: {$grade->violation_count} pelanggaran anti-cheat");
+            $reason = "Akun diblokir otomatis: {$grade->violation_count} pelanggaran anti-cheat";
+            $student->block($reason);
             
             ActivityLogService::log(
                 action: 'block',
@@ -277,6 +289,9 @@ class AntiCheatService
                 'student_name' => $student->name,
                 'violation_count' => $grade->violation_count,
             ]);
+
+            // Send Telegram notification
+            app(TelegramService::class)->sendStudentBlockedAlert($student, $reason);
 
             return true;
         }

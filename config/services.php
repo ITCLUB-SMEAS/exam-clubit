@@ -40,4 +40,17 @@ return [
         'secret' => env('TURNSTILE_SECRET_KEY'),
     ],
 
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'chat_id' => env('TELEGRAM_CHAT_ID'),
+        'admin_ids' => env('TELEGRAM_ADMIN_IDS', ''),
+        'notify_ids' => env('TELEGRAM_NOTIFY_IDS', ''),
+        'group_topic_id' => env('TELEGRAM_GROUP_TOPIC_ID'),
+        'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
+    ],
+
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+    ],
+
 ];

@@ -205,4 +205,88 @@ class StudentController extends Controller
 
         return redirect()->back()->with('success', $message);
     }
+
+    /**
+     * Bulk password reset page
+     */
+    public function bulkPasswordReset()
+    {
+        $classrooms = Classroom::withCount('students')->get();
+        
+        return inertia('Admin/Students/BulkPasswordReset', [
+            'classrooms' => $classrooms,
+        ]);
+    }
+
+    /**
+     * Execute bulk password reset
+     */
+    public function executeBulkPasswordReset(Request $request)
+    {
+        $request->validate([
+            'classroom_id' => 'nullable|exists:classrooms,id',
+            'student_ids' => 'nullable|array',
+            'student_ids.*' => 'exists:students,id',
+            'password_type' => 'required|in:nisn,custom,random',
+            'custom_password' => 'required_if:password_type,custom|nullable|min:6',
+        ]);
+
+        $query = Student::query();
+
+        if ($request->student_ids && count($request->student_ids) > 0) {
+            $query->whereIn('id', $request->student_ids);
+        } elseif ($request->classroom_id) {
+            $query->where('classroom_id', $request->classroom_id);
+        } else {
+            return back()->with('error', 'Pilih kelas atau siswa terlebih dahulu.');
+        }
+
+        $students = $query->get();
+        $count = 0;
+        $results = [];
+
+        foreach ($students as $student) {
+            $newPassword = match ($request->password_type) {
+                'nisn' => $student->nisn,
+                'custom' => $request->custom_password,
+                'random' => $this->generateRandomPassword(),
+            };
+
+            $student->update(['password' => $newPassword]);
+            $count++;
+
+            if ($request->password_type === 'random') {
+                $results[] = [
+                    'nisn' => $student->nisn,
+                    'name' => $student->name,
+                    'password' => $newPassword,
+                ];
+            }
+        }
+
+        $response = ['success' => "{$count} password siswa berhasil direset."];
+        
+        if ($request->password_type === 'random') {
+            $response['results'] = $results;
+        }
+
+        return back()->with($response);
+    }
+
+    /**
+     * Generate random password
+     */
+    private function generateRandomPassword(int $length = 8): string
+    {
+        return substr(str_shuffle('abcdefghjkmnpqrstuvwxyz23456789'), 0, $length);
+    }
+
+    /**
+     * Get students by classroom (API)
+     */
+    public function getByClassroom(Classroom $classroom)
+    {
+        $students = $classroom->students()->select('id', 'name', 'nisn')->get();
+        return response()->json($students);
+    }
 }

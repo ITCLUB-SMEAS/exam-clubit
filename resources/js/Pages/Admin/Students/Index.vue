@@ -4,23 +4,28 @@
     </Head>
     <div class="container-fluid mb-5 mt-5">
         <div class="row">
-            <div class="col-md-8">
+            <div class="col-md-10">
                 <div class="row">
-                    <div class="col-md-5 col-12 mb-2">
+                    <div class="col-md-6 col-12 mb-2">
                         <div class="row">
-                            <div class="col-md-6 col-12 mb-2">
+                            <div class="col-md-4 col-12 mb-2">
                                 <Link href="/admin/students/create" class="btn btn-md btn-primary border-0 shadow w-100"
                                     type="button"><i class="fa fa-plus-circle"></i>
                                 Tambah</Link>
                             </div>
-                            <div class="col-md-6 col-12 mb-2">
+                            <div class="col-md-4 col-12 mb-2">
                                 <Link href="/admin/students/import" class="btn btn-md btn-success border-0 shadow w-100 text-white"
                                     type="button"><i class="fa fa-file-excel"></i>
                                 Import</Link>
                             </div>
+                            <div class="col-md-4 col-12 mb-2">
+                                <Link href="/admin/students-bulk-password-reset" class="btn btn-md btn-warning border-0 shadow w-100"
+                                    type="button"><i class="fa fa-key"></i>
+                                Reset PW</Link>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-7 col-12 mb-2">
+                    <div class="col-md-6 col-12 mb-2">
                         <form @submit.prevent="handleSearch">
                             <div class="input-group">
                                 <input type="text" class="form-control border-0 shadow" v-model="search" placeholder="masukkan kata kunci dan enter...">

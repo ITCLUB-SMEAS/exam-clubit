@@ -22,6 +22,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 \App\Http\Middleware\SanitizeInput::class,
             ],
         );
+        
+        // Exclude telegram webhook from CSRF
+        $middleware->validateCsrfTokens(except: [
+            'telegram/webhook',
+        ]);
+        
         $middleware->alias([
             "student" => \App\Http\Middleware\AuthStudent::class,
             "admin.only" => \App\Http\Middleware\AdminOnly::class,

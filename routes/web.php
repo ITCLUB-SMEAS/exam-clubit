@@ -43,6 +43,22 @@ Route::prefix("admin")->group(function () {
                 "toggleBlock",
             ])->name("admin.students.toggleBlock");
 
+            // Bulk Password Reset
+            Route::get("/students-bulk-password-reset", [
+                \App\Http\Controllers\Admin\StudentController::class,
+                "bulkPasswordReset",
+            ])->name("admin.students.bulkPasswordReset");
+
+            Route::post("/students-bulk-password-reset", [
+                \App\Http\Controllers\Admin\StudentController::class,
+                "executeBulkPasswordReset",
+            ])->name("admin.students.executeBulkPasswordReset");
+
+            Route::get("/students-by-classroom/{classroom}", [
+                \App\Http\Controllers\Admin\StudentController::class,
+                "getByClassroom",
+            ])->name("admin.students.byClassroom");
+
             Route::resource(
                 "/students",
                 \App\Http\Controllers\Admin\StudentController::class,
@@ -254,12 +270,6 @@ Route::prefix("admin")->group(function () {
             "studentPerformance",
         ])->name("admin.analytics.students");
 
-        // Leaderboard
-        Route::get("/leaderboard", [
-            \App\Http\Controllers\Admin\LeaderboardController::class,
-            "index",
-        ])->name("admin.leaderboard.index");
-
         // Notifications
         Route::get("/notifications", [\App\Http\Controllers\Admin\NotificationController::class, "index"])->name("admin.notifications.index");
         Route::get("/notifications/unread", [\App\Http\Controllers\Admin\NotificationController::class, "unread"])->name("admin.notifications.unread");
@@ -335,6 +345,28 @@ Route::prefix("admin")->group(function () {
             \App\Http\Controllers\Admin\ExamController::class,
             "checkDuplicate",
         ])->name("admin.questions.checkDuplicate");
+
+        // AI Question Generator
+        Route::get("/ai-generator", [
+            \App\Http\Controllers\Admin\AIQuestionController::class,
+            "index",
+        ])->name("admin.ai.index");
+
+        Route::post("/ai/generate-questions", [
+            \App\Http\Controllers\Admin\AIQuestionController::class,
+            "generate",
+        ])->name("admin.ai.generateQuestions");
+
+        Route::post("/exams/{exam}/ai-save-questions", [
+            \App\Http\Controllers\Admin\AIQuestionController::class,
+            "saveToExam",
+        ])->name("admin.ai.saveToExam");
+
+        // Plagiarism Detection
+        Route::get("/plagiarism", [
+            \App\Http\Controllers\Admin\PlagiarismController::class,
+            "index",
+        ])->name("admin.plagiarism.index");
 
         // PDF Export Routes (rate limited to prevent DoS)
         Route::middleware('throttle:10,1')->group(function () {
@@ -513,5 +545,16 @@ Route::prefix("student")->group(function () {
             App\Http\Controllers\Student\AntiCheatController::class,
             "heartbeat",
         ])->middleware('throttle:60,1')->name("student.anticheat.heartbeat");
+
+        //route anti-cheat server time (rate limited: 30 per minute)
+        Route::get("/anticheat/server-time", [
+            App\Http\Controllers\Student\AntiCheatController::class,
+            "serverTime",
+        ])->middleware('throttle:30,1')->name("student.anticheat.serverTime");
     });
 });
+
+// Telegram Webhook (no CSRF)
+Route::post('/telegram/webhook', [App\Http\Controllers\TelegramWebhookController::class, 'handle'])
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])
+    ->name('telegram.webhook');

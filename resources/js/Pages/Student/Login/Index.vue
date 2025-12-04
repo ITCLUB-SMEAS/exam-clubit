@@ -100,12 +100,12 @@
 </template>
 
 <script>
-import LayoutAuth from '../../../Layouts/Auth.vue';
+import LayoutStudent from '../../../Layouts/Student.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { reactive, ref, computed, onMounted, onUnmounted, watch } from 'vue';
 
 export default {
-    layout: LayoutAuth,
+    layout: LayoutStudent,
     components: { Head },
     props: {
         errors: Object,

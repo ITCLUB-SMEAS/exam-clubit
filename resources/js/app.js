@@ -1,6 +1,15 @@
 import { createApp, h } from 'vue'
 import { createInertiaApp } from '@inertiajs/vue3'
 import 'sweetalert2/dist/sweetalert2.min.css';
+import axios from 'axios';
+
+// Configure axios
+axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+const token = document.head.querySelector('meta[name="csrf-token"]');
+if (token) {
+    axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
+}
+window.axios = axios;
 
 createInertiaApp({
   resolve: name => {

@@ -52,6 +52,10 @@ class ExamViolation extends Model
     public const TYPE_MULTIPLE_TABS = 'multiple_tabs';
     public const TYPE_POPUP_BLOCKED = 'popup_blocked';
     public const TYPE_EXTERNAL_LINK = 'external_link';
+    public const TYPE_TIME_MANIPULATION = 'time_manipulation';
+    public const TYPE_EXTENDED_BLUR = 'extended_blur';
+    public const TYPE_PROLONGED_BLUR = 'prolonged_blur';
+    public const TYPE_EXCESSIVE_BLUR = 'excessive_blur';
 
     /**
      * Get all violation types
@@ -77,6 +81,10 @@ class ExamViolation extends Model
             self::TYPE_MULTIPLE_TABS => 'Multiple Tab',
             self::TYPE_POPUP_BLOCKED => 'Popup Diblokir',
             self::TYPE_EXTERNAL_LINK => 'Link Eksternal',
+            self::TYPE_TIME_MANIPULATION => 'Manipulasi Waktu',
+            self::TYPE_EXTENDED_BLUR => 'Tidak Fokus Lama',
+            self::TYPE_PROLONGED_BLUR => 'Tidak Fokus Berkepanjangan',
+            self::TYPE_EXCESSIVE_BLUR => 'Total Tidak Fokus Berlebihan',
         ];
     }
 

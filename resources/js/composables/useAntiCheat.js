@@ -61,6 +61,13 @@ export function useAntiCheat(options = {}) {
     const isBlockedEnvironment = ref(false);
     const blockedReason = ref('');
 
+    // Window Focus Duration tracking
+    const windowFocused = ref(true);
+    const blurStartTime = ref(null);
+    const totalBlurDuration = ref(0); // Total time unfocused in ms
+    const blurCount = ref(0); // Number of times window lost focus
+    const BLUR_WARNING_THRESHOLD = 10000; // 10 seconds unfocused triggers warning
+    const BLUR_VIOLATION_THRESHOLD = 30000; // 30 seconds total unfocused triggers violation
     /**
      * Check if a violation should be recorded (debouncing)
      */
@@ -162,7 +169,73 @@ export function useAntiCheat(options = {}) {
     const handleWindowBlur = () => {
         if (!config.value.blockTabSwitch) return;
 
+        windowFocused.value = false;
+        blurStartTime.value = Date.now();
+        blurCount.value++;
+
         recordViolation('blur', 'Window ujian kehilangan fokus');
+
+        // Start checking blur duration
+        startBlurDurationCheck();
+    };
+
+    /**
+     * Handle window focus (regained focus)
+     */
+    const handleWindowFocus = () => {
+        if (!windowFocused.value && blurStartTime.value) {
+            const blurDuration = Date.now() - blurStartTime.value;
+            totalBlurDuration.value += blurDuration;
+
+            // Record extended blur as separate violation if too long
+            if (blurDuration >= BLUR_WARNING_THRESHOLD) {
+                recordViolation('extended_blur', 
+                    `Window tidak fokus selama ${Math.round(blurDuration / 1000)} detik`,
+                    { duration: blurDuration, totalBlurTime: totalBlurDuration.value }
+                );
+            }
+
+            // Check if total blur time exceeded threshold
+            if (totalBlurDuration.value >= BLUR_VIOLATION_THRESHOLD) {
+                recordViolation('excessive_blur',
+                    `Total waktu tidak fokus: ${Math.round(totalBlurDuration.value / 1000)} detik`,
+                    { totalBlurTime: totalBlurDuration.value, blurCount: blurCount.value }
+                );
+            }
+        }
+
+        windowFocused.value = true;
+        blurStartTime.value = null;
+        stopBlurDurationCheck();
+    };
+
+    // Blur duration check interval
+    let blurCheckInterval = null;
+
+    const startBlurDurationCheck = () => {
+        if (blurCheckInterval) return;
+        
+        blurCheckInterval = setInterval(() => {
+            if (!windowFocused.value && blurStartTime.value) {
+                const currentBlurDuration = Date.now() - blurStartTime.value;
+                
+                // Warn every 10 seconds while unfocused
+                if (currentBlurDuration >= BLUR_WARNING_THRESHOLD && 
+                    currentBlurDuration % BLUR_WARNING_THRESHOLD < 1000) {
+                    recordViolation('prolonged_blur',
+                        `Window tidak fokus selama ${Math.round(currentBlurDuration / 1000)} detik`,
+                        { currentDuration: currentBlurDuration }
+                    );
+                }
+            }
+        }, 5000); // Check every 5 seconds
+    };
+
+    const stopBlurDurationCheck = () => {
+        if (blurCheckInterval) {
+            clearInterval(blurCheckInterval);
+            blurCheckInterval = null;
+        }
     };
 
     /**
@@ -798,12 +871,122 @@ export function useAntiCheat(options = {}) {
     /**
      * Initialize anti-cheat
      */
+    // Time Anomaly Detection
+    let timeCheckInterval = null;
+    let serverTimeOffset = 0; // Difference between server and client time
+    const TIME_ANOMALY_THRESHOLD = 30000; // 30 seconds tolerance
+    const lastClientTime = ref(Date.now());
+
+    /**
+     * Initialize server time sync
+     */
+    const initTimeSync = async () => {
+        try {
+            const clientBefore = Date.now();
+            const response = await axios.get('/student/anticheat/server-time');
+            const clientAfter = Date.now();
+            
+            if (response.data.success) {
+                const serverTime = response.data.server_time;
+                const roundTrip = clientAfter - clientBefore;
+                const estimatedServerTime = serverTime + (roundTrip / 2);
+                serverTimeOffset = estimatedServerTime - clientAfter;
+                lastClientTime.value = clientAfter;
+            }
+        } catch (error) {
+            console.error('Failed to sync server time:', error);
+        }
+    };
+
+    /**
+     * Check for time anomaly (system time manipulation)
+     */
+    const checkTimeAnomaly = async () => {
+        const currentClientTime = Date.now();
+        const expectedElapsed = currentClientTime - lastClientTime.value;
+        
+        // Check if time jumped backwards (user set clock back)
+        if (expectedElapsed < -5000) { // More than 5 seconds backwards
+            recordViolation('time_manipulation', 
+                'Waktu sistem diubah mundur',
+                { expected: expectedElapsed, jumped: true, direction: 'backward' }
+            );
+            lastClientTime.value = currentClientTime;
+            return;
+        }
+
+        // Check if time jumped forward too much (user set clock forward)
+        // Normal interval is ~10 seconds, allow up to 60 seconds for tab being inactive
+        if (expectedElapsed > 120000) { // More than 2 minutes jump
+            recordViolation('time_manipulation',
+                'Waktu sistem diubah maju secara tidak wajar',
+                { expected: 10000, actual: expectedElapsed, direction: 'forward' }
+            );
+        }
+
+        // Verify against server time periodically
+        try {
+            const clientBefore = Date.now();
+            const response = await axios.get('/student/anticheat/server-time');
+            const clientAfter = Date.now();
+            
+            if (response.data.success) {
+                const serverTime = response.data.server_time;
+                const roundTrip = clientAfter - clientBefore;
+                const estimatedServerTime = serverTime + (roundTrip / 2);
+                const currentOffset = estimatedServerTime - clientAfter;
+                const offsetDrift = Math.abs(currentOffset - serverTimeOffset);
+                
+                // If offset changed significantly, time was manipulated
+                if (offsetDrift > TIME_ANOMALY_THRESHOLD) {
+                    recordViolation('time_manipulation',
+                        'Terdeteksi manipulasi waktu sistem',
+                        { 
+                            originalOffset: serverTimeOffset, 
+                            currentOffset: currentOffset,
+                            drift: offsetDrift 
+                        }
+                    );
+                    // Update offset to new value
+                    serverTimeOffset = currentOffset;
+                }
+            }
+        } catch (error) {
+            // Network error, skip this check
+        }
+
+        lastClientTime.value = currentClientTime;
+    };
+
+    /**
+     * Start time anomaly detection
+     */
+    const startTimeAnomalyDetection = async () => {
+        await initTimeSync();
+        // Check every 10 seconds
+        timeCheckInterval = setInterval(checkTimeAnomaly, 10000);
+    };
+
+    /**
+     * Stop time anomaly detection
+     */
+    const stopTimeAnomalyDetection = () => {
+        if (timeCheckInterval) {
+            clearInterval(timeCheckInterval);
+            timeCheckInterval = null;
+        }
+    };
+
+    /**
+     * Initialize anti-cheat - Original
+     */
     const initialize = async () => {
         if (!config.value.enabled) return;
 
         // Add event listeners
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('blur', handleWindowBlur);
+        window.addEventListener('focus', handleWindowFocus);
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
         document.addEventListener('mozfullscreenchange', handleFullscreenChange);
@@ -820,6 +1003,9 @@ export function useAntiCheat(options = {}) {
 
         // Start remote desktop detection
         startRemoteDesktopDetection();
+
+        // Start time anomaly detection
+        await startTimeAnomalyDetection();
 
         // Detect multiple monitors on init
         await detectMultipleMonitors();
@@ -880,6 +1066,8 @@ export function useAntiCheat(options = {}) {
     const cleanup = () => {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         window.removeEventListener('blur', handleWindowBlur);
+        window.removeEventListener('focus', handleWindowFocus);
+        stopBlurDurationCheck();
         document.removeEventListener('fullscreenchange', handleFullscreenChange);
         document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
         document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
@@ -899,6 +1087,7 @@ export function useAntiCheat(options = {}) {
 
         stopDevtoolsDetection();
         stopRemoteDesktopDetection();
+        stopTimeAnomalyDetection();
         cleanupSingleTabEnforcement();
         cleanupBrowserLockdown();
 
@@ -925,6 +1114,9 @@ export function useAntiCheat(options = {}) {
         blockedReason: blockedReason.value,
         hasMultipleMonitors: hasMultipleMonitors.value,
         isVirtualMachine: isVirtualMachine.value,
+        windowFocused: windowFocused.value,
+        totalBlurDuration: totalBlurDuration.value,
+        blurCount: blurCount.value,
         config: config.value,
     });
 
@@ -951,6 +1143,9 @@ export function useAntiCheat(options = {}) {
         blockedReason,
         hasMultipleMonitors,
         isVirtualMachine,
+        windowFocused,
+        totalBlurDuration,
+        blurCount,
 
         // Methods
         initialize,
