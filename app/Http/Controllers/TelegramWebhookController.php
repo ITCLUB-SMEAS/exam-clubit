@@ -66,12 +66,14 @@ class TelegramWebhookController extends Controller
         }
 
         // Parse callback data
-        [$action, $nisn] = explode('_', $data, 2) + [null, null];
+        [$action, $param] = explode('_', $data, 2) + [null, null];
 
         $response = match($action) {
-            'block' => $telegram->handleCommand('/block', [$nisn], (string) $chatId),
-            'reset' => $telegram->handleCommand('/reset_violation', [$nisn], (string) $chatId),
-            'kick' => $telegram->handleCommand('/kick', [$nisn], (string) $chatId),
+            'block' => $telegram->handleCommand('/block', [$param], (string) $chatId),
+            'reset' => $telegram->handleCommand('/reset_violation', [$param], (string) $chatId),
+            'kick' => $telegram->handleCommand('/kick', [$param], (string) $chatId),
+            'newtoken' => $telegram->handleCommand('/new_token', [$param], (string) $chatId),
+            'token' => $telegram->handleCommand('/token', [$param], (string) $chatId),
             default => '❓ Action tidak dikenal',
         };
 

@@ -44,7 +44,7 @@ class SecurityHeaders
     {
         return implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tiny.cloud https://cdnjs.cloudflare.com https://challenges.cloudflare.com https://cdn.tailwindcss.com",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tiny.cloud https://cdnjs.cloudflare.com https://challenges.cloudflare.com",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tiny.cloud https://cdnjs.cloudflare.com",
             "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:",
             "img-src 'self' data: blob: https:",
@@ -53,6 +53,8 @@ class SecurityHeaders
             "frame-ancestors 'self'",
             "form-action 'self'",
             "base-uri 'self'",
+            "object-src 'none'",
+            "upgrade-insecure-requests",
         ]);
     }
 }

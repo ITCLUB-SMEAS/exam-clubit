@@ -18,10 +18,12 @@ class Student extends Authenticatable
      */
     protected $fillable = [
         "classroom_id",
+        "room_id",
         "nisn",
         "name",
         "password",
         "gender",
+        "photo",
         "is_blocked",
         "blocked_at",
         "blocked_reason",
@@ -85,6 +87,11 @@ class Student extends Authenticatable
     public function classroom()
     {
         return $this->belongsTo(Classroom::class);
+    }
+
+    public function room()
+    {
+        return $this->belongsTo(Room::class);
     }
 
     /**

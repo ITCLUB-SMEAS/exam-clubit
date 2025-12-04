@@ -487,8 +487,36 @@ class TelegramService
             '/unmute' => $this->cmdUnmute(),
             '/health' => $this->cmdHealth(),
             '/export' => $this->cmdExport($params[0] ?? null, $chatId),
+            // Attendance commands
+            '/token' => $this->cmdToken($params[0] ?? null),
+            '/new_token' => $this->cmdNewToken($params[0] ?? null),
             default => "❓ Command tidak dikenal. Ketik /help"
         };
+    }
+
+    /**
+     * Handle callback query from inline buttons
+     */
+    public function handleCallback(string $callbackData, string $callbackId, ?string $chatId = null): ?string
+    {
+        // Parse callback data
+        $parts = explode('_', $callbackData);
+        $action = $parts[0] ?? '';
+        $param = $parts[1] ?? null;
+
+        $response = match($action) {
+            'block' => $this->cmdBlock($param),
+            'reset' => $this->cmdResetViolation($param),
+            'kick' => $this->cmdKick($param),
+            'newtoken' => $this->cmdNewToken($param),
+            'token' => $this->cmdToken($param),
+            default => null
+        };
+
+        // Answer callback to remove loading state
+        $this->answerCallback($callbackId, $response ? '✅' : '❌');
+
+        return $response;
     }
 
     protected function cmdStart(): string
@@ -510,6 +538,10 @@ class TelegramService
             . "/summary - Rekap hari ini\n"
             . "/violations - Pelanggaran hari ini\n"
             . "/health - Cek server health\n\n"
+            . "<b>🎫 Absensi</b>\n"
+            . "/token - Lihat token absensi aktif\n"
+            . "/token [session_id] - Token sesi tertentu\n"
+            . "/new_token [session_id] - Generate token baru\n\n"
             . "<b>🔍 Pencarian</b>\n"
             . "/search [nama] - Cari siswa\n"
             . "/score [nisn] - Nilai siswa\n"
@@ -1035,6 +1067,113 @@ class TelegramService
         \App\Jobs\ExportPdfJob::dispatch((int) $examId, $chatId);
 
         return "📤 Export sedang diproses... File akan dikirim sebentar lagi.";
+    }
+
+    // ==================== ATTENDANCE TOKEN COMMANDS ====================
+
+    protected function cmdToken(?string $sessionId): string
+    {
+        // If no session ID, show active sessions with tokens
+        if (!$sessionId) {
+            $sessions = ExamSession::with('exam')
+                ->where('start_time', '<=', now())
+                ->where('end_time', '>=', now())
+                ->get();
+
+            if ($sessions->isEmpty()) {
+                // Check upcoming sessions
+                $upcoming = ExamSession::with('exam')
+                    ->where('start_time', '>', now())
+                    ->where('start_time', '<=', now()->addHours(24))
+                    ->get();
+                
+                if ($upcoming->isEmpty()) {
+                    return "📋 Tidak ada sesi ujian aktif atau yang akan datang dalam 24 jam.";
+                }
+                
+                $message = "📋 <b>SESI UJIAN MENDATANG (24 JAM)</b>\n\n";
+                foreach ($upcoming as $s) {
+                    $token = $s->access_token ?: $s->generateAccessToken();
+                    $message .= "📝 {$s->exam->title}\n"
+                        . "   📅 {$s->title}\n"
+                        . "   🕐 Mulai: {$s->start_time->format('d/m H:i')}\n"
+                        . "   🎫 Token: <code>{$token}</code>\n\n";
+                }
+                return $message;
+            }
+
+            $message = "🎫 <b>TOKEN ABSENSI AKTIF</b>\n\n";
+            foreach ($sessions as $s) {
+                $token = $s->access_token ?: $s->generateAccessToken();
+                $checkedIn = $s->exam_groups()->whereNotNull('checked_in_at')->count();
+                $total = $s->exam_groups()->count();
+                $message .= "📝 <b>{$s->exam->title}</b>\n"
+                    . "   📅 {$s->title}\n"
+                    . "   🎫 Token: <code>{$token}</code>\n"
+                    . "   👥 Hadir: {$checkedIn}/{$total}\n\n";
+            }
+
+            return $message;
+        }
+
+        $session = ExamSession::with('exam')->find($sessionId);
+        if (!$session) {
+            return "❌ Sesi ujian tidak ditemukan.";
+        }
+
+        if (!$session->access_token) {
+            $session->generateAccessToken();
+        }
+
+        $checkedIn = $session->exam_groups()->whereNotNull('checked_in_at')->count();
+        $total = $session->exam_groups()->count();
+
+        return "🎫 <b>TOKEN ABSENSI</b>\n\n"
+            . "📝 Ujian: {$session->exam->title}\n"
+            . "📅 Sesi: {$session->title}\n"
+            . "🎫 Token: <code>{$session->access_token}</code>\n"
+            . "👥 Hadir: {$checkedIn}/{$total}";
+    }
+
+    protected function cmdNewToken(?string $sessionId): string
+    {
+        if (!$sessionId) {
+            // Show buttons for active sessions
+            $sessions = ExamSession::with('exam')
+                ->where('end_time', '>=', now())
+                ->orderBy('start_time')
+                ->limit(10)
+                ->get();
+
+            if ($sessions->isEmpty()) {
+                return "📋 Tidak ada sesi ujian tersedia.";
+            }
+
+            $message = "🔄 <b>PILIH SESI UNTUK GENERATE TOKEN BARU</b>\n\n";
+            foreach ($sessions as $i => $s) {
+                $num = $i + 1;
+                $status = $s->start_time <= now() ? '🟢' : '🟡';
+                $message .= "{$status} <b>{$num}.</b> {$s->exam->title}\n"
+                    . "    📅 {$s->title}\n"
+                    . "    ➡️ Ketik: /new_token {$s->id}\n\n";
+            }
+            return $message;
+        }
+
+        $session = ExamSession::with('exam')->find($sessionId);
+        if (!$session) {
+            return "❌ Sesi ujian tidak ditemukan.";
+        }
+
+        $oldToken = $session->access_token ?: '-';
+        $newToken = $session->generateAccessToken();
+
+        return "🔄 <b>TOKEN BARU DIGENERATE</b>\n\n"
+            . "📝 Ujian: {$session->exam->title}\n"
+            . "📅 Sesi: {$session->title}\n"
+            . "🚫 Token Lama: <s>{$oldToken}</s>\n"
+            . "✅ Token Baru: <code>{$newToken}</code>\n\n"
+            . "⚠️ Token lama sudah tidak berlaku!";
     }
 
     public function isMuted(): bool

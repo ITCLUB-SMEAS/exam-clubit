@@ -62,6 +62,12 @@ class ExamController extends Controller
             "exam_group" => $exam_group,
             "grade" => $grade,
             "anticheat_config" => $anticheat_config,
+            "attendance" => [
+                "required" => $exam_group->exam_session->require_attendance,
+                "checked_in" => $exam_group->isCheckedIn(),
+                "checked_in_at" => $exam_group->checked_in_at?->format('H:i:s'),
+                "session_id" => $exam_group->exam_session_id,
+            ],
         ]);
     }
 
@@ -156,6 +162,13 @@ class ExamController extends Controller
         // Guard: session window must be active
         if ($redirect = $this->guardExamSchedule($exam_group, $grade)) {
             return $redirect;
+        }
+
+        // Guard: check attendance if required
+        if ($exam_group->exam_session->require_attendance && !$exam_group->isCheckedIn()) {
+            return redirect()
+                ->route("student.exams.confirmation", $exam_group->id)
+                ->with("error", "Anda harus melakukan absensi terlebih dahulu sebelum memulai ujian.");
         }
 
         // Prevent restart after completion

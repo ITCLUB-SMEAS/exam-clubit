@@ -1,8 +1,8 @@
 <template>
-    <nav class="navbar navbar-expand-lg navbar-transparent navbar-dark navbar-theme-primary mb-4 shadow">
+    <nav v-if="$page.props.auth.student" class="navbar navbar-expand-lg navbar-transparent navbar-dark navbar-theme-primary mb-4 shadow">
         <div class="container position-relative">
             <Link class="navbar-brand me-lg-3" href="/student/dashboard">
-                <img class="navbar-brand-dark" src="/assets/images/logo.png" style="height:70px">
+                <span class="text-white fw-bold">Ujian Online</span>
             </Link>
             <button
                 class="navbar-toggler"
@@ -152,7 +152,8 @@
                         showLogoutModal.value = false;
                     },
                     onError: () => {
-                        isLoggingOut.value = false;
+                        // CSRF token expired (419), redirect to login
+                        window.location.href = '/';
                     }
                 });
             };

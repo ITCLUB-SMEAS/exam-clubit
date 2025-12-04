@@ -89,6 +89,13 @@ Route::prefix("admin")->group(function () {
             ["as" => "admin"],
         );
 
+        //route resource rooms
+        Route::resource(
+            "/rooms",
+            \App\Http\Controllers\Admin\RoomController::class,
+            ["as" => "admin"],
+        );
+
         //route resource exams
         Route::resource(
             "/exams",
@@ -205,6 +212,53 @@ Route::prefix("admin")->group(function () {
             \App\Http\Controllers\Admin\ExamSessionController::class,
             "bulkUnenrollClass",
         ])->name("admin.exam_sessions.bulkUnenroll");
+
+        // Attendance routes
+        Route::get("/exam_sessions/{exam_session}/attendance", [
+            \App\Http\Controllers\Admin\AttendanceController::class,
+            "show",
+        ])->name("admin.exam_sessions.attendance");
+
+        Route::get("/exam_sessions/{exam_session}/attendance/qr", [
+            \App\Http\Controllers\Admin\AttendanceController::class,
+            "getQrCode",
+        ])->name("admin.exam_sessions.attendance.qr");
+
+        Route::post("/exam_sessions/{exam_session}/attendance/regenerate-token", [
+            \App\Http\Controllers\Admin\AttendanceController::class,
+            "regenerateToken",
+        ])->name("admin.exam_sessions.attendance.regenerateToken");
+
+        Route::post("/exam_sessions/{exam_session}/attendance/toggle", [
+            \App\Http\Controllers\Admin\AttendanceController::class,
+            "toggleRequirement",
+        ])->name("admin.exam_sessions.attendance.toggle");
+
+        Route::post("/exam_sessions/{exam_session}/attendance/manual-checkin", [
+            \App\Http\Controllers\Admin\AttendanceController::class,
+            "manualCheckIn",
+        ])->name("admin.exam_sessions.attendance.manualCheckin");
+
+        Route::get("/exam_sessions/{exam_session}/attendance/list", [
+            \App\Http\Controllers\Admin\AttendanceController::class,
+            "getAttendanceList",
+        ])->name("admin.exam_sessions.attendance.list");
+
+        // Exam Cards routes
+        Route::get("/exam_sessions/{exam_session}/cards", [
+            \App\Http\Controllers\Admin\ExamCardController::class,
+            "preview",
+        ])->name("admin.exam_sessions.cards.preview");
+
+        Route::get("/exam_sessions/{exam_session}/cards/print", [
+            \App\Http\Controllers\Admin\ExamCardController::class,
+            "print",
+        ])->name("admin.exam_sessions.cards.print");
+
+        Route::get("/exam_sessions/{exam_session}/cards/print/{student}", [
+            \App\Http\Controllers\Admin\ExamCardController::class,
+            "printSingle",
+        ])->name("admin.exam_sessions.cards.printSingle");
 
         //route index reports
         Route::get("/reports", [
@@ -473,6 +527,17 @@ Route::prefix("student")->group(function () {
             App\Http\Controllers\Student\ExamController::class,
             "confirmation",
         ])->name("student.exams.confirmation");
+
+        // Attendance check-in routes
+        Route::post("/checkin/qr", [
+            App\Http\Controllers\Student\CheckinController::class,
+            "qrCheckin",
+        ])->name("student.checkin.qr");
+
+        Route::post("/checkin/token", [
+            App\Http\Controllers\Student\CheckinController::class,
+            "tokenCheckin",
+        ])->name("student.checkin.token");
 
         //route exam start
         Route::get("/exam-start/{id}", [

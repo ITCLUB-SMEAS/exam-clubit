@@ -28,7 +28,6 @@
             <div class="col-md-12">
                 <div class="card border-0 shadow">
                     <div class="card-body">
-
                         <div class="table-responsive">
                             <table class="table table-bordered table-centered table-nowrap mb-0 rounded">
                                 <thead class="thead-dark">
@@ -38,7 +37,6 @@
                                         <th class="border-0 rounded-end" style="width:15%">Aksi</th>
                                     </tr>
                                 </thead>
-                                <div class="mt-2"></div>
                                 <tbody>
                                     <tr v-for="(classroom, index) in classrooms.data" :key="index">
                                         <td class="fw-bold text-center">{{ ++index + (classrooms.current_page - 1) * classrooms.per_page }}</td>
@@ -59,98 +57,35 @@
     </div>
 </template>
 
-<script>
-    //import layout
-    import LayoutAdmin from '../../../Layouts/Admin.vue';
+<script setup>
+import { ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import LayoutAdmin from '../../../Layouts/Admin.vue';
+import Pagination from '../../../Components/Pagination.vue';
+import Swal from 'sweetalert2';
 
-    //import component pagination
-    import Pagination from '../../../Components/Pagination.vue';
+defineOptions({ layout: LayoutAdmin });
 
-    //import Heade and Link from Inertia
-    import {
-        Head,
-        Link,
-        router
-    } from '@inertiajs/vue3';
+defineProps({ classrooms: Object });
 
-    //import ref from vue
-    import {
-        ref
-    } from 'vue';
+const search = ref(new URL(document.location).searchParams.get('q') || '');
 
-    //import sweet alert2
-    import Swal from 'sweetalert2';
+const handleSearch = () => {
+    router.get('/admin/classrooms', { q: search.value });
+};
 
-    export default {
-        //layout
-        layout: LayoutAdmin,
-
-        //register component
-        components: {
-            Head,
-            Link,
-            Pagination
-        },
-
-        //props
-        props: {
-            classrooms: Object,
-        },
-
-        //inisialisasi composition API
-        setup() {
-
-            //define state search
-            const search = ref('' || (new URL(document.location)).searchParams.get('q'));
-
-            //define method search
-            const handleSearch = () => {
-                router.get('/admin/classrooms', {
-
-                    //send params "q" with value from state "search"
-                    q: search.value,
-                });
-            }
-
-            //define method destroy
-            const destroy = (id) => {
-                Swal.fire({
-                    title: 'Apakah Anda yakin?',
-                    text: "Anda tidak akan dapat mengembalikan ini!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Yes, delete it!'
-                })
-                .then((result) => {
-                    if (result.isConfirmed) {
-
-                        router.delete(`/admin/classrooms/${id}`);
-
-                        Swal.fire({
-                            title: 'Deleted!',
-                            text: 'Kelas Berhasil Dihapus!.',
-                            icon: 'success',
-                            timer: 2000,
-                            showConfirmButton: false,
-                        });
-                    }
-                })
-            }
-
-            //return
-            return {
-                search,
-                handleSearch,
-                destroy,
-            }
-
+const destroy = (id) => {
+    Swal.fire({
+        title: 'Apakah Anda yakin?',
+        text: "Kelas akan dihapus!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Ya, Hapus!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.delete(`/admin/classrooms/${id}`);
         }
-    }
-
+    });
+};
 </script>
-
-<style>
-
-</style>

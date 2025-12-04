@@ -2,8 +2,8 @@
     <Head>
         <title>Login Siswa - Aplikasi Ujian Online</title>
     </Head>
-    <div class="row justify-content-center mt-5">
-        <div class="col-md-5">
+    <div class="login-bg d-flex justify-content-center align-items-center min-vh-100">
+        <div class="w-100 px-3" style="max-width: 450px;">
             <div class="bg-white shadow border-0 rounded border-light p-4 p-lg-5 w-100 fmxw-500">
                 <!-- Success Message -->
                 <div v-if="$page.props.session.success" class="alert alert-success mt-2">
@@ -41,6 +41,11 @@
                 </div>
 
                 <form @submit.prevent="submit" class="mt-4">
+                    <!-- Logo -->
+                    <div class="text-center mb-4">
+                        <img src="/assets/images/logo.webp?v=2" style="height:150px" alt="Logo">
+                    </div>
+
                     <div class="form-group mb-4">
                         <label for="nisn">NISN</label>
                         <div class="input-group">
@@ -194,6 +199,14 @@ export default {
 </script>
 
 <style scoped>
+.login-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: url('/assets/images/bg-login.webp?v=1') center/cover no-repeat;
+}
 .progress { background-color: #e9ecef; border-radius: 3px; }
 .progress-bar { transition: width 1s linear; }
 </style>

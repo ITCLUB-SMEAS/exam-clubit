@@ -59,9 +59,10 @@
                                         <td>{{ exam_session.start_time }}</td>
                                         <td>{{ exam_session.end_time }}</td>
                                         <td class="text-center">
-                                            <Link :href="`/admin/exam_sessions/${exam_session.id}`" class="btn btn-sm btn-primary border-0 shadow me-2" type="button"><i class="fa fa-plus-circle"></i></Link>
-                                            <Link :href="`/admin/exam_sessions/${exam_session.id}/edit`" class="btn btn-sm btn-info border-0 shadow me-2" type="button"><i class="fa fa-pencil-alt"></i></Link>
-                                            <button @click.prevent="destroy(exam_session.id)" class="btn btn-sm btn-danger border-0"><i class="fa fa-trash"></i></button>
+                                            <Link :href="`/admin/exam_sessions/${exam_session.id}`" class="btn btn-sm btn-primary border-0 shadow me-1" type="button" title="Detail"><i class="fa fa-eye"></i></Link>
+                                            <Link :href="`/admin/exam_sessions/${exam_session.id}/cards`" class="btn btn-sm btn-success border-0 shadow me-1" type="button" title="Cetak Kartu"><i class="fa fa-id-card"></i></Link>
+                                            <Link :href="`/admin/exam_sessions/${exam_session.id}/edit`" class="btn btn-sm btn-info border-0 shadow me-1" type="button" title="Edit"><i class="fa fa-pencil-alt"></i></Link>
+                                            <button @click.prevent="destroy(exam_session.id)" class="btn btn-sm btn-danger border-0" title="Hapus"><i class="fa fa-trash"></i></button>
                                         </td>
                                     </tr>
                                 </tbody>

@@ -1,5 +1,5 @@
 import { createApp, h } from 'vue'
-import { createInertiaApp } from '@inertiajs/vue3'
+import { createInertiaApp, router } from '@inertiajs/vue3'
 import 'sweetalert2/dist/sweetalert2.min.css';
 import axios from 'axios';
 
@@ -9,6 +9,26 @@ const token = document.head.querySelector('meta[name="csrf-token"]');
 if (token) {
     axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
 }
+
+// Handle 419 CSRF token mismatch globally
+axios.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response?.status === 419) {
+            window.location.href = '/';
+        }
+        return Promise.reject(error);
+    }
+);
+
+// Handle Inertia 419 errors
+router.on('invalid', (event) => {
+    if (event.detail.response.status === 419) {
+        event.preventDefault();
+        window.location.href = '/';
+    }
+});
+
 window.axios = axios;
 
 createInertiaApp({

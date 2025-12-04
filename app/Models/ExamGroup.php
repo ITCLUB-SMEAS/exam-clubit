@@ -6,44 +6,51 @@ use Illuminate\Database\Eloquent\Model;
 
 class ExamGroup extends Model
 {
-    /**
-     * fillable
-     *
-     * @var array
-     */
     protected $fillable = [
         'exam_id',
         'exam_session_id',
         'student_id',
+        'checked_in_at',
+        'checkin_method',
+        'checkin_ip',
     ];
 
-    /**
-     * exam
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
+    protected $casts = [
+        'checked_in_at' => 'datetime',
+    ];
+
     public function exam()
     {
         return $this->belongsTo(Exam::class);
     }
 
-    /**
-     * exam_session
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function exam_session()
     {
         return $this->belongsTo(ExamSession::class);
     }
 
-    /**
-     * student
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function student()
     {
         return $this->belongsTo(Student::class);
+    }
+
+    /**
+     * Check if student has checked in
+     */
+    public function isCheckedIn(): bool
+    {
+        return $this->checked_in_at !== null;
+    }
+
+    /**
+     * Perform check-in
+     */
+    public function checkIn(string $method, ?string $ip = null): void
+    {
+        $this->update([
+            'checked_in_at' => now(),
+            'checkin_method' => $method,
+            'checkin_ip' => $ip,
+        ]);
     }
 }

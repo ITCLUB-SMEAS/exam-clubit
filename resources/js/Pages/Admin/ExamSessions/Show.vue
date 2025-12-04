@@ -15,7 +15,13 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"><i class="fa fa-stopwatch"></i> Detail Sesi Ujian</h5>
-                            <div>
+                            <div class="d-flex gap-2">
+                                <Link :href="`/admin/exam_sessions/${exam_session.id}/cards`" class="btn btn-success btn-sm">
+                                    <i class="fa fa-id-card me-1"></i> Cetak Kartu
+                                </Link>
+                                <Link :href="`/admin/exam_sessions/${exam_session.id}/attendance`" class="btn btn-info btn-sm">
+                                    <i class="fa fa-user-check me-1"></i> Absensi
+                                </Link>
                                 <button 
                                     v-if="!allPaused"
                                     @click="pauseAll" 

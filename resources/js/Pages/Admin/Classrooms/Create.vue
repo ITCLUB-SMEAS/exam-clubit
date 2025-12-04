@@ -11,17 +11,11 @@
                         <h5><i class="fa fa-clone"></i> Tambah Kelas</h5>
                         <hr>
                         <form @submit.prevent="submit">
-
                             <div class="mb-4">
                                 <label>Nama Kelas</label> 
                                 <input type="text" class="form-control" placeholder="Masukkan Nama Kelas" v-model="form.title">
-                                
-                                <div v-if="errors.title" class="alert alert-danger mt-2">
-                                    {{ errors.title }}
-                                </div>
-
+                                <div v-if="errors.title" class="alert alert-danger mt-2">{{ errors.title }}</div>
                             </div>
-                            
                             <button type="submit" class="btn btn-md btn-primary border-0 shadow me-2">Simpan</button>
                             <button type="reset" class="btn btn-md btn-warning border-0 shadow">Reset</button>
                         </form>
@@ -32,80 +26,22 @@
     </div>
 </template>
 
-<script>
-    //import layout
-    import LayoutAdmin from '../../../Layouts/Admin.vue';
+<script setup>
+import { reactive } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import LayoutAdmin from '../../../Layouts/Admin.vue';
+import Swal from 'sweetalert2';
 
-    //import Heade and Link from Inertia
-    import {
-        Head,
-        Link,
-        router
-    } from '@inertiajs/vue3';
+defineOptions({ layout: LayoutAdmin });
+defineProps({ errors: Object });
 
-    //import reactive from vue
-    import { reactive } from 'vue';
+const form = reactive({ title: '' });
 
-    //import sweet alert2
-    import Swal from 'sweetalert2';
-
-    export default {
-
-        //layout
-        layout: LayoutAdmin,
-
-        //register components
-        components: {
-            Head,
-            Link
-        },
-
-        //props
-        props: {
-            errors: Object,
-        },
-
-        //inisialisasi composition API
-        setup() {
-
-            //define form with reactive
-            const form = reactive({
-                title: '',
-            });
-
-            //method "submit"
-            const submit = () => {
-
-                //send data to server
-                router.post('/admin/classrooms', {
-                    //data
-                    title: form.title,
-                }, {
-                    onSuccess: () => {
-                        //show success alert
-                        Swal.fire({
-                            title: 'Success!',
-                            text: 'Kelas Berhasil Disimpan!.',
-                            icon: 'success',
-                            showConfirmButton: false,
-                            timer: 2000
-                        });
-                    },
-                });
-
-            }
-
-            return {
-                form,
-                submit,
-            };
-
+const submit = () => {
+    router.post('/admin/classrooms', form, {
+        onSuccess: () => {
+            Swal.fire({ title: 'Berhasil!', text: 'Kelas Berhasil Disimpan!', icon: 'success', timer: 2000, showConfirmButton: false });
         }
-
-    }
-
+    });
+};
 </script>
-
-<style>
-
-</style>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Student;
 use App\Models\Classroom;
+use App\Models\Room;
 use Illuminate\Http\Request;
 use App\Imports\StudentsImport;
 use App\Http\Controllers\Controller;
@@ -20,7 +21,7 @@ class StudentController extends Controller
     {
         $students = Student::when(request()->q, function($students) {
             $students = $students->where('name', 'like', '%'. request()->q . '%');
-        })->with('classroom')->latest()->paginate(10);
+        })->with(['classroom', 'room'])->latest()->paginate(10);
 
         $students->appends(['q' => request()->q]);
 
@@ -36,12 +37,9 @@ class StudentController extends Controller
      */
     public function create()
     {
-        //get classrooms
-        $classrooms = Classroom::all();
-
-        //render with inertia
         return inertia('Admin/Students/Create', [
-            'classrooms' => $classrooms,
+            'classrooms' => Classroom::all(),
+            'rooms' => Room::withCount('students')->get(),
         ]);
     }
 
@@ -53,25 +51,35 @@ class StudentController extends Controller
      */
     public function store(Request $request)
     {
-        //validate request
         $request->validate([
-            'name'          => 'required|string|max:255',
-            'nisn'          => 'required|unique:students',
-            'gender'        => 'required|string',
-            'password'      => 'required|confirmed',
-            'classroom_id'  => 'required'
+            'name'              => 'required|string|max:255',
+            'nisn'              => 'required|unique:students',
+            'gender'            => 'required|string',
+            'password'          => 'required|confirmed',
+            'classroom_id'      => 'required|exists:classrooms,id',
+            'room_id'           => 'nullable|exists:rooms,id',
+            'auto_assign_room'  => 'nullable|boolean'
         ]);
 
-        //create student
+        // Auto assign random room if requested
+        $roomId = $request->room_id;
+        if ($request->auto_assign_room || !$roomId) {
+            $room = Room::getRandomAvailable();
+            if (!$room) {
+                return back()->withErrors(['room_id' => 'Semua ruangan sudah penuh!']);
+            }
+            $roomId = $room->id;
+        }
+
         Student::create([
             'name'          => $request->name,
             'nisn'          => $request->nisn,
             'gender'        => $request->gender,
             'password'      => $request->password,
-            'classroom_id'  => $request->classroom_id
+            'classroom_id'  => $request->classroom_id,
+            'room_id'       => $roomId,
         ]);
 
-        //redirect
         return redirect()->route('admin.students.index');
     }
 

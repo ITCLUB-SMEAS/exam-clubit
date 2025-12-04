@@ -23,9 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
             ],
         );
         
-        // Exclude telegram webhook from CSRF
+        // Exclude from CSRF
         $middleware->validateCsrfTokens(except: [
             'telegram/webhook',
+            'student/logout',
         ]);
         
         $middleware->alias([
