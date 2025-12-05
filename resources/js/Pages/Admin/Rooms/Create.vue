@@ -6,11 +6,11 @@
         <div class="row">
             <div class="col-md-12">
                 <Link href="/admin/rooms" class="btn btn-md btn-primary border-0 shadow mb-3">
-                    <i class="fa fa-long-arrow-alt-left me-2"></i> Kembali
+                    <i class="fas fa-long-arrow-alt-left me-2"></i> Kembali
                 </Link>
                 <div class="card border-0 shadow">
                     <div class="card-body">
-                        <h5><i class="fa fa-door-open"></i> Tambah Ruangan</h5>
+                        <h5><i class="fas fa-door-open"></i> Tambah Ruangan</h5>
                         <hr>
                         <form @submit.prevent="submit">
                             <div class="row">

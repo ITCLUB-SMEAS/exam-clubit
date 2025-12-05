@@ -4,7 +4,7 @@
         <div class="col-md-6">
             <div class="card border-0 shadow text-center">
                 <div class="card-body py-5">
-                    <i class="fa fa-pause-circle text-warning" style="font-size: 80px;"></i>
+                    <i class="fas fa-pause-circle text-warning" style="font-size: 80px;"></i>
                     <h3 class="mt-4">Ujian Di-Pause</h3>
                     <p class="text-muted mb-4">
                         Ujian Anda sedang di-pause oleh pengawas.<br>
@@ -15,11 +15,11 @@
                     </div>
                     <div class="mt-4">
                         <p class="text-muted small">
-                            <i class="fa fa-info-circle me-1"></i>
+                            <i class="fas fa-info-circle me-1"></i>
                             Halaman akan otomatis refresh setiap 10 detik.
                         </p>
                         <button @click="checkStatus" class="btn btn-primary">
-                            <i class="fa fa-sync me-1"></i> Cek Status
+                            <i class="fas fa-sync me-1"></i> Cek Status
                         </button>
                     </div>
                 </div>

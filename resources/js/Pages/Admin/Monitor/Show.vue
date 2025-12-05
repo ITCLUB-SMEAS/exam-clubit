@@ -14,7 +14,7 @@
                                 <p class="text-muted mb-0">{{ examSession.exam.lesson?.name }} | {{ examSession.exam.classroom?.name }}</p>
                             </div>
                             <div class="text-end">
-                                <span class="badge bg-success fs-6"><i class="fa fa-circle me-1"></i>Live</span>
+                                <span class="badge bg-success fs-6"><i class="fas fa-circle me-1"></i>Live</span>
                                 <p class="text-muted small mb-0 mt-1">Auto-refresh: {{ refreshInterval }}s</p>
                             </div>
                         </div>
@@ -80,7 +80,7 @@
             <div class="col-lg-8">
                 <div class="card border-0 shadow">
                     <div class="card-header bg-white">
-                        <h6 class="mb-0"><i class="fa fa-users me-2"></i>Peserta ({{ participantList.length }})</h6>
+                        <h6 class="mb-0"><i class="fas fa-users me-2"></i>Peserta ({{ participantList.length }})</h6>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
@@ -125,11 +125,11 @@
             <div class="col-lg-4">
                 <div class="card border-0 shadow">
                     <div class="card-header bg-danger text-white">
-                        <h6 class="mb-0"><i class="fa fa-exclamation-triangle me-2"></i>Pelanggaran Terbaru</h6>
+                        <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Pelanggaran Terbaru</h6>
                     </div>
                     <div class="card-body p-0" style="max-height: 500px; overflow-y: auto;">
                         <div v-if="violations.length === 0" class="text-center py-4 text-muted">
-                            <i class="fa fa-check-circle fa-2x mb-2"></i>
+                            <i class="fas fa-check-circle fa-2x mb-2"></i>
                             <p class="mb-0">Tidak ada pelanggaran</p>
                         </div>
                         <ul v-else class="list-group list-group-flush">
@@ -170,8 +170,8 @@ let interval = null;
 const fetchData = async () => {
     try {
         const [pRes, vRes] = await Promise.all([
-            axios.get(route('admin.monitor.participants', props.examSession.id)),
-            axios.get(route('admin.monitor.violations', props.examSession.id)),
+            axios.get(`/admin/monitor/${props.examSession.id}/participants`),
+            axios.get(`/admin/monitor/${props.examSession.id}/violations`),
         ]);
         participantList.value = pRes.data.participants;
         stats.value = pRes.data.stats;

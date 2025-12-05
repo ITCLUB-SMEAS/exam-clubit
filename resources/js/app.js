@@ -1,5 +1,6 @@
 import { createApp, h } from 'vue'
 import { createInertiaApp, router } from '@inertiajs/vue3'
+import { route } from 'ziggy-js'
 import 'sweetalert2/dist/sweetalert2.min.css';
 import axios from 'axios';
 
@@ -37,7 +38,9 @@ createInertiaApp({
     return pages[`./Pages/${name}.vue`]
   },
   setup({ el, App, props, plugin }) {
-    createApp({ render: () => h(App, props) })
+    const app = createApp({ render: () => h(App, props) })
+    app.config.globalProperties.route = route
+    app
     //set mixins
     .mixin({
         methods: {

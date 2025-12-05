@@ -198,7 +198,7 @@
                         </div>
                         <div class="card-photo">
                             <div class="photo-box">
-                                @if($student['photo'])
+                                @if($student['photo'] && str_contains($student['photo'], '/'))
                                     <img src="{{ public_path('storage/' . $student['photo']) }}" alt="Foto">
                                 @else
                                     <div class="photo-placeholder">Pas Foto<br>3x4</div>

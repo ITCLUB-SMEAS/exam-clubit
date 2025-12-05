@@ -10,7 +10,7 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="icon-shape icon-shape-info rounded me-3">
-                                <i class="fa fa-th-large fa-lg"></i>
+                                <i class="fas fa-th-large fa-lg"></i>
                             </div>
                             <div>
                                 <h6 class="mb-0 text-muted">Kelas</h6>
@@ -26,7 +26,7 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="icon-shape icon-shape-success rounded me-3">
-                                <i class="fa fa-users fa-lg"></i>
+                                <i class="fas fa-users fa-lg"></i>
                             </div>
                             <div>
                                 <h6 class="mb-0 text-muted">Siswa</h6>
@@ -42,7 +42,7 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="icon-shape icon-shape-tertiary rounded me-3">
-                                <i class="fa fa-file-alt fa-lg"></i>
+                                <i class="fas fa-file-alt fa-lg"></i>
                             </div>
                             <div>
                                 <h6 class="mb-0 text-muted">Ujian</h6>
@@ -58,7 +58,7 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="icon-shape icon-shape-danger rounded me-3">
-                                <i class="fa fa-clock fa-lg"></i>
+                                <i class="fas fa-clock fa-lg"></i>
                             </div>
                             <div>
                                 <h6 class="mb-0 text-muted">Sesi Aktif</h6>

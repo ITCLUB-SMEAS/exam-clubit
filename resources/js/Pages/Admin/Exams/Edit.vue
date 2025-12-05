@@ -5,10 +5,10 @@
     <div class="container-fluid mb-5 mt-5">
         <div class="row">
             <div class="col-md-12">
-                <Link href="/admin/exams" class="btn btn-md btn-primary border-0 shadow mb-3" type="button"><i class="fa fa-long-arrow-alt-left me-2"></i> Kembali</Link>
+                <Link href="/admin/exams" class="btn btn-md btn-primary border-0 shadow mb-3" type="button"><i class="fas fa-long-arrow-alt-left me-2"></i> Kembali</Link>
                 <div class="card border-0 shadow">
                     <div class="card-body">
-                        <h5><i class="fa fa-edit"></i> Edit Ujian</h5>
+                        <h5><i class="fas fa-edit"></i> Edit Ujian</h5>
                         <hr>
                         <form @submit.prevent="submit">
 
@@ -107,7 +107,7 @@
 
                             <!-- Advanced Features -->
                             <hr>
-                            <h6 class="mb-3"><i class="fa fa-cog"></i> Pengaturan Lanjutan</h6>
+                            <h6 class="mb-3"><i class="fas fa-cog"></i> Pengaturan Lanjutan</h6>
                             <div class="row">
                                 <div class="col-md-3">
                                     <div class="mb-4">
@@ -141,7 +141,7 @@
 
                             <!-- Anti-Cheat Info Banner -->
                             <div class="alert alert-info mb-4">
-                                <i class="fa fa-shield-alt me-2"></i>
+                                <i class="fas fa-shield-alt me-2"></i>
                                 <strong>Anti-Cheat Otomatis Aktif:</strong> Deteksi pindah tab, fullscreen, copy-paste, multiple monitor, dan virtual machine otomatis aktif.
                             </div>
 
@@ -150,7 +150,7 @@
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="faceDetection" v-model="form.face_detection_enabled">
                                     <label class="form-check-label" for="faceDetection">
-                                        <i class="fa fa-video me-1"></i> Aktifkan Face Detection
+                                        <i class="fas fa-video me-1"></i> Aktifkan Face Detection
                                     </label>
                                 </div>
                                 <small class="text-muted">Deteksi wajah siswa via webcam (memerlukan izin kamera)</small>
@@ -161,7 +161,7 @@
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="audioDetection" v-model="form.audio_detection_enabled">
                                     <label class="form-check-label" for="audioDetection">
-                                        <i class="fa fa-microphone me-1"></i> Aktifkan Audio Detection
+                                        <i class="fas fa-microphone me-1"></i> Aktifkan Audio Detection
                                     </label>
                                 </div>
                                 <small class="text-muted">Deteksi suara mencurigakan via mikrofon (memerlukan izin mikrofon)</small>

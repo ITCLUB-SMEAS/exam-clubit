@@ -8,7 +8,7 @@
                 <div class="row">
                     <div class="col-md-3 col-12 mb-2">
                         <Link href="/admin/lessons/create" class="btn btn-md btn-primary border-0 shadow w-100" type="button"><i
-                            class="fa fa-plus-circle"></i>
+                            class="fas fa-plus-circle"></i>
                         Tambah</Link>
                     </div>
                     <div class="col-md-9 col-12 mb-2">
@@ -16,7 +16,7 @@
                             <div class="input-group">
                                 <input type="text" class="form-control border-0 shadow" v-model="search" placeholder="masukkan kata kunci dan enter...">
                                 <span class="input-group-text border-0 shadow">
-                                    <i class="fa fa-search"></i>
+                                    <i class="fas fa-search"></i>
                                 </span>
                             </div>
                         </form>
@@ -45,8 +45,8 @@
                                         <td class="fw-bold text-center">{{ ++index + (lessons.current_page - 1) * lessons.per_page }}</td>
                                         <td>{{ lesson.title }}</td>
                                         <td class="text-center">
-                                            <Link :href="`/admin/lessons/${lesson.id}/edit`" class="btn btn-sm btn-info border-0 shadow me-2" type="button"><i class="fa fa-pencil-alt"></i></Link>
-                                            <button @click.prevent="destroy(lesson.id)" class="btn btn-sm btn-danger border-0"><i class="fa fa-trash"></i></button>
+                                            <Link :href="`/admin/lessons/${lesson.id}/edit`" class="btn btn-sm btn-info border-0 shadow me-2" type="button"><i class="fas fa-pencil-alt"></i></Link>
+                                            <button @click.prevent="destroy(lesson.id)" class="btn btn-sm btn-danger border-0"><i class="fas fa-trash"></i></button>
                                         </td>
                                     </tr>
                                 </tbody>

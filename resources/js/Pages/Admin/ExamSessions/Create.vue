@@ -6,7 +6,7 @@
         <div class="row">
             <div class="col-md-12">
                 <Link href="/admin/exam_sessions" class="btn btn-md btn-primary border-0 shadow mb-3" type="button"><i
-                    class="fa fa-long-arrow-alt-left me-2"></i> Kembali</Link>
+                    class="fas fa-long-arrow-alt-left me-2"></i> Kembali</Link>
                 <div class="card border-0 shadow">
                     <div class="card-body">
                         <h5><i class="fas fa-stopwatch"></i> Tambah Sesi</h5>

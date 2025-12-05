@@ -25,7 +25,7 @@
                                 <textarea class="form-control" v-model="form.description" rows="3"></textarea>
                             </div>
                             <button type="submit" class="btn btn-primary" :disabled="form.processing">
-                                <i class="fa fa-save"></i> Update
+                                <i class="fas fa-save"></i> Update
                             </button>
                             <Link href="/admin/question-categories" class="btn btn-secondary ms-2">Kembali</Link>
                         </form>

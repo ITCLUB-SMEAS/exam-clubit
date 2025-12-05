@@ -7,25 +7,25 @@
             <div class="bg-white shadow border-0 rounded border-light p-4 p-lg-5 w-100 fmxw-500">
                 <!-- Success Message -->
                 <div v-if="$page.props.session.success" class="alert alert-success mt-2">
-                    <i class="fa fa-check-circle me-2"></i>
+                    <i class="fas fa-check-circle me-2"></i>
                     {{ $page.props.session.success }}
                 </div>
 
                 <!-- Error Message -->
                 <div v-if="errors.message" class="alert alert-danger mt-2">
-                    <i class="fa fa-exclamation-circle me-2"></i>
+                    <i class="fas fa-exclamation-circle me-2"></i>
                     {{ errors.message }}
                 </div>
 
                 <!-- Session Error with Rate Limit Info -->
                 <div v-if="$page.props.session.error" class="alert alert-danger mt-2">
-                    <i class="fa fa-exclamation-triangle me-2"></i>
+                    <i class="fas fa-exclamation-triangle me-2"></i>
                     {{ $page.props.session.error }}
 
                     <!-- Countdown Timer for Rate Limiting -->
                     <div v-if="isLocked" class="mt-2">
                         <small class="d-block">
-                            <i class="fa fa-clock me-1"></i>
+                            <i class="fas fa-clock me-1"></i>
                             Waktu tunggu: <strong>{{ formatTime(countdown) }}</strong>
                         </small>
                         <div class="progress mt-2" style="height: 5px;">
@@ -36,7 +36,7 @@
 
                 <!-- Attempts Warning -->
                 <div v-if="$page.props.session.attempts_left && $page.props.session.attempts_left <= 3" class="alert alert-warning mt-2">
-                    <i class="fa fa-exclamation-circle me-2"></i>
+                    <i class="fas fa-exclamation-circle me-2"></i>
                     <strong>Peringatan:</strong> Sisa {{ $page.props.session.attempts_left }} percobaan login sebelum akun dikunci sementara.
                 </div>
 
@@ -50,7 +50,7 @@
                         <label for="nisn">NISN</label>
                         <div class="input-group">
                             <span class="input-group-text" id="basic-addon1">
-                                <i class="fa fa-id-card"></i>
+                                <i class="fas fa-id-card"></i>
                             </span>
                             <input type="number" class="form-control" v-model="form.nisn" placeholder="Masukkan NISN" :disabled="isLocked || isLoading" required>
                         </div>
@@ -62,11 +62,11 @@
                             <label for="password">Password</label>
                             <div class="input-group">
                                 <span class="input-group-text" id="basic-addon2">
-                                    <i class="fa fa-lock"></i>
+                                    <i class="fas fa-lock"></i>
                                 </span>
                                 <input :type="showPassword ? 'text' : 'password'" placeholder="Masukkan Password" class="form-control" v-model="form.password" :disabled="isLocked || isLoading" required>
                                 <button type="button" class="btn btn-outline-secondary" @click="showPassword = !showPassword" :disabled="isLocked || isLoading">
-                                    <i :class="showPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+                                    <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
                                 </button>
                             </div>
                             <div v-if="errors.password" class="alert alert-danger mt-2">{{ errors.password }}</div>
@@ -88,16 +88,16 @@
 
                     <div class="d-grid">
                         <button type="submit" class="btn btn-gray-800" :disabled="isLocked || isLoading || !turnstileToken">
-                            <span v-if="isLoading"><i class="fa fa-spinner fa-spin me-2"></i>Memproses...</span>
-                            <span v-else-if="isLocked"><i class="fa fa-lock me-2"></i>Terkunci ({{ formatTime(countdown) }})</span>
-                            <span v-else><i class="fa fa-sign-in-alt me-2"></i>LOGIN</span>
+                            <span v-if="isLoading"><i class="fas fa-spinner fa-spin me-2"></i>Memproses...</span>
+                            <span v-else-if="isLocked"><i class="fas fa-lock me-2"></i>Terkunci ({{ formatTime(countdown) }})</span>
+                            <span v-else><i class="fas fa-sign-in-alt me-2"></i>LOGIN</span>
                         </button>
                     </div>
                 </form>
 
                 <!-- Security Info -->
                 <div class="mt-4 text-center">
-                    <small class="text-muted"><i class="fa fa-shield-alt me-1"></i>Maksimal 5 percobaan login dalam 5 menit</small>
+                    <small class="text-muted"><i class="fas fa-shield-alt me-1"></i>Maksimal 5 percobaan login dalam 5 menit</small>
                 </div>
             </div>
         </div>

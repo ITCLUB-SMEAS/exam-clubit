@@ -7,11 +7,11 @@
             <div class="col-md-8">
                 <div class="card border-0 shadow">
                     <div class="card-header bg-white">
-                        <h5 class="mb-0"><i class="fa fa-images me-2"></i>Upload Foto Siswa Massal</h5>
+                        <h5 class="mb-0"><i class="fas fa-images me-2"></i>Upload Foto Siswa Massal</h5>
                     </div>
                     <div class="card-body">
                         <div class="alert alert-info">
-                            <h6><i class="fa fa-info-circle me-2"></i>Petunjuk:</h6>
+                            <h6><i class="fas fa-info-circle me-2"></i>Petunjuk:</h6>
                             <ol class="mb-0">
                                 <li>Siapkan foto siswa dalam format <strong>JPG, JPEG, PNG, atau WEBP</strong></li>
                                 <li>Rename setiap foto dengan <strong>NISN siswa</strong> (contoh: <code>1234567890.jpg</code>)</li>
@@ -37,11 +37,11 @@
                             </div>
 
                             <div class="d-flex gap-2">
-                                <Link :href="route('admin.students.index')" class="btn btn-secondary">
-                                    <i class="fa fa-arrow-left me-1"></i>Kembali
+                                <Link href="/admin/students" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i>Kembali
                                 </Link>
                                 <button type="submit" class="btn btn-primary" :disabled="form.processing || !form.file">
-                                    <i class="fa fa-upload me-1"></i>Upload
+                                    <i class="fas fa-upload me-1"></i>Upload
                                 </button>
                             </div>
                         </form>
@@ -67,7 +67,7 @@ const handleFile = (e) => {
 };
 
 const upload = () => {
-    form.post(route('admin.students.bulkPhotoUpload.process'), {
+    form.post('/admin/students/bulk-photo', {
         forceFormData: true,
     });
 };

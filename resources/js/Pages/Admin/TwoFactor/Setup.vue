@@ -7,7 +7,7 @@
             <div class="col-md-6">
                 <div class="card border-0 shadow">
                     <div class="card-header bg-white">
-                        <h5 class="mb-0"><i class="fa fa-qrcode me-2"></i>Setup Two-Factor Authentication</h5>
+                        <h5 class="mb-0"><i class="fas fa-qrcode me-2"></i>Setup Two-Factor Authentication</h5>
                     </div>
                     <div class="card-body text-center">
                         <p class="text-muted">Scan QR code dengan aplikasi authenticator (Google Authenticator, Authy, dll)</p>
@@ -27,7 +27,7 @@
                                 <input v-model="form.code" type="text" class="form-control text-center" maxlength="6" placeholder="000000" required style="font-size: 1.5rem; letter-spacing: 0.5rem;">
                             </div>
                             <button type="submit" class="btn btn-primary" :disabled="form.processing">
-                                <i class="fa fa-check me-1"></i>Verifikasi & Aktifkan
+                                <i class="fas fa-check me-1"></i>Verifikasi & Aktifkan
                             </button>
                         </form>
                     </div>

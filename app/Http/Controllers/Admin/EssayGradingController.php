@@ -7,6 +7,7 @@ use App\Models\Answer;
 use App\Models\Grade;
 use App\Models\Exam;
 use App\Models\ExamSession;
+use App\Services\GeminiService;
 use Illuminate\Http\Request;
 
 class EssayGradingController extends Controller
@@ -140,5 +141,97 @@ class EssayGradingController extends Controller
             'points_earned' => $earnedPoints,
             'status' => $status,
         ]);
+    }
+
+    public function aiGrade(Request $request, Answer $answer, GeminiService $gemini)
+    {
+        $question = $answer->question;
+        
+        if (!$question || !in_array($question->question_type, ['essay', 'short_answer'])) {
+            return back()->with('error', 'Soal bukan tipe essay.');
+        }
+
+        $studentAnswer = $answer->answer_text ?? $answer->answer ?? '';
+        if (empty(trim($studentAnswer))) {
+            return back()->with('error', 'Jawaban siswa kosong.');
+        }
+
+        $result = $gemini->gradeEssay(
+            strip_tags($question->question),
+            $studentAnswer,
+            $question->answer, // rubrik/kunci jawaban
+            $question->points ?? 10
+        );
+
+        if (!$result) {
+            return back()->with('error', 'Gagal mendapatkan penilaian AI. Coba lagi.');
+        }
+
+        return back()->with([
+            'ai_result' => $result,
+            'answer_id' => $answer->id,
+        ]);
+    }
+
+    public function aiBulkGrade(Request $request, GeminiService $gemini)
+    {
+        $request->validate([
+            'answer_ids' => 'required|array|max:10',
+            'answer_ids.*' => 'exists:answers,id',
+        ]);
+
+        $results = [];
+        $answers = Answer::whereIn('id', $request->answer_ids)
+            ->with('question')
+            ->get();
+
+        foreach ($answers as $answer) {
+            $question = $answer->question;
+            if (!$question || !in_array($question->question_type, ['essay', 'short_answer'])) {
+                continue;
+            }
+
+            $studentAnswer = $answer->answer_text ?? $answer->answer ?? '';
+            if (empty(trim($studentAnswer))) {
+                continue;
+            }
+
+            $result = $gemini->gradeEssay(
+                strip_tags($question->question),
+                $studentAnswer,
+                $question->answer,
+                $question->points ?? 10
+            );
+
+            if ($result) {
+                $results[] = [
+                    'answer_id' => $answer->id,
+                    'score' => $result['score'],
+                    'feedback' => $result['feedback'],
+                ];
+            }
+        }
+
+        return back()->with('ai_bulk_results', $results);
+    }
+
+    public function applyAiGrade(Request $request, Answer $answer)
+    {
+        $request->validate([
+            'points' => 'required|numeric|min:0',
+            'feedback' => 'nullable|string|max:1000',
+        ]);
+
+        $maxPoints = $answer->question->points ?? 1;
+        $points = min($request->points, $maxPoints);
+
+        $answer->update([
+            'points_awarded' => $points,
+            'is_correct' => $points >= ($maxPoints * 0.5) ? 'Y' : 'N',
+        ]);
+
+        $this->recalculateGrade($answer);
+
+        return back()->with('success', 'Nilai AI berhasil diterapkan.');
     }
 }

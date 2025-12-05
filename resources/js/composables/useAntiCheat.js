@@ -30,6 +30,7 @@ export function useAntiCheat(options = {}) {
         examId: options.examId ?? null,
         examSessionId: options.examSessionId ?? null,
         gradeId: options.gradeId ?? null,
+        externalVideoElement: options.externalVideoElement ?? null,
         onViolation: options.onViolation ?? null,
         onWarningThreshold: options.onWarningThreshold ?? null,
         onMaxViolations: options.onMaxViolations ?? null,
@@ -92,14 +93,16 @@ export function useAntiCheat(options = {}) {
      * Capture snapshot from webcam
      */
     const captureSnapshot = () => {
-        if (!videoElement.value || !videoStream.value) return null;
+        // Use external video element (from face detection) if available
+        const video = config.value.externalVideoElement?.value || videoElement.value;
+        if (!video || (!videoStream.value && !config.value.externalVideoElement)) return null;
         
         try {
             const canvas = document.createElement('canvas');
             canvas.width = 320; // Small size to reduce bandwidth
             canvas.height = 240;
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(videoElement.value, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             return canvas.toDataURL('image/jpeg', 0.5); // 50% quality
         } catch (e) {
             return null;
@@ -110,6 +113,11 @@ export function useAntiCheat(options = {}) {
      * Initialize video stream for snapshots
      */
     const initVideoStream = async () => {
+        // Skip if external video element is provided (e.g., from face detection)
+        if (config.value.externalVideoElement) {
+            return;
+        }
+        
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { width: 320, height: 240, facingMode: 'user' } 

@@ -9,7 +9,7 @@
                 <ol class="breadcrumb breadcrumb-dark breadcrumb-transparent">
                     <li class="breadcrumb-item">
                         <Link href="/admin/dashboard">
-                            <i class="fa fa-home"></i>
+                            <i class="fas fa-home"></i>
                         </Link>
                     </li>
                     <li class="breadcrumb-item active">Activity Logs</li>
@@ -23,7 +23,7 @@
                 </div>
                 <div>
                     <a :href="exportUrl" class="btn btn-sm btn-outline-primary">
-                        <i class="fa fa-download me-1"></i> Export CSV
+                        <i class="fas fa-download me-1"></i> Export CSV
                     </a>
                 </div>
             </div>
@@ -77,10 +77,10 @@
                     <div class="row mt-3">
                         <div class="col-12">
                             <button type="submit" class="btn btn-sm btn-primary me-2">
-                                <i class="fa fa-search me-1"></i> Filter
+                                <i class="fas fa-search me-1"></i> Filter
                             </button>
                             <button type="button" @click="resetFilters" class="btn btn-sm btn-secondary">
-                                <i class="fa fa-times me-1"></i> Reset
+                                <i class="fas fa-times me-1"></i> Reset
                             </button>
                         </div>
                     </div>
@@ -108,7 +108,7 @@
                         <tbody>
                             <tr v-if="logs.data.length === 0">
                                 <td colspan="8" class="text-center py-4">
-                                    <i class="fa fa-inbox fa-3x text-muted mb-3 d-block"></i>
+                                    <i class="fas fa-inbox fa-3x text-muted mb-3 d-block"></i>
                                     <span class="text-muted">Tidak ada data activity log</span>
                                 </td>
                             </tr>
@@ -142,7 +142,7 @@
                                 <td>
                                     <Link :href="`/admin/activity-logs/${log.id}`"
                                         class="btn btn-sm btn-outline-primary">
-                                        <i class="fa fa-eye"></i>
+                                        <i class="fas fa-eye"></i>
                                     </Link>
                                 </td>
                             </tr>

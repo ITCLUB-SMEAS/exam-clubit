@@ -5,10 +5,10 @@
     <div class="container-fluid mb-5 mt-5">
         <div class="row">
             <div class="col-md-12">
-                <Link href="/admin/students" class="btn btn-md btn-primary border-0 shadow mb-3" type="button"><i class="fa fa-long-arrow-alt-left me-2"></i> Kembali</Link>
+                <Link href="/admin/students" class="btn btn-md btn-primary border-0 shadow mb-3" type="button"><i class="fas fa-long-arrow-alt-left me-2"></i> Kembali</Link>
                 <div class="card border-0 shadow">
                     <div class="card-body">
-                        <h5><i class="fa fa-user"></i> Tambah Siswa</h5>
+                        <h5><i class="fas fa-user"></i> Tambah Siswa</h5>
                         <hr>
                         <form @submit.prevent="submit">
 
@@ -61,7 +61,7 @@
                                         <div class="form-check mb-2">
                                             <input type="checkbox" class="form-check-input" id="autoAssign" v-model="form.auto_assign_room">
                                             <label class="form-check-label" for="autoAssign">
-                                                <i class="fa fa-random me-1"></i> Auto Random Ruangan
+                                                <i class="fas fa-random me-1"></i> Auto Random Ruangan
                                             </label>
                                         </div>
                                         <select class="form-select" v-model="form.room_id" :disabled="form.auto_assign_room">

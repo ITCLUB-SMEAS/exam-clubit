@@ -6,6 +6,7 @@ use App\Models\Student;
 use App\Models\Classroom;
 use App\Models\Room;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use App\Imports\StudentsImport;
 use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
@@ -53,7 +54,7 @@ class StudentController extends Controller
     {
         $request->validate([
             'name'              => 'required|string|max:255',
-            'nisn'              => 'required|unique:students',
+            'nisn'              => ['required', Rule::unique('students')->whereNull('deleted_at')],
             'gender'            => 'required|string',
             'password'          => 'required|confirmed',
             'classroom_id'      => 'required|exists:classrooms,id',
@@ -116,7 +117,7 @@ class StudentController extends Controller
         //validate request
         $request->validate([
             'name'          => 'required|string|max:255',
-            'nisn'          => 'required|unique:students,nisn,'.$student->id,
+            'nisn'          => ['required', Rule::unique('students')->ignore($student->id)->whereNull('deleted_at')],
             'gender'        => 'required|string',
             'classroom_id'  => 'required',
             'password'      => 'confirmed'

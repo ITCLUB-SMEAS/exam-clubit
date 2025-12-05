@@ -64,12 +64,13 @@ class ProfileController extends Controller
         $user = auth()->user();
 
         // Delete old photo
-        if ($user->photo && Storage::disk('public')->exists($user->photo)) {
+        if ($user->photo && strlen($user->photo) > 1 && Storage::disk('public')->exists($user->photo)) {
             Storage::disk('public')->delete($user->photo);
         }
 
         $path = $request->file('photo')->store('avatars', 'public');
-        $user->update(['photo' => $path]);
+        $user->photo = $path;
+        $user->save();
 
         return back()->with('success', 'Foto profil berhasil diperbarui.');
     }

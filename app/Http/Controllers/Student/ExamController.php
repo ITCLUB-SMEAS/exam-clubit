@@ -381,8 +381,8 @@ class ExamController extends Controller
             );
         }
 
-        //get all questions
-        $all_questions = Answer::with("question")
+        //get all questions - single query with eager loading
+        $all_questions = Answer::with("question:id,question,question_type,option_1,option_2,option_3,option_4,option_5,correct_answer,points,matching_pairs")
             ->where("student_id", auth()->guard("student")->user()->id)
             ->where("exam_id", $exam_group->exam->id)
             ->orderBy("question_order", "ASC")
@@ -397,12 +397,11 @@ class ExamController extends Controller
             })
             ->count();
 
-        //get question active
-        $question_active = Answer::with("question.exam")
-            ->where("student_id", auth()->guard("student")->user()->id)
-            ->where("exam_id", $exam_group->exam->id)
-            ->where("question_order", $page)
-            ->first();
+        //get question active from already loaded collection
+        $question_active = $all_questions->firstWhere("question_order", $page);
+        if ($question_active) {
+            $question_active->load("question.exam:id,title,random_answer");
+        }
 
         //explode atau pecah jawaban
         if ($question_active) {

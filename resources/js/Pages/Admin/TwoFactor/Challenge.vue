@@ -6,7 +6,7 @@
         <div class="card border-0 shadow" style="width: 400px;">
             <div class="card-body p-4">
                 <div class="text-center mb-4">
-                    <i class="fa fa-shield-alt text-primary" style="font-size: 3rem;"></i>
+                    <i class="fas fa-shield-alt text-primary" style="font-size: 3rem;"></i>
                     <h4 class="mt-3">Verifikasi 2FA</h4>
                     <p class="text-muted small">Masukkan kode dari aplikasi authenticator</p>
                 </div>
@@ -20,7 +20,7 @@
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100" :disabled="form.processing">
-                        <i class="fa fa-check me-1"></i>Verifikasi
+                        <i class="fas fa-check me-1"></i>Verifikasi
                     </button>
                 </form>
 

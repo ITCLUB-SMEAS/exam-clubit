@@ -57,6 +57,7 @@ class ExamViolation extends Model
     public const TYPE_EXTENDED_BLUR = 'extended_blur';
     public const TYPE_PROLONGED_BLUR = 'prolonged_blur';
     public const TYPE_EXCESSIVE_BLUR = 'excessive_blur';
+    public const TYPE_SUSPICIOUS_AUDIO = 'suspicious_audio';
 
     /**
      * Get all violation types
@@ -86,6 +87,7 @@ class ExamViolation extends Model
             self::TYPE_EXTENDED_BLUR => 'Tidak Fokus Lama',
             self::TYPE_PROLONGED_BLUR => 'Tidak Fokus Berkepanjangan',
             self::TYPE_EXCESSIVE_BLUR => 'Total Tidak Fokus Berlebihan',
+            self::TYPE_SUSPICIOUS_AUDIO => 'Suara Mencurigakan',
         ];
     }
 

@@ -6,7 +6,7 @@
         <div class="row">
             <div class="col-md-12 mb-3">
                 <Link href="/admin/question-categories/create" class="btn btn-md btn-primary border-0 shadow">
-                    <i class="fa fa-plus-circle"></i> Tambah Kategori
+                    <i class="fas fa-plus-circle"></i> Tambah Kategori
                 </Link>
             </div>
         </div>
@@ -33,10 +33,10 @@
                                         <td class="text-center">{{ cat.question_banks_count }}</td>
                                         <td class="text-center">
                                             <Link :href="`/admin/question-categories/${cat.id}/edit`" class="btn btn-sm btn-info me-2">
-                                                <i class="fa fa-pencil-alt"></i>
+                                                <i class="fas fa-pencil-alt"></i>
                                             </Link>
                                             <button @click="destroy(cat.id)" class="btn btn-sm btn-danger">
-                                                <i class="fa fa-trash"></i>
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </td>
                                     </tr>

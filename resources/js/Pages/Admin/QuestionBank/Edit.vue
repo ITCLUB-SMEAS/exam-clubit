@@ -76,14 +76,14 @@
                                         <input type="text" class="form-control" v-model="pair.right" placeholder="Kanan">
                                     </div>
                                     <div class="col-2">
-                                        <button type="button" class="btn btn-danger" @click="removePair(idx)"><i class="fa fa-trash"></i></button>
+                                        <button type="button" class="btn btn-danger" @click="removePair(idx)"><i class="fas fa-trash"></i></button>
                                     </div>
                                 </div>
                                 <button type="button" class="btn btn-sm btn-secondary" @click="addPair">+ Tambah Pasangan</button>
                             </div>
 
                             <button type="submit" class="btn btn-primary" :disabled="form.processing">
-                                <i class="fa fa-save"></i> Update
+                                <i class="fas fa-save"></i> Update
                             </button>
                             <Link href="/admin/question-bank" class="btn btn-secondary ms-2">Kembali</Link>
                         </form>

@@ -57,7 +57,10 @@ class AnalyticsController extends Controller
 
         // Performance by classroom - optimized single query
         $classroomPerformance = DB::table('classrooms')
-            ->leftJoin('students', 'classrooms.id', '=', 'students.classroom_id')
+            ->leftJoin('students', function($join) {
+                $join->on('classrooms.id', '=', 'students.classroom_id')
+                     ->whereNull('students.deleted_at');
+            })
             ->leftJoin('grades', function($join) {
                 $join->on('students.id', '=', 'grades.student_id')
                      ->whereNotNull('grades.end_time');

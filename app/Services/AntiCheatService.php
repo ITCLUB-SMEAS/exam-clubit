@@ -349,6 +349,9 @@ class AntiCheatService
             ExamViolation::TYPE_MULTIPLE_MONITORS => 'Terdeteksi penggunaan multiple monitor',
             ExamViolation::TYPE_REMOTE_DESKTOP => 'Terdeteksi penggunaan remote desktop',
             ExamViolation::TYPE_VIRTUAL_MACHINE => 'Terdeteksi penggunaan virtual machine',
+            ExamViolation::TYPE_NO_FACE => 'Wajah siswa tidak terdeteksi di kamera',
+            ExamViolation::TYPE_MULTIPLE_FACES => 'Terdeteksi lebih dari satu wajah di kamera',
+            ExamViolation::TYPE_SUSPICIOUS_AUDIO => 'Terdeteksi suara mencurigakan (berbicara/berbisik)',
         ];
 
         return $descriptions[$type] ?? 'Pelanggaran tidak diketahui';
@@ -465,6 +468,7 @@ class AntiCheatService
             ExamViolation::TYPE_MULTIPLE_TABS,
             ExamViolation::TYPE_POPUP_BLOCKED,
             ExamViolation::TYPE_EXTERNAL_LINK,
+            ExamViolation::TYPE_SUSPICIOUS_AUDIO,
         ]);
     }
 }

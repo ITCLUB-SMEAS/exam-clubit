@@ -44,7 +44,7 @@
             <div class="col-md-6 mb-4">
                 <div class="card border-0 shadow">
                     <div class="card-body">
-                        <h5><i class="fa fa-chart-bar"></i> Distribusi Nilai</h5>
+                        <h5><i class="fas fa-chart-bar"></i> Distribusi Nilai</h5>
                         <hr>
                         <div v-for="item in gradeDistribution" :key="item.grade_range" class="mb-2">
                             <div class="d-flex justify-content-between">
@@ -65,7 +65,7 @@
             <div class="col-md-6 mb-4">
                 <div class="card border-0 shadow">
                     <div class="card-body">
-                        <h5><i class="fa fa-list"></i> Ujian Terbaru</h5>
+                        <h5><i class="fas fa-list"></i> Ujian Terbaru</h5>
                         <hr>
                         <div class="table-responsive">
                             <table class="table table-sm">
@@ -84,7 +84,7 @@
                                         <td>{{ Number(exam.avg_grade || 0).toFixed(1) }}</td>
                                         <td>
                                             <Link :href="`/admin/analytics/exam/${exam.id}`" class="btn btn-sm btn-info">
-                                                <i class="fa fa-eye"></i>
+                                                <i class="fas fa-eye"></i>
                                             </Link>
                                         </td>
                                     </tr>
@@ -102,7 +102,7 @@
                 <div class="card border-0 shadow">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0"><i class="fa fa-users"></i> Performa per Kelas</h5>
+                            <h5 class="mb-0"><i class="fas fa-users"></i> Performa per Kelas</h5>
                             <Link href="/admin/analytics/students" class="btn btn-sm btn-primary">
                                 Lihat Detail Siswa
                             </Link>

@@ -11,7 +11,7 @@
                 <label for="email">Email Address</label>
                 <div class="input-group">
                     <span class="input-group-text" id="basic-addon1">
-                        <i class="fa fa-envelope"></i>
+                        <i class="fas fa-envelope"></i>
                     </span>
                     <input type="email" class="form-control" v-model="form.email" placeholder="Email Address">
                 </div>
@@ -25,7 +25,7 @@
                     <label for="password">Password</label>
                     <div class="input-group">
                         <span class="input-group-text" id="basic-addon2">
-                            <i class="fa fa-lock"></i>
+                            <i class="fas fa-lock"></i>
                         </span>
                         <input type="password" placeholder="Password" class="form-control" v-model="form.password">
                     </div>

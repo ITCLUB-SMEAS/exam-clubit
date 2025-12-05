@@ -11,7 +11,7 @@
                         <div class="position-relative d-inline-block mb-3">
                             <img :src="avatarUrl" class="rounded-circle" width="120" height="120" style="object-fit: cover;">
                             <label class="position-absolute bottom-0 end-0 btn btn-sm btn-primary rounded-circle" style="width: 32px; height: 32px;">
-                                <i class="fa fa-camera"></i>
+                                <i class="fas fa-camera"></i>
                                 <input type="file" @change="uploadPhoto" accept="image/*" class="d-none">
                             </label>
                         </div>
@@ -24,16 +24,16 @@
                 <!-- Quick Nav -->
                 <div class="list-group mt-3 shadow-sm">
                     <a href="#profile" class="list-group-item list-group-item-action" :class="{active: tab === 'profile'}" @click.prevent="tab = 'profile'">
-                        <i class="fa fa-user me-2"></i>Profil
+                        <i class="fas fa-user me-2"></i>Profil
                     </a>
                     <a href="#password" class="list-group-item list-group-item-action" :class="{active: tab === 'password'}" @click.prevent="tab = 'password'">
-                        <i class="fa fa-key me-2"></i>Password
+                        <i class="fas fa-key me-2"></i>Password
                     </a>
                     <a href="#2fa" class="list-group-item list-group-item-action" :class="{active: tab === '2fa'}" @click.prevent="tab = '2fa'">
-                        <i class="fa fa-shield-alt me-2"></i>Keamanan 2FA
+                        <i class="fas fa-shield-alt me-2"></i>Keamanan 2FA
                     </a>
                     <a href="#history" class="list-group-item list-group-item-action" :class="{active: tab === 'history'}" @click.prevent="tab = 'history'">
-                        <i class="fa fa-history me-2"></i>Riwayat Login
+                        <i class="fas fa-history me-2"></i>Riwayat Login
                     </a>
                 </div>
             </div>
@@ -54,7 +54,7 @@
                                 <input v-model="profileForm.email" type="email" class="form-control" required>
                             </div>
                             <button type="submit" class="btn btn-primary" :disabled="profileForm.processing">
-                                <i class="fa fa-save me-1"></i>Simpan
+                                <i class="fas fa-save me-1"></i>Simpan
                             </button>
                         </form>
                     </div>
@@ -78,7 +78,7 @@
                                 <input v-model="passwordForm.password_confirmation" type="password" class="form-control" required>
                             </div>
                             <button type="submit" class="btn btn-primary" :disabled="passwordForm.processing">
-                                <i class="fa fa-key me-1"></i>Ubah Password
+                                <i class="fas fa-key me-1"></i>Ubah Password
                             </button>
                         </form>
                     </div>
@@ -89,7 +89,7 @@
                     <div class="card-header bg-white"><h5 class="mb-0">Two-Factor Authentication</h5></div>
                     <div class="card-body">
                         <div v-if="twoFactorEnabled" class="text-center">
-                            <i class="fa fa-check-circle text-success fa-3x mb-3"></i>
+                            <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
                             <h5 class="text-success">2FA Aktif</h5>
                             <div class="mt-4" v-if="recoveryCodes">
                                 <h6>Recovery Codes</h6>
@@ -103,7 +103,7 @@
                             </div>
                         </div>
                         <div v-else class="text-center">
-                            <i class="fa fa-shield-alt text-warning fa-3x mb-3"></i>
+                            <i class="fas fa-shield-alt text-warning fa-3x mb-3"></i>
                             <h5>2FA Belum Aktif</h5>
                             <p class="text-muted">Aktifkan untuk keamanan tambahan</p>
                             <button @click="setup2FA" class="btn btn-primary">Aktifkan 2FA</button>
@@ -188,7 +188,9 @@ const code2fa = ref('');
 const disablePassword = ref('');
 
 const avatarUrl = computed(() => {
-    if (props.user.photo) return `/storage/${props.user.photo}`;
+    if (props.user.photo && props.user.photo.length > 1 && props.user.photo.includes('/')) {
+        return `/storage/${props.user.photo}`;
+    }
     return `https://ui-avatars.com/api/?name=${props.user.name}&background=4e73df&color=ffffff&size=120`;
 });
 
@@ -198,11 +200,16 @@ const passwordForm = useForm({ current_password: '', password: '', password_conf
 const updateProfile = () => profileForm.put(route('admin.profile.update'));
 const updatePassword = () => passwordForm.put(route('admin.profile.password'), { onSuccess: () => passwordForm.reset() });
 
+const photoForm = useForm({ photo: null });
+
 const uploadPhoto = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const form = useForm({ photo: file });
-    form.post(route('admin.profile.photo'), { forceFormData: true });
+    photoForm.photo = file;
+    photoForm.post(route('admin.profile.photo'), { 
+        forceFormData: true,
+        onError: (errors) => console.error('Upload error:', errors),
+    });
 };
 
 const setup2FA = async () => {

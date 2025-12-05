@@ -6,13 +6,13 @@
         <div class="row">
             <div class="col-md-12">
                 <Link href="/admin/exams" class="btn btn-md btn-primary border-0 shadow mb-3">
-                    <i class="fa fa-long-arrow-alt-left me-2"></i> Kembali
+                    <i class="fas fa-long-arrow-alt-left me-2"></i> Kembali
                 </Link>
 
                 <!-- Exam Info -->
                 <div class="card border-0 shadow mb-4">
                     <div class="card-body">
-                        <h5><i class="fa fa-chart-bar me-2"></i> Analisis Soal: {{ exam.title }}</h5>
+                        <h5><i class="fas fa-chart-bar me-2"></i> Analisis Soal: {{ exam.title }}</h5>
                         <p class="text-muted mb-0">
                             {{ exam.lesson?.title }} | {{ exam.classroom?.title }} | 
                             Total Peserta: <strong>{{ total_students }}</strong>
@@ -59,7 +59,7 @@
                 <!-- No Data -->
                 <div v-if="!analysis.length" class="card border-0 shadow">
                     <div class="card-body text-center py-5">
-                        <i class="fa fa-chart-bar fa-3x text-muted mb-3"></i>
+                        <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
                         <p class="text-muted">Belum ada data ujian yang selesai untuk dianalisis.</p>
                     </div>
                 </div>
@@ -111,7 +111,7 @@
                                             <button v-if="item.distractors.length" 
                                                     @click="showDistractors(item)" 
                                                     class="btn btn-sm btn-outline-info">
-                                                <i class="fa fa-chart-pie"></i>
+                                                <i class="fas fa-chart-pie"></i>
                                             </button>
                                         </td>
                                     </tr>

@@ -7,18 +7,18 @@
             <div class="col-md-8">
                 <div class="card border-0 shadow">
                     <div class="card-header bg-white">
-                        <h5 class="mb-0"><i class="fa fa-tools me-2"></i>Maintenance Mode</h5>
+                        <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Maintenance Mode</h5>
                     </div>
                     <div class="card-body">
                         <!-- Status -->
                         <div class="text-center mb-4">
                             <div v-if="isDown" class="alert alert-danger">
-                                <i class="fa fa-exclamation-triangle fa-2x mb-2"></i>
+                                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
                                 <h5>Sistem Sedang OFFLINE</h5>
                                 <p class="mb-0">Siswa tidak dapat mengakses sistem.</p>
                             </div>
                             <div v-else class="alert alert-success">
-                                <i class="fa fa-check-circle fa-2x mb-2"></i>
+                                <i class="fas fa-check-circle fa-2x mb-2"></i>
                                 <h5>Sistem ONLINE</h5>
                                 <p class="mb-0">Semua pengguna dapat mengakses sistem.</p>
                             </div>
@@ -41,10 +41,10 @@
 
                             <div class="d-grid">
                                 <button v-if="isDown" type="submit" class="btn btn-success btn-lg" :disabled="form.processing">
-                                    <i class="fa fa-power-off me-2"></i>Aktifkan Sistem
+                                    <i class="fas fa-power-off me-2"></i>Aktifkan Sistem
                                 </button>
                                 <button v-else type="submit" class="btn btn-danger btn-lg" :disabled="form.processing">
-                                    <i class="fa fa-power-off me-2"></i>Nonaktifkan Sistem
+                                    <i class="fas fa-power-off me-2"></i>Nonaktifkan Sistem
                                 </button>
                             </div>
                         </form>

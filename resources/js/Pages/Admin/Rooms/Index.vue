@@ -8,7 +8,7 @@
                 <div class="row">
                     <div class="col-md-3 col-12 mb-2">
                         <Link href="/admin/rooms/create" class="btn btn-md btn-primary border-0 shadow w-100">
-                            <i class="fa fa-plus-circle"></i> Tambah
+                            <i class="fas fa-plus-circle"></i> Tambah
                         </Link>
                     </div>
                     <div class="col-md-9 col-12 mb-2">
@@ -16,7 +16,7 @@
                             <div class="input-group">
                                 <input type="text" class="form-control border-0 shadow" v-model="search" placeholder="Cari ruangan...">
                                 <span class="input-group-text border-0 shadow">
-                                    <i class="fa fa-search"></i>
+                                    <i class="fas fa-search"></i>
                                 </span>
                             </div>
                         </form>
@@ -51,10 +51,10 @@
                                         </td>
                                         <td class="text-center">
                                             <Link :href="`/admin/rooms/${room.id}/edit`" class="btn btn-sm btn-info me-1">
-                                                <i class="fa fa-pencil-alt"></i>
+                                                <i class="fas fa-pencil-alt"></i>
                                             </Link>
                                             <button @click="destroy(room.id)" class="btn btn-sm btn-danger">
-                                                <i class="fa fa-trash"></i>
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </td>
                                     </tr>

@@ -32,7 +32,7 @@
 
         <div class="card border-0 shadow">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fa fa-history me-2"></i>Riwayat Login</h5>
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Riwayat Login</h5>
                 <div class="d-flex gap-2">
                     <select v-model="filterType" @change="applyFilter" class="form-select form-select-sm" style="width: auto;">
                         <option value="">Semua Tipe</option>
@@ -131,8 +131,8 @@ const statusBadge = (status) => ({
 }[status] || 'badge bg-secondary');
 
 const deviceIcon = (device) => ({
-    'Desktop': 'fa fa-desktop',
-    'Mobile': 'fa fa-mobile-alt',
-    'Tablet': 'fa fa-tablet-alt',
-}[device] || 'fa fa-question');
+    'Desktop': 'fas fa-desktop',
+    'Mobile': 'fas fa-mobile-alt',
+    'Tablet': 'fas fa-tablet-alt',
+}[device] || 'fas fa-question');
 </script>

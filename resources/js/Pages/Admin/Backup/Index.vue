@@ -7,19 +7,19 @@
             <div class="col-12">
                 <div class="card border-0 shadow">
                     <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fa fa-database me-2"></i>Backup Database</h5>
+                        <h5 class="mb-0"><i class="fas fa-database me-2"></i>Backup Database</h5>
                         <div>
                             <button @click="cleanup" class="btn btn-outline-warning btn-sm me-2">
-                                <i class="fa fa-broom me-1"></i>Hapus Backup Lama
+                                <i class="fas fa-broom me-1"></i>Hapus Backup Lama
                             </button>
                             <button @click="createBackup" class="btn btn-primary btn-sm" :disabled="creating">
-                                <i class="fa fa-plus me-1"></i>Buat Backup
+                                <i class="fas fa-plus me-1"></i>Buat Backup
                             </button>
                         </div>
                     </div>
                     <div class="card-body">
                         <div v-if="backups.length === 0" class="text-center py-5 text-muted">
-                            <i class="fa fa-inbox fa-3x mb-3"></i>
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
                             <p>Belum ada backup.</p>
                         </div>
                         <div v-else class="table-responsive">
@@ -34,15 +34,15 @@
                                 </thead>
                                 <tbody>
                                     <tr v-for="backup in backups" :key="backup.name">
-                                        <td><i class="fa fa-file-archive text-warning me-2"></i>{{ backup.name }}</td>
+                                        <td><i class="fas fa-file-archive text-warning me-2"></i>{{ backup.name }}</td>
                                         <td>{{ formatSize(backup.size) }}</td>
                                         <td>{{ formatDate(backup.created_at) }}</td>
                                         <td>
                                             <a :href="route('admin.backup.download', backup.name)" class="btn btn-sm btn-outline-primary me-1">
-                                                <i class="fa fa-download"></i>
+                                                <i class="fas fa-download"></i>
                                             </a>
                                             <button @click="deleteBackup(backup.name)" class="btn btn-sm btn-outline-danger">
-                                                <i class="fa fa-trash"></i>
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </td>
                                     </tr>

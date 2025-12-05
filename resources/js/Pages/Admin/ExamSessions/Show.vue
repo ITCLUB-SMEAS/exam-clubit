@@ -7,20 +7,20 @@
             <div class="col-md-12">
 
                 <Link href="/admin/exam_sessions" class="btn btn-md btn-primary border-0 shadow mb-3">
-                    <i class="fa fa-long-arrow-alt-left me-2"></i> Kembali
+                    <i class="fas fa-long-arrow-alt-left me-2"></i> Kembali
                 </Link>
 
                 <!-- Session Info -->
                 <div class="card border-0 shadow mb-4">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="fa fa-stopwatch"></i> Detail Sesi Ujian</h5>
+                            <h5 class="mb-0"><i class="fas fa-stopwatch"></i> Detail Sesi Ujian</h5>
                             <div class="d-flex gap-2">
                                 <Link :href="`/admin/exam_sessions/${exam_session.id}/cards`" class="btn btn-success btn-sm">
-                                    <i class="fa fa-id-card me-1"></i> Cetak Kartu
+                                    <i class="fas fa-id-card me-1"></i> Cetak Kartu
                                 </Link>
                                 <Link :href="`/admin/exam_sessions/${exam_session.id}/attendance`" class="btn btn-info btn-sm">
-                                    <i class="fa fa-user-check me-1"></i> Absensi
+                                    <i class="fas fa-user-check me-1"></i> Absensi
                                 </Link>
                                 <button 
                                     v-if="!allPaused"
@@ -28,7 +28,7 @@
                                     class="btn btn-warning btn-sm"
                                     :disabled="pauseForm.processing"
                                 >
-                                    <i class="fa fa-pause me-1"></i> Pause Semua Ujian
+                                    <i class="fas fa-pause me-1"></i> Pause Semua Ujian
                                 </button>
                                 <button 
                                     v-else
@@ -36,7 +36,7 @@
                                     class="btn btn-success btn-sm"
                                     :disabled="pauseForm.processing"
                                 >
-                                    <i class="fa fa-play me-1"></i> Resume Semua Ujian
+                                    <i class="fas fa-play me-1"></i> Resume Semua Ujian
                                 </button>
                             </div>
                         </div>
@@ -77,7 +77,7 @@
                 <!-- Bulk Enrollment Card -->
                 <div class="card border-0 shadow mb-4">
                     <div class="card-header bg-success text-white">
-                        <h5 class="mb-0"><i class="fa fa-users me-2"></i> Bulk Enrollment (Per Kelas)</h5>
+                        <h5 class="mb-0"><i class="fas fa-users me-2"></i> Bulk Enrollment (Per Kelas)</h5>
                     </div>
                     <div class="card-body">
                         <p class="text-muted mb-3">Daftarkan seluruh siswa dalam satu kelas sekaligus</p>
@@ -109,7 +109,7 @@
                                                         class="btn btn-sm btn-success me-1"
                                                         :disabled="bulkForm.processing"
                                                     >
-                                                        <i class="fa fa-plus"></i> Daftarkan
+                                                        <i class="fas fa-plus"></i> Daftarkan
                                                     </button>
                                                     <button 
                                                         v-if="enrolledByClass[classroom.id] > 0"
@@ -117,7 +117,7 @@
                                                         class="btn btn-sm btn-outline-danger"
                                                         :disabled="bulkForm.processing"
                                                     >
-                                                        <i class="fa fa-minus"></i>
+                                                        <i class="fas fa-minus"></i>
                                                     </button>
                                                     <span v-if="classroom.students_count === 0 && !enrolledByClass[classroom.id]" class="text-muted">
                                                         -
@@ -135,11 +135,11 @@
                 <!-- Enrolled Students -->
                 <div class="card border-0 shadow">
                     <div class="card-body">
-                        <h5><i class="fa fa-user-plus"></i> Enrolled Siswa ({{ exam_session.exam_groups.total || 0 }})</h5>
+                        <h5><i class="fas fa-user-plus"></i> Enrolled Siswa ({{ exam_session.exam_groups.total || 0 }})</h5>
                         <hr>
                         
                         <Link :href="`/admin/exam_sessions/${exam_session.id}/enrolle/create`" class="btn btn-md btn-primary border-0 shadow me-2">
-                            <i class="fa fa-user-plus"></i> Enrolle Siswa Manual
+                            <i class="fas fa-user-plus"></i> Enrolle Siswa Manual
                         </Link>
                         
                         <div class="table-responsive mt-3">
@@ -161,7 +161,7 @@
                                         <td class="text-center">{{ data.student.gender === 'L' ? 'Laki-laki' : 'Perempuan' }}</td>
                                         <td class="text-center">
                                             <button @click="destroy(exam_session.id, data.id)" class="btn btn-sm btn-danger">
-                                                <i class="fa fa-trash"></i>
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </td>
                                     </tr>

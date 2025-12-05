@@ -7,7 +7,7 @@
             <div class="col-md-12">
                 <div class="card border-0 shadow">
                     <div class="card-header bg-white">
-                        <h5 class="mb-0"><i class="fa fa-search me-2"></i>Deteksi Plagiarisme Essay</h5>
+                        <h5 class="mb-0"><i class="fas fa-search me-2"></i>Deteksi Plagiarisme Essay</h5>
                     </div>
                     <div class="card-body">
                         <!-- Filters -->
@@ -30,7 +30,7 @@
                             </div>
                             <div class="col-md-4 d-flex align-items-end">
                                 <button @click="checkPlagiarism" class="btn btn-primary" :disabled="!selectedExam || !selectedSession">
-                                    <i class="fa fa-search me-1"></i> Cek Plagiarisme
+                                    <i class="fas fa-search me-1"></i> Cek Plagiarisme
                                 </button>
                             </div>
                         </div>
@@ -38,7 +38,7 @@
                         <!-- Results -->
                         <div v-if="results.length > 0">
                             <div class="alert alert-warning">
-                                <i class="fa fa-exclamation-triangle me-2"></i>
+                                <i class="fas fa-exclamation-triangle me-2"></i>
                                 Ditemukan <strong>{{ totalSimilarities }}</strong> pasangan jawaban dengan kemiripan tinggi (≥70%)
                             </div>
 
@@ -80,12 +80,12 @@
                         </div>
 
                         <div v-else-if="checked" class="alert alert-success">
-                            <i class="fa fa-check-circle me-2"></i>
+                            <i class="fas fa-check-circle me-2"></i>
                             Tidak ditemukan kemiripan jawaban yang mencurigakan.
                         </div>
 
                         <div v-else class="text-center text-muted py-5">
-                            <i class="fa fa-search fa-3x mb-3"></i>
+                            <i class="fas fa-search fa-3x mb-3"></i>
                             <p>Pilih ujian dan sesi untuk memulai pengecekan plagiarisme.</p>
                         </div>
                     </div>

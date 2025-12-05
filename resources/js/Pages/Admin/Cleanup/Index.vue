@@ -7,11 +7,11 @@
             <div class="col-md-8">
                 <div class="card border-0 shadow">
                     <div class="card-header bg-white">
-                        <h5 class="mb-0"><i class="fa fa-broom me-2"></i>Cleanup Data Lama</h5>
+                        <h5 class="mb-0"><i class="fas fa-broom me-2"></i>Cleanup Data Lama</h5>
                     </div>
                     <div class="card-body">
                         <div class="alert alert-warning">
-                            <i class="fa fa-exclamation-triangle me-2"></i>
+                            <i class="fas fa-exclamation-triangle me-2"></i>
                             <strong>Perhatian!</strong> Data yang dihapus tidak dapat dikembalikan.
                         </div>
 
@@ -28,7 +28,7 @@
                             </div>
 
                             <button type="submit" class="btn btn-danger" :disabled="form.processing">
-                                <i class="fa fa-trash me-1"></i>Jalankan Cleanup
+                                <i class="fas fa-trash me-1"></i>Jalankan Cleanup
                             </button>
                         </form>
                     </div>
@@ -38,7 +38,7 @@
             <div class="col-md-4">
                 <div class="card border-0 shadow">
                     <div class="card-header bg-white">
-                        <h6 class="mb-0"><i class="fa fa-chart-pie me-2"></i>Statistik Data</h6>
+                        <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Statistik Data</h6>
                     </div>
                     <div class="card-body">
                         <ul class="list-group list-group-flush">

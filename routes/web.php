@@ -504,6 +504,21 @@ Route::prefix("admin")->group(function () {
             "bulkGrade",
         ])->name("admin.essay-grading.bulk");
 
+        Route::post("/essay-grading/{answer}/ai", [
+            \App\Http\Controllers\Admin\EssayGradingController::class,
+            "aiGrade",
+        ])->name("admin.essay-grading.ai");
+
+        Route::post("/essay-grading-ai-bulk", [
+            \App\Http\Controllers\Admin\EssayGradingController::class,
+            "aiBulkGrade",
+        ])->name("admin.essay-grading.ai-bulk");
+
+        Route::post("/essay-grading/{answer}/apply-ai", [
+            \App\Http\Controllers\Admin\EssayGradingController::class,
+            "applyAiGrade",
+        ])->name("admin.essay-grading.apply-ai");
+
         // Real-time Exam Monitor
         Route::get("/monitor", [\App\Http\Controllers\Admin\ExamMonitorController::class, "index"])->name("admin.monitor.index");
         Route::get("/monitor/{examSession}", [\App\Http\Controllers\Admin\ExamMonitorController::class, "show"])->name("admin.monitor.show");
@@ -525,8 +540,8 @@ Route::prefix("admin")->group(function () {
     });
 
     // 2FA Challenge (outside main auth middleware)
-    Route::get("/two-factor/challenge", [\App\Http\Controllers\Admin\TwoFactorChallengeController::class, "show"])->name("admin.two-factor.challenge")->middleware('auth');
-    Route::post("/two-factor/challenge", [\App\Http\Controllers\Admin\TwoFactorChallengeController::class, "verify"])->name("admin.two-factor.verify")->middleware('auth');
+    Route::get("/two-factor/challenge", [\App\Http\Controllers\Admin\TwoFactorChallengeController::class, "show"])->name("admin.two-factor.challenge");
+    Route::post("/two-factor/challenge", [\App\Http\Controllers\Admin\TwoFactorChallengeController::class, "verify"])->name("admin.two-factor.verify");
 });
 
 //route homepage (student login)
@@ -694,3 +709,4 @@ Route::prefix("student")->group(function () {
 Route::post('/telegram/webhook', [App\Http\Controllers\TelegramWebhookController::class, 'handle'])
     ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])
     ->name('telegram.webhook');
+

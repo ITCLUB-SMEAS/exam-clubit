@@ -7,7 +7,7 @@
             <div class="col-md-5">
                 <div class="card border-0 shadow">
                     <div class="card-header bg-white">
-                        <h5 class="mb-0"><i class="fa fa-robot me-2"></i>Generate Soal dengan AI</h5>
+                        <h5 class="mb-0"><i class="fas fa-robot me-2"></i>Generate Soal dengan AI</h5>
                     </div>
                     <div class="card-body">
                         <form @submit.prevent="generate">
@@ -45,8 +45,8 @@
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-primary w-100" :disabled="generating">
-                                <span v-if="generating"><i class="fa fa-spinner fa-spin me-1"></i> Generating...</span>
-                                <span v-else><i class="fa fa-magic me-1"></i> Generate Soal</span>
+                                <span v-if="generating"><i class="fas fa-spinner fa-spin me-1"></i> Generating...</span>
+                                <span v-else><i class="fas fa-magic me-1"></i> Generate Soal</span>
                             </button>
                         </form>
                     </div>
@@ -56,12 +56,12 @@
             <div class="col-md-7">
                 <div class="card border-0 shadow">
                     <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fa fa-list me-2"></i>Hasil Generate</h5>
+                        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Hasil Generate</h5>
                         <span class="badge bg-primary" v-if="questions.length">{{ questions.length }} soal</span>
                     </div>
                     <div class="card-body" style="max-height: 600px; overflow-y: auto;">
                         <div v-if="questions.length === 0" class="text-center text-muted py-5">
-                            <i class="fa fa-lightbulb fa-3x mb-3"></i>
+                            <i class="fas fa-lightbulb fa-3x mb-3"></i>
                             <p>Soal yang di-generate akan muncul di sini.</p>
                         </div>
 
@@ -79,7 +79,7 @@
                                 <div v-for="(opt, oi) in q.options" :key="oi" class="ms-3">
                                     <span :class="{'text-success fw-bold': q.answer === oi + 1}">
                                         {{ String.fromCharCode(65 + oi) }}. {{ opt }}
-                                        <i v-if="q.answer === oi + 1" class="fa fa-check ms-1"></i>
+                                        <i v-if="q.answer === oi + 1" class="fas fa-check ms-1"></i>
                                     </span>
                                 </div>
                             </div>
@@ -88,7 +88,7 @@
                                 <p class="text-success mb-0">{{ q.answer }}</p>
                             </div>
                             <small class="text-muted" v-if="q.explanation">
-                                <i class="fa fa-info-circle me-1"></i>{{ q.explanation }}
+                                <i class="fas fa-info-circle me-1"></i>{{ q.explanation }}
                             </small>
                         </div>
                     </div>
@@ -105,7 +105,7 @@
                             </div>
                             <div class="col-md-5">
                                 <button @click="saveToExam" class="btn btn-success btn-sm w-100" :disabled="!targetExamId || selectedQuestions.length === 0">
-                                    <i class="fa fa-save me-1"></i> Simpan {{ selectedQuestions.length }} Soal ke Ujian
+                                    <i class="fas fa-save me-1"></i> Simpan {{ selectedQuestions.length }} Soal ke Ujian
                                 </button>
                             </div>
                         </div>

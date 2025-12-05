@@ -27,7 +27,7 @@
                     <div class="col-lg-5 mb-4">
                         <div class="card border-0 shadow">
                             <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0"><i class="fa fa-qrcode me-2"></i>QR Code Absensi</h5>
+                                <h5 class="mb-0"><i class="fas fa-qrcode me-2"></i>QR Code Absensi</h5>
                             </div>
                             <div class="card-body text-center">
                                 <div class="qr-container mb-3">
@@ -43,7 +43,7 @@
                                 <p class="mb-2"><strong>Token Backup:</strong></p>
                                 <h2 class="text-primary font-monospace">{{ examSession.access_token }}</h2>
                                 <button @click="regenerateToken" class="btn btn-sm btn-outline-primary mt-2">
-                                    <i class="fa fa-refresh me-1"></i>Generate Token Baru
+                                    <i class="fas fa-refresh me-1"></i>Generate Token Baru
                                 </button>
                             </div>
                         </div>
@@ -51,7 +51,7 @@
                         <!-- Settings -->
                         <div class="card border-0 shadow mt-4">
                             <div class="card-header">
-                                <h5 class="mb-0"><i class="fa fa-cog me-2"></i>Pengaturan</h5>
+                                <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Pengaturan</h5>
                             </div>
                             <div class="card-body">
                                 <div class="form-check form-switch">
@@ -72,7 +72,7 @@
                     <div class="col-lg-7 mb-4">
                         <div class="card border-0 shadow">
                             <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0"><i class="fa fa-users me-2"></i>Daftar Hadir</h5>
+                                <h5 class="mb-0"><i class="fas fa-users me-2"></i>Daftar Hadir</h5>
                                 <span class="badge bg-success">{{ checkedInCount }}/{{ totalCount }} Hadir</span>
                             </div>
                             <div class="card-body p-0">
@@ -95,7 +95,7 @@
                                                 <td>{{ item.classroom }}</td>
                                                 <td>
                                                     <span v-if="item.checked_in" class="badge bg-success">
-                                                        <i class="fa fa-check me-1"></i>Hadir
+                                                        <i class="fas fa-check me-1"></i>Hadir
                                                     </span>
                                                     <span v-else class="badge bg-secondary">Belum</span>
                                                 </td>
@@ -110,7 +110,7 @@
                                                     <button v-if="!item.checked_in" 
                                                             @click="manualCheckin(item.student_id)"
                                                             class="btn btn-sm btn-outline-success">
-                                                        <i class="fa fa-check"></i>
+                                                        <i class="fas fa-check"></i>
                                                     </button>
                                                 </td>
                                             </tr>

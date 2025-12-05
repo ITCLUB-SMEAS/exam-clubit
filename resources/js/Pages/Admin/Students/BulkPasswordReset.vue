@@ -6,11 +6,11 @@
         <div class="row">
             <div class="col-md-8">
                 <Link href="/admin/students" class="btn btn-md btn-primary border-0 shadow mb-3">
-                    <i class="fa fa-arrow-left me-2"></i> Kembali
+                    <i class="fas fa-arrow-left me-2"></i> Kembali
                 </Link>
                 <div class="card border-0 shadow">
                     <div class="card-body">
-                        <h5><i class="fa fa-key me-2"></i>Bulk Reset Password Siswa</h5>
+                        <h5><i class="fas fa-key me-2"></i>Bulk Reset Password Siswa</h5>
                         <hr>
 
                         <form @submit.prevent="submit">
@@ -72,12 +72,12 @@
                             </div>
 
                             <div class="alert alert-warning">
-                                <i class="fa fa-exclamation-triangle me-2"></i>
+                                <i class="fas fa-exclamation-triangle me-2"></i>
                                 <strong>Perhatian!</strong> Tindakan ini akan mereset password siswa yang dipilih dan tidak dapat dibatalkan.
                             </div>
 
                             <button type="submit" class="btn btn-danger" :disabled="processing">
-                                <i class="fa fa-key me-2"></i>
+                                <i class="fas fa-key me-2"></i>
                                 {{ processing ? 'Memproses...' : 'Reset Password' }}
                             </button>
                         </form>
@@ -87,7 +87,7 @@
                 <!-- Results for Random Password -->
                 <div class="card border-0 shadow mt-4" v-if="results.length > 0">
                     <div class="card-header bg-success text-white">
-                        <h6 class="mb-0"><i class="fa fa-check me-2"></i>Password Baru (Random)</h6>
+                        <h6 class="mb-0"><i class="fas fa-check me-2"></i>Password Baru (Random)</h6>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -109,7 +109,7 @@
                             </table>
                         </div>
                         <button @click="copyResults" class="btn btn-sm btn-outline-primary">
-                            <i class="fa fa-copy me-1"></i> Copy to Clipboard
+                            <i class="fas fa-copy me-1"></i> Copy to Clipboard
                         </button>
                     </div>
                 </div>

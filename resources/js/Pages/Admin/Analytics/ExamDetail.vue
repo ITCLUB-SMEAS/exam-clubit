@@ -4,7 +4,7 @@
     </Head>
     <div class="container-fluid mb-5 mt-5">
         <Link href="/admin/analytics" class="btn btn-primary mb-3">
-            <i class="fa fa-arrow-left"></i> Kembali
+            <i class="fas fa-arrow-left"></i> Kembali
         </Link>
 
         <div class="card border-0 shadow mb-4">
@@ -71,7 +71,7 @@
             <div class="col-md-8 mb-4">
                 <div class="card border-0 shadow">
                     <div class="card-body">
-                        <h5><i class="fa fa-question-circle"></i> Analisis Soal</h5>
+                        <h5><i class="fas fa-question-circle"></i> Analisis Soal</h5>
                         <hr>
                         <div class="table-responsive">
                             <table class="table table-sm">
@@ -113,7 +113,7 @@
             <div class="col-md-4 mb-4">
                 <div class="card border-0 shadow">
                     <div class="card-body">
-                        <h5><i class="fa fa-trophy"></i> Top 10 Siswa</h5>
+                        <h5><i class="fas fa-trophy"></i> Top 10 Siswa</h5>
                         <hr>
                         <ol class="list-group list-group-numbered">
                             <li v-for="(student, idx) in topPerformers" :key="idx" 

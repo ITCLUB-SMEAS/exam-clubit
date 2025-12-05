@@ -273,7 +273,8 @@ class TelegramService
             return false;
         }
         
-        $className = $student->classroom?->name ?? '-';
+        $student->loadMissing('classroom');
+        $className = $student->classroom?->title ?? '-';
         $message = "🔒 <b>SISWA DIBLOKIR</b>\n\n"
             . "👤 Nama: <b>{$student->name}</b>\n"
             . "🆔 NISN: {$student->nisn}\n"

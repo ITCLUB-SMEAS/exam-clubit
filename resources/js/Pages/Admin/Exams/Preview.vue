@@ -6,11 +6,11 @@
     <main class="content">
         <div class="py-4">
             <Link :href="`/admin/exams/${exam.id}`" class="btn btn-secondary mb-3">
-                <i class="fa fa-arrow-left me-2"></i> Kembali
+                <i class="fas fa-arrow-left me-2"></i> Kembali
             </Link>
 
             <div class="alert alert-info">
-                <i class="fa fa-eye me-2"></i>
+                <i class="fas fa-eye me-2"></i>
                 <strong>Mode Preview</strong> - Tampilan ini menunjukkan bagaimana siswa akan melihat ujian.
             </div>
         </div>
@@ -27,7 +27,7 @@
                     </div>
                     <div class="col-md-4 text-end">
                         <span class="badge bg-primary fs-6 me-2">
-                            <i class="fa fa-clock me-1"></i> {{ exam.duration }} menit
+                            <i class="fas fa-clock me-1"></i> {{ exam.duration }} menit
                         </span>
                         <span class="badge bg-secondary fs-6">
                             {{ questions.length }} soal
@@ -67,10 +67,10 @@
                 </h5>
                 <div>
                     <button @click="prevQuestion" :disabled="currentQuestion === 0" class="btn btn-sm btn-outline-secondary me-1">
-                        <i class="fa fa-chevron-left"></i>
+                        <i class="fas fa-chevron-left"></i>
                     </button>
                     <button @click="nextQuestion" :disabled="currentQuestion === questions.length - 1" class="btn btn-sm btn-outline-secondary">
-                        <i class="fa fa-chevron-right"></i>
+                        <i class="fas fa-chevron-right"></i>
                     </button>
                 </div>
             </div>
@@ -87,14 +87,14 @@
                             {{ opt.text }}
                         </label>
                         <span v-if="opt.number == activeQuestion.answer" class="badge bg-success ms-2">
-                            <i class="fa fa-check"></i> Jawaban Benar
+                            <i class="fas fa-check"></i> Jawaban Benar
                         </span>
                     </div>
                 </div>
 
                 <!-- Multiple Choice Multiple -->
                 <div v-else-if="activeQuestion.type === 'multiple_choice_multiple'">
-                    <p class="text-muted mb-2"><i class="fa fa-info-circle"></i> Pilih semua jawaban yang benar</p>
+                    <p class="text-muted mb-2"><i class="fas fa-info-circle"></i> Pilih semua jawaban yang benar</p>
                     <div v-for="(opt, idx) in activeQuestion.options" :key="idx" class="form-check mb-2 p-3 border rounded">
                         <input class="form-check-input" type="checkbox" disabled>
                         <label class="form-check-label ms-2">
@@ -102,7 +102,7 @@
                             {{ opt.text }}
                         </label>
                         <span v-if="activeQuestion.correct_answers?.includes(opt.number)" class="badge bg-success ms-2">
-                            <i class="fa fa-check"></i> Benar
+                            <i class="fas fa-check"></i> Benar
                         </span>
                     </div>
                 </div>
@@ -110,12 +110,12 @@
                 <!-- True/False -->
                 <div v-else-if="activeQuestion.type === 'true_false'" class="d-flex gap-3">
                     <div class="p-4 border rounded text-center" style="min-width: 150px;">
-                        <i class="fa fa-check fa-2x text-success mb-2"></i>
+                        <i class="fas fa-check fa-2x text-success mb-2"></i>
                         <div>Benar</div>
                         <span v-if="activeQuestion.answer == 1" class="badge bg-success mt-2">Jawaban</span>
                     </div>
                     <div class="p-4 border rounded text-center" style="min-width: 150px;">
-                        <i class="fa fa-times fa-2x text-danger mb-2"></i>
+                        <i class="fas fa-times fa-2x text-danger mb-2"></i>
                         <div>Salah</div>
                         <span v-if="activeQuestion.answer == 2" class="badge bg-success mt-2">Jawaban</span>
                     </div>
@@ -125,7 +125,7 @@
                 <div v-else-if="activeQuestion.type === 'short_answer'">
                     <input type="text" class="form-control" placeholder="Siswa akan mengetik jawaban singkat di sini" disabled>
                     <div class="mt-2 text-muted">
-                        <i class="fa fa-key me-1"></i> Kunci Jawaban: 
+                        <i class="fas fa-key me-1"></i> Kunci Jawaban: 
                         <code>{{ activeQuestion.correct_answers?.join(', ') || '-' }}</code>
                     </div>
                 </div>
@@ -134,13 +134,13 @@
                 <div v-else-if="activeQuestion.type === 'essay'">
                     <textarea class="form-control" rows="5" placeholder="Siswa akan menulis jawaban essay di sini" disabled></textarea>
                     <div class="mt-2 text-info">
-                        <i class="fa fa-info-circle me-1"></i> Jawaban essay akan dinilai manual oleh guru
+                        <i class="fas fa-info-circle me-1"></i> Jawaban essay akan dinilai manual oleh guru
                     </div>
                 </div>
 
                 <!-- Matching -->
                 <div v-else-if="activeQuestion.type === 'matching'">
-                    <p class="text-muted mb-3"><i class="fa fa-info-circle"></i> Siswa akan menjodohkan item di kolom kiri dengan kolom kanan</p>
+                    <p class="text-muted mb-3"><i class="fas fa-info-circle"></i> Siswa akan menjodohkan item di kolom kiri dengan kolom kanan</p>
                     <div class="row" v-if="activeQuestion.matching_pairs">
                         <div class="col-md-5">
                             <div v-for="(pair, idx) in activeQuestion.matching_pairs" :key="'l'+idx" class="p-2 border rounded mb-2 bg-light">
@@ -148,7 +148,7 @@
                             </div>
                         </div>
                         <div class="col-md-2 text-center align-self-center">
-                            <i class="fa fa-arrows-alt-h fa-2x text-muted"></i>
+                            <i class="fas fa-arrows-alt-h fa-2x text-muted"></i>
                         </div>
                         <div class="col-md-5">
                             <div v-for="(pair, idx) in activeQuestion.matching_pairs" :key="'r'+idx" class="p-2 border rounded mb-2 bg-light">
@@ -163,10 +163,10 @@
         <!-- No Questions -->
         <div class="card border-0 shadow" v-else>
             <div class="card-body text-center py-5">
-                <i class="fa fa-exclamation-circle fa-3x text-warning mb-3"></i>
+                <i class="fas fa-exclamation-circle fa-3x text-warning mb-3"></i>
                 <p class="text-muted">Ujian ini belum memiliki soal</p>
                 <Link :href="`/admin/exams/${exam.id}/questions/create`" class="btn btn-primary">
-                    <i class="fa fa-plus me-1"></i> Tambah Soal
+                    <i class="fas fa-plus me-1"></i> Tambah Soal
                 </Link>
             </div>
         </div>

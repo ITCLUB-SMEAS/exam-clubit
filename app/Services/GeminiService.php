@@ -87,4 +87,61 @@ PROMPT;
             default => 'Pilihan ganda dengan 4 opsi',
         };
     }
+
+    public function gradeEssay(string $question, string $answer, ?string $rubric = null, int $maxPoints = 10): ?array
+    {
+        $rubricText = $rubric ? "Rubrik penilaian: {$rubric}" : "Nilai berdasarkan kelengkapan, kebenaran, dan kejelasan jawaban.";
+
+        $prompt = <<<PROMPT
+Kamu adalah guru yang menilai jawaban essay siswa. Berikan penilaian objektif.
+
+Pertanyaan: {$question}
+
+Jawaban Siswa: {$answer}
+
+{$rubricText}
+
+Nilai maksimal: {$maxPoints} poin
+
+PENTING: Jawab HANYA dalam format JSON tanpa markdown:
+{
+  "score": <angka 0-{$maxPoints}>,
+  "feedback": "<feedback konstruktif dalam bahasa Indonesia, maksimal 200 kata>",
+  "strengths": ["<kelebihan 1>", "<kelebihan 2>"],
+  "improvements": ["<saran perbaikan 1>", "<saran perbaikan 2>"]
+}
+PROMPT;
+
+        try {
+            $response = Http::timeout(30)->post("{$this->baseUrl}?key={$this->apiKey}", [
+                'contents' => [['parts' => [['text' => $prompt]]]],
+                'generationConfig' => [
+                    'temperature' => 0.3,
+                    'maxOutputTokens' => 1024,
+                ],
+            ]);
+
+            if ($response->successful()) {
+                $content = $response->json('candidates.0.content.parts.0.text');
+                $content = trim($content);
+                $content = preg_replace('/^```json\s*/', '', $content);
+                $content = preg_replace('/\s*```$/', '', $content);
+
+                $result = json_decode($content, true);
+
+                if (json_last_error() === JSON_ERROR_NONE && isset($result['score'])) {
+                    $result['score'] = max(0, min($maxPoints, (float) $result['score']));
+                    return $result;
+                }
+
+                Log::warning('Gemini essay grading response not valid', ['content' => $content]);
+            }
+
+            Log::error('Gemini essay grading API error', ['response' => $response->body()]);
+        } catch (\Exception $e) {
+            Log::error('Gemini essay grading exception: ' . $e->getMessage());
+        }
+
+        return null;
+    }
 }

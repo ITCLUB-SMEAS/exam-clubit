@@ -6,13 +6,13 @@
         <div class="row">
             <div class="col-md-12">
                 <Link :href="`/admin/exam_sessions/${examSession.id}`" class="btn btn-md btn-primary border-0 shadow mb-3">
-                    <i class="fa fa-long-arrow-alt-left me-2"></i> Kembali
+                    <i class="fas fa-long-arrow-alt-left me-2"></i> Kembali
                 </Link>
 
                 <!-- Info Ujian -->
                 <div class="card border-0 shadow mb-4">
                     <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="fa fa-id-card me-2"></i> Cetak Kartu Peserta Ujian</h5>
+                        <h5 class="mb-0"><i class="fas fa-id-card me-2"></i> Cetak Kartu Peserta Ujian</h5>
                     </div>
                     <div class="card-body">
                         <div class="row">
@@ -54,16 +54,16 @@
                             <a :href="`/admin/exam_sessions/${examSession.id}/cards/print`" 
                                class="btn btn-success" 
                                target="_blank">
-                                <i class="fa fa-print me-1"></i> Cetak Semua Kartu (PDF)
+                                <i class="fas fa-print me-1"></i> Cetak Semua Kartu (PDF)
                             </a>
                             <button @click="selectAll" class="btn btn-outline-primary">
-                                <i class="fa fa-check-square me-1"></i> Pilih Semua
+                                <i class="fas fa-check-square me-1"></i> Pilih Semua
                             </button>
                             <button @click="deselectAll" class="btn btn-outline-secondary">
-                                <i class="fa fa-square me-1"></i> Batal Pilih
+                                <i class="fas fa-square me-1"></i> Batal Pilih
                             </button>
                             <button @click="printSelected" class="btn btn-info" :disabled="selectedStudents.length === 0">
-                                <i class="fa fa-print me-1"></i> Cetak Terpilih ({{ selectedStudents.length }})
+                                <i class="fas fa-print me-1"></i> Cetak Terpilih ({{ selectedStudents.length }})
                             </button>
                         </div>
                     </div>
@@ -72,7 +72,7 @@
                 <!-- Daftar Siswa -->
                 <div class="card border-0 shadow">
                     <div class="card-body">
-                        <h5 class="mb-3"><i class="fa fa-users me-2"></i> Daftar Peserta</h5>
+                        <h5 class="mb-3"><i class="fas fa-users me-2"></i> Daftar Peserta</h5>
                         <div class="table-responsive">
                             <table class="table table-bordered table-hover">
                                 <thead class="table-dark">
@@ -107,7 +107,7 @@
                                                class="btn btn-sm btn-outline-success"
                                                target="_blank"
                                                title="Cetak Kartu">
-                                                <i class="fa fa-print"></i>
+                                                <i class="fas fa-print"></i>
                                             </a>
                                         </td>
                                     </tr>

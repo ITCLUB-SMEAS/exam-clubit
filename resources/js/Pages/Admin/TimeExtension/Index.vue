@@ -9,7 +9,7 @@
                 <ol class="breadcrumb breadcrumb-dark breadcrumb-transparent">
                     <li class="breadcrumb-item">
                         <Link href="/admin/dashboard">
-                            <i class="fa fa-home"></i>
+                            <i class="fas fa-home"></i>
                         </Link>
                     </li>
                     <li class="breadcrumb-item active">Perpanjangan Waktu</li>
@@ -73,7 +73,7 @@
                                 <td>{{ formatDuration(exam.total_time) }}</td>
                                 <td>
                                     <button @click="openExtendModal(exam)" class="btn btn-sm btn-primary">
-                                        <i class="fa fa-clock me-1"></i> Perpanjang
+                                        <i class="fas fa-clock me-1"></i> Perpanjang
                                     </button>
                                 </td>
                             </tr>
@@ -85,7 +85,7 @@
 
         <div class="card border-0 shadow" v-else-if="selectedSession">
             <div class="card-body text-center py-5">
-                <i class="fa fa-info-circle fa-3x text-muted mb-3"></i>
+                <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
                 <p class="text-muted">Tidak ada siswa yang sedang mengerjakan ujian di sesi ini</p>
             </div>
         </div>
@@ -119,7 +119,7 @@
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                             <button type="submit" class="btn btn-primary" :disabled="extendForm.processing">
                                 <span v-if="extendForm.processing">
-                                    <i class="fa fa-spinner fa-spin me-1"></i> Menyimpan...
+                                    <i class="fas fa-spinner fa-spin me-1"></i> Menyimpan...
                                 </span>
                                 <span v-else>Perpanjang</span>
                             </button>

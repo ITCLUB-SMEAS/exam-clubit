@@ -4,13 +4,13 @@
     </Head>
     <div class="container-fluid mb-5 mt-5">
         <Link href="/admin/analytics" class="btn btn-primary mb-3">
-            <i class="fa fa-arrow-left"></i> Kembali
+            <i class="fas fa-arrow-left"></i> Kembali
         </Link>
 
         <div class="card border-0 shadow">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0"><i class="fa fa-users"></i> Performa Siswa</h5>
+                    <h5 class="mb-0"><i class="fas fa-users"></i> Performa Siswa</h5>
                     <select class="form-select w-auto" v-model="selectedClass" @change="filterByClass">
                         <option value="">Semua Kelas</option>
                         <option v-for="c in classrooms" :key="c.id" :value="c.id">{{ c.title }}</option>

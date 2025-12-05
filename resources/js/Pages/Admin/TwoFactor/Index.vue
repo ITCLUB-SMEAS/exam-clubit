@@ -7,12 +7,12 @@
             <div class="col-md-8">
                 <div class="card border-0 shadow">
                     <div class="card-header bg-white">
-                        <h5 class="mb-0"><i class="fa fa-shield-alt me-2"></i>Two-Factor Authentication</h5>
+                        <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Two-Factor Authentication</h5>
                     </div>
                     <div class="card-body">
                         <div v-if="enabled" class="text-center">
                             <div class="mb-4">
-                                <i class="fa fa-check-circle text-success" style="font-size: 4rem;"></i>
+                                <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
                             </div>
                             <h4 class="text-success">2FA Aktif</h4>
                             <p class="text-muted">Akun Anda dilindungi dengan Two-Factor Authentication.</p>
@@ -24,22 +24,22 @@
                                     <code v-for="code in recoveryCodes" :key="code" class="d-block">{{ code }}</code>
                                 </div>
                                 <button @click="regenerateCodes" class="btn btn-outline-warning btn-sm me-2">
-                                    <i class="fa fa-sync me-1"></i>Generate Ulang
+                                    <i class="fas fa-sync me-1"></i>Generate Ulang
                                 </button>
                                 <button @click="showDisableModal = true" class="btn btn-outline-danger btn-sm">
-                                    <i class="fa fa-times me-1"></i>Nonaktifkan 2FA
+                                    <i class="fas fa-times me-1"></i>Nonaktifkan 2FA
                                 </button>
                             </div>
                         </div>
                         
                         <div v-else class="text-center">
                             <div class="mb-4">
-                                <i class="fa fa-shield-alt text-warning" style="font-size: 4rem;"></i>
+                                <i class="fas fa-shield-alt text-warning" style="font-size: 4rem;"></i>
                             </div>
                             <h4>2FA Belum Aktif</h4>
                             <p class="text-muted">Aktifkan Two-Factor Authentication untuk keamanan tambahan.</p>
                             <Link :href="route('admin.two-factor.setup')" class="btn btn-primary">
-                                <i class="fa fa-lock me-1"></i>Aktifkan 2FA
+                                <i class="fas fa-lock me-1"></i>Aktifkan 2FA
                             </Link>
                         </div>
                     </div>

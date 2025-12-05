@@ -7,7 +7,7 @@
             <div class="col-md-6 mx-auto">
                 <div class="card border-0 shadow">
                     <div class="card-body">
-                        <h5><i class="fa fa-user-plus"></i> Tambah User</h5>
+                        <h5><i class="fas fa-user-plus"></i> Tambah User</h5>
                         <hr>
                         <form @submit.prevent="submit">
                             <div class="mb-3">
@@ -38,7 +38,7 @@
                                 <input type="password" class="form-control" v-model="form.password_confirmation">
                             </div>
                             <button type="submit" class="btn btn-primary" :disabled="form.processing">
-                                <i class="fa fa-save"></i> Simpan
+                                <i class="fas fa-save"></i> Simpan
                             </button>
                             <Link href="/admin/users" class="btn btn-secondary ms-2">Kembali</Link>
                         </form>

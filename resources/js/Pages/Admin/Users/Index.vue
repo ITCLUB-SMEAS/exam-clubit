@@ -6,7 +6,7 @@
         <div class="row mb-3">
             <div class="col-md-2">
                 <Link href="/admin/users/create" class="btn btn-primary w-100">
-                    <i class="fa fa-plus-circle"></i> Tambah User
+                    <i class="fas fa-plus-circle"></i> Tambah User
                 </Link>
             </div>
             <div class="col-md-3">
@@ -20,7 +20,7 @@
                 <form @submit.prevent="applyFilter">
                     <div class="input-group">
                         <input type="text" class="form-control" v-model="filters.q" placeholder="Cari nama...">
-                        <button class="btn btn-outline-secondary"><i class="fa fa-search"></i></button>
+                        <button class="btn btn-outline-secondary"><i class="fas fa-search"></i></button>
                     </div>
                 </form>
             </div>
@@ -51,10 +51,10 @@
                                 </td>
                                 <td class="text-center">
                                     <Link :href="`/admin/users/${user.id}/edit`" class="btn btn-sm btn-info me-1">
-                                        <i class="fa fa-pencil-alt"></i>
+                                        <i class="fas fa-pencil-alt"></i>
                                     </Link>
                                     <button @click="destroy(user.id)" class="btn btn-sm btn-danger" :disabled="user.id === currentUserId">
-                                        <i class="fa fa-trash"></i>
+                                        <i class="fas fa-trash"></i>
                                     </button>
                                 </td>
                             </tr>

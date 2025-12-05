@@ -5,7 +5,7 @@
 
     <!-- Anti-Cheat Warning Banner -->
     <div v-if="antiCheat.warningReached.value && !showViolationWarning" class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
-        <i class="fa fa-exclamation-triangle me-2"></i>
+        <i class="fas fa-exclamation-triangle me-2"></i>
         <strong>Peringatan!</strong> Anda telah melakukan {{ antiCheat.violationCount.value }} pelanggaran.
         Sisa pelanggaran yang diizinkan: {{ antiCheat.remainingViolations.value }}
         <button type="button" class="btn-close" @click="dismissWarningBanner"></button>
@@ -14,7 +14,7 @@
     <!-- Violation Counter Badge -->
     <div v-if="antiCheatConfig.enabled" class="position-fixed" style="top: 10px; right: 10px; z-index: 1050;">
         <span :class="violationBadgeClass" class="badge p-2">
-            <i class="fa fa-shield-alt me-1"></i>
+            <i class="fas fa-shield-alt me-1"></i>
             Pelanggaran: {{ antiCheat.violationCount.value }}/{{ antiCheatConfig.max_violations }}
         </span>
     </div>
@@ -34,12 +34,12 @@
                             <!-- Timer per soal (jika aktif) -->
                             <VueCountdown v-if="questionTimeLimit > 0" :time="questionTimeRemaining" @end="handleQuestionTimeEnd" v-slot="{ minutes, seconds }">
                                 <span class="badge bg-warning text-dark p-2">
-                                    <i class="fa fa-stopwatch"></i> Soal: {{ minutes }}:{{ String(seconds).padStart(2, '0') }}
+                                    <i class="fas fa-stopwatch"></i> Soal: {{ minutes }}:{{ String(seconds).padStart(2, '0') }}
                                 </span>
                             </VueCountdown>
                             <!-- Timer total ujian -->
                             <VueCountdown :time="duration" @progress="handleChangeDuration" @end="showModalEndTimeExam = true" v-slot="{ hours, minutes, seconds }">
-                                <span class="badge bg-info p-2"> <i class="fa fa-clock"></i> {{ hours }} jam,
+                                <span class="badge bg-info p-2"> <i class="fas fa-clock"></i> {{ hours }} jam,
                                     {{ minutes }} menit, {{ seconds }} detik.</span>
                             </VueCountdown>
                         </div>
@@ -103,10 +103,10 @@
                         <div v-else-if="isTrueFalse">
                             <div class="d-flex gap-3">
                                 <button @click.prevent="submitAnswerSingle(1)" :class="['btn', 'btn-lg', question_active.answer == 1 ? 'btn-success' : 'btn-outline-success']">
-                                    <i class="fa fa-check me-2"></i> Benar
+                                    <i class="fas fa-check me-2"></i> Benar
                                 </button>
                                 <button @click.prevent="submitAnswerSingle(2)" :class="['btn', 'btn-lg', question_active.answer == 2 ? 'btn-danger' : 'btn-outline-danger']">
-                                    <i class="fa fa-times me-2"></i> Salah
+                                    <i class="fas fa-times me-2"></i> Salah
                                 </button>
                             </div>
                         </div>
@@ -134,7 +134,7 @@
 
                     <div v-else>
                         <div class="alert alert-danger border-0 shadow">
-                            <i class="fa fa-exclamation-triangle"></i> Soal Tidak Ditemukan!.
+                            <i class="fas fa-exclamation-triangle"></i> Soal Tidak Ditemukan!.
                         </div>
                     </div>
 
@@ -220,13 +220,13 @@
             <div class="modal-content border-warning">
                 <div class="modal-header bg-warning text-dark">
                     <h5 class="modal-title">
-                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        <i class="fas fa-exclamation-triangle me-2"></i>
                         Peringatan Pelanggaran!
                     </h5>
                 </div>
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <i class="fa fa-shield-alt fa-4x text-warning"></i>
+                        <i class="fas fa-shield-alt fa-4x text-warning"></i>
                     </div>
                     <h5 class="text-danger">{{ lastViolationMessage }}</h5>
                     <p class="mb-2">
@@ -244,13 +244,13 @@
                         </div>
                     </div>
                     <p class="text-muted small">
-                        <i class="fa fa-info-circle me-1"></i>
+                        <i class="fas fa-info-circle me-1"></i>
                         Jika Anda mencapai batas maksimal pelanggaran, ujian dapat diakhiri secara otomatis.
                     </p>
                 </div>
                 <div class="modal-footer justify-content-center">
                     <button @click="dismissViolationWarning" type="button" class="btn btn-warning">
-                        <i class="fa fa-check me-1"></i> Saya Mengerti
+                        <i class="fas fa-check me-1"></i> Saya Mengerti
                     </button>
                 </div>
             </div>
@@ -263,13 +263,13 @@
             <div class="modal-content border-danger">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title">
-                        <i class="fa fa-ban me-2"></i>
+                        <i class="fas fa-ban me-2"></i>
                         Batas Pelanggaran Tercapai!
                     </h5>
                 </div>
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <i class="fa fa-times-circle fa-4x text-danger"></i>
+                        <i class="fas fa-times-circle fa-4x text-danger"></i>
                     </div>
                     <h5>Ujian akan diakhiri secara otomatis</h5>
                     <p>Anda telah mencapai batas maksimal pelanggaran ({{ antiCheatConfig.max_violations }}).</p>
@@ -277,7 +277,7 @@
                 </div>
                 <div class="modal-footer justify-content-center">
                     <button @click.prevent="endExam" type="button" class="btn btn-danger">
-                        <i class="fa fa-stop me-1"></i> Akhiri Sekarang
+                        <i class="fas fa-stop me-1"></i> Akhiri Sekarang
                     </button>
                 </div>
             </div>
@@ -290,20 +290,20 @@
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">
-                        <i class="fa fa-expand me-2"></i>
+                        <i class="fas fa-expand me-2"></i>
                         Mode Fullscreen Diperlukan
                     </h5>
                 </div>
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <i class="fa fa-desktop fa-4x text-primary"></i>
+                        <i class="fas fa-desktop fa-4x text-primary"></i>
                     </div>
                     <h5>Ujian ini memerlukan mode fullscreen</h5>
                     <p class="text-muted">Klik tombol di bawah untuk masuk ke mode fullscreen dan melanjutkan ujian.</p>
                 </div>
                 <div class="modal-footer justify-content-center">
                     <button @click="requestFullscreen" type="button" class="btn btn-primary btn-lg">
-                        <i class="fa fa-expand me-1"></i> Masuk Fullscreen
+                        <i class="fas fa-expand me-1"></i> Masuk Fullscreen
                     </button>
                 </div>
             </div>
@@ -316,13 +316,13 @@
             <div class="modal-content border-danger">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title">
-                        <i class="fa fa-ban me-2"></i>
+                        <i class="fas fa-ban me-2"></i>
                         Lingkungan Tidak Diizinkan
                     </h5>
                 </div>
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <i class="fa fa-exclamation-circle fa-4x text-danger"></i>
+                        <i class="fas fa-exclamation-circle fa-4x text-danger"></i>
                     </div>
                     <h5 class="text-danger">{{ blockedMessage }}</h5>
                     <p class="text-muted">
@@ -332,7 +332,7 @@
                 </div>
                 <div class="modal-footer justify-content-center">
                     <Link href="/student/dashboard" class="btn btn-secondary">
-                        <i class="fa fa-arrow-left me-1"></i> Kembali ke Dashboard
+                        <i class="fas fa-arrow-left me-1"></i> Kembali ke Dashboard
                     </Link>
                 </div>
             </div>
@@ -500,6 +500,7 @@
                 examId: props.exam_group.exam.id,
                 examSessionId: props.exam_group.exam_session.id,
                 gradeId: props.duration.id,
+                externalVideoElement: faceVideoRef,
 
                 // Callbacks
                 onViolation: (data) => {

@@ -7,7 +7,7 @@
             <div class="col-md-12">
                 <div class="card border-0 shadow">
                     <div class="card-header">
-                        <h5><i class="fa fa-shield-alt me-2"></i> Log Pelanggaran Anti-Cheat</h5>
+                        <h5><i class="fas fa-shield-alt me-2"></i> Log Pelanggaran Anti-Cheat</h5>
                     </div>
                     <div class="card-body">
                         <!-- Filters -->
@@ -40,7 +40,7 @@
                                 <tbody>
                                     <tr v-if="violations.data.length === 0">
                                         <td colspan="7" class="text-center py-4 text-muted">
-                                            <i class="fa fa-check-circle fa-2x mb-2"></i>
+                                            <i class="fas fa-check-circle fa-2x mb-2"></i>
                                             <p>Tidak ada pelanggaran tercatat</p>
                                         </td>
                                     </tr>
@@ -64,7 +64,7 @@
                                         <td>{{ v.description }}</td>
                                         <td class="text-center">
                                             <a v-if="v.snapshot_path" :href="route('admin.violation-logs.snapshot', v.id)" target="_blank" class="btn btn-sm btn-outline-primary">
-                                                <i class="fa fa-camera"></i>
+                                                <i class="fas fa-camera"></i>
                                             </a>
                                             <span v-else class="text-muted">-</span>
                                         </td>

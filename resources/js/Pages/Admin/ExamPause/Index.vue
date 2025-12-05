@@ -5,7 +5,7 @@
             <div class="col-12">
                 <div class="card border-0 shadow">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class="fa fa-pause-circle me-2"></i>Pause/Resume Ujian</h5>
+                        <h5 class="mb-0"><i class="fas fa-pause-circle me-2"></i>Pause/Resume Ujian</h5>
                     </div>
                     <div class="card-body">
                         <!-- Filter -->
@@ -21,10 +21,10 @@
                             </div>
                             <div class="col-md-6 d-flex align-items-end gap-2" v-if="selectedSession">
                                 <button @click="pauseAll" class="btn btn-warning">
-                                    <i class="fa fa-pause me-1"></i> Pause Semua
+                                    <i class="fas fa-pause me-1"></i> Pause Semua
                                 </button>
                                 <button @click="resumeAll" class="btn btn-success">
-                                    <i class="fa fa-play me-1"></i> Resume Semua
+                                    <i class="fas fa-play me-1"></i> Resume Semua
                                 </button>
                             </div>
                         </div>
@@ -48,18 +48,18 @@
                                         <td>{{ exam.exam?.title }}</td>
                                         <td>
                                             <span v-if="exam.is_paused" class="badge bg-warning">
-                                                <i class="fa fa-pause me-1"></i> Paused
+                                                <i class="fas fa-pause me-1"></i> Paused
                                             </span>
                                             <span v-else class="badge bg-success">
-                                                <i class="fa fa-play me-1"></i> Berjalan
+                                                <i class="fas fa-play me-1"></i> Berjalan
                                             </span>
                                         </td>
                                         <td>
                                             <button v-if="!exam.is_paused" @click="pauseExam(exam)" class="btn btn-sm btn-warning">
-                                                <i class="fa fa-pause"></i> Pause
+                                                <i class="fas fa-pause"></i> Pause
                                             </button>
                                             <button v-else @click="resumeExam(exam)" class="btn btn-sm btn-success">
-                                                <i class="fa fa-play"></i> Resume
+                                                <i class="fas fa-play"></i> Resume
                                             </button>
                                         </td>
                                     </tr>

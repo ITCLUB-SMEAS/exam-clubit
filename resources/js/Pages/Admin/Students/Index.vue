@@ -4,33 +4,30 @@
     </Head>
     <div class="container-fluid mb-5 mt-5">
         <div class="row">
-            <div class="col-md-10">
-                <div class="row">
-                    <div class="col-md-6 col-12 mb-2">
-                        <div class="row">
-                            <div class="col-md-4 col-12 mb-2">
-                                <Link href="/admin/students/create" class="btn btn-md btn-primary border-0 shadow w-100"
-                                    type="button"><i class="fa fa-plus-circle"></i>
-                                Tambah</Link>
-                            </div>
-                            <div class="col-md-4 col-12 mb-2">
-                                <Link href="/admin/students/import" class="btn btn-md btn-success border-0 shadow w-100 text-white"
-                                    type="button"><i class="fa fa-file-excel"></i>
-                                Import</Link>
-                            </div>
-                            <div class="col-md-4 col-12 mb-2">
-                                <Link href="/admin/students-bulk-password-reset" class="btn btn-md btn-warning border-0 shadow w-100"
-                                    type="button"><i class="fa fa-key"></i>
-                                Reset PW</Link>
-                            </div>
-                        </div>
+            <div class="col-md-12">
+                <div class="row mb-2">
+                    <div class="col-6 col-md-2 mb-2">
+                        <Link href="/admin/students/create" class="btn btn-md btn-primary border-0 shadow w-100"
+                            type="button"><i class="fas fa-plus-circle me-1"></i>Tambah</Link>
                     </div>
-                    <div class="col-md-6 col-12 mb-2">
+                    <div class="col-6 col-md-2 mb-2">
+                        <Link href="/admin/students/import" class="btn btn-md btn-success border-0 shadow w-100 text-white"
+                            type="button"><i class="fas fa-file-excel me-1"></i>Import</Link>
+                    </div>
+                    <div class="col-6 col-md-2 mb-2">
+                        <Link href="/admin/students/bulk-photo" class="btn btn-md btn-info border-0 shadow w-100 text-white"
+                            type="button"><i class="fas fa-images me-1"></i>Foto</Link>
+                    </div>
+                    <div class="col-6 col-md-2 mb-2">
+                        <Link href="/admin/students-bulk-password-reset" class="btn btn-md btn-warning border-0 shadow w-100"
+                            type="button"><i class="fas fa-key me-1"></i>Reset PW</Link>
+                    </div>
+                    <div class="col-12 col-md-4 mb-2">
                         <form @submit.prevent="handleSearch">
                             <div class="input-group">
-                                <input type="text" class="form-control border-0 shadow" v-model="search" placeholder="masukkan kata kunci dan enter...">
+                                <input type="text" class="form-control border-0 shadow" v-model="search" placeholder="Cari siswa...">
                                 <span class="input-group-text border-0 shadow">
-                                    <i class="fa fa-search"></i>
+                                    <i class="fas fa-search"></i>
                                 </span>
                             </div>
                         </form>
@@ -73,10 +70,10 @@
                                             <button @click.prevent="toggleBlock(student)" 
                                                 :class="student.is_blocked ? 'btn btn-sm btn-success border-0 shadow me-2' : 'btn btn-sm btn-warning border-0 shadow me-2'" 
                                                 type="button" :title="student.is_blocked ? 'Unblock' : 'Block'">
-                                                <i :class="student.is_blocked ? 'fa fa-unlock' : 'fa fa-ban'"></i>
+                                                <i :class="student.is_blocked ? 'fas fa-unlock' : 'fas fa-ban'"></i>
                                             </button>
-                                            <Link :href="`/admin/students/${student.id}/edit`" class="btn btn-sm btn-info border-0 shadow me-2" type="button"><i class="fa fa-pencil-alt"></i></Link>
-                                            <button @click.prevent="destroy(student.id)" class="btn btn-sm btn-danger border-0"><i class="fa fa-trash"></i></button>
+                                            <Link :href="`/admin/students/${student.id}/edit`" class="btn btn-sm btn-info border-0 shadow me-2" type="button"><i class="fas fa-pencil-alt"></i></Link>
+                                            <button @click.prevent="destroy(student.id)" class="btn btn-sm btn-danger border-0"><i class="fas fa-trash"></i></button>
                                         </td>
                                     </tr>
                                 </tbody>

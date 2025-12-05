@@ -5,7 +5,7 @@
     <div class="row">
         <div class="col-md-12 mb-3">
             <Link href="/student/dashboard" class="btn btn-primary">
-                <i class="fa fa-arrow-left"></i> Kembali
+                <i class="fas fa-arrow-left"></i> Kembali
             </Link>
         </div>
     </div>
@@ -15,7 +15,7 @@
         <div class="col-md-6 mb-4">
             <div class="card border-0 shadow">
                 <div class="card-body">
-                    <h5><i class="fa fa-user"></i> Informasi Profil</h5>
+                    <h5><i class="fas fa-user"></i> Informasi Profil</h5>
                     <hr>
                     
                     <div v-if="$page.props.session?.success" class="alert alert-success">
@@ -48,7 +48,7 @@
                             <div class="invalid-feedback">{{ errors.gender }}</div>
                         </div>
                         <button type="submit" class="btn btn-primary" :disabled="profileForm.processing">
-                            <i class="fa fa-save"></i> Simpan Perubahan
+                            <i class="fas fa-save"></i> Simpan Perubahan
                         </button>
                     </form>
                 </div>
@@ -59,7 +59,7 @@
         <div class="col-md-6 mb-4">
             <div class="card border-0 shadow">
                 <div class="card-body">
-                    <h5><i class="fa fa-lock"></i> Ubah Password</h5>
+                    <h5><i class="fas fa-lock"></i> Ubah Password</h5>
                     <hr>
 
                     <form @submit.prevent="updatePassword">
@@ -80,7 +80,7 @@
                             <input type="password" class="form-control" v-model="passwordForm.password_confirmation">
                         </div>
                         <button type="submit" class="btn btn-warning" :disabled="passwordForm.processing">
-                            <i class="fa fa-key"></i> Ubah Password
+                            <i class="fas fa-key"></i> Ubah Password
                         </button>
                     </form>
                 </div>
@@ -93,7 +93,7 @@
         <div class="col-md-12">
             <div class="card border-0 shadow">
                 <div class="card-body">
-                    <h5><i class="fa fa-info-circle"></i> Informasi Login</h5>
+                    <h5><i class="fas fa-info-circle"></i> Informasi Login</h5>
                     <hr>
                     <div class="row">
                         <div class="col-md-6">

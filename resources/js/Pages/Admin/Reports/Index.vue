@@ -7,7 +7,7 @@
             <div class="col-md-12">
                 <div class="card border-0 shadow mb-4">
                     <div class="card-body">
-                        <h5><i class="fa fa-filter"></i> Filter Nilai Ujian</h5>
+                        <h5><i class="fas fa-filter"></i> Filter Nilai Ujian</h5>
                         <hr>
                         <form @submit.prevent="filter">
                             
@@ -23,7 +23,7 @@
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold text-white">*</label>
-                                    <button type="submit" class="btn btn-md btn-primary border-0 shadow w-100"> <i class="fa fa-filter"></i> Filter</button>
+                                    <button type="submit" class="btn btn-md btn-primary border-0 shadow w-100"> <i class="fas fa-filter"></i> Filter</button>
                                 </div>
                             </div>
 
@@ -35,10 +35,10 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-9 col-12">
-                                <h5 class="mt-2"><i class="fa fa-chart-line"></i> Laporan Nilai Ujian</h5>
+                                <h5 class="mt-2"><i class="fas fa-chart-line"></i> Laporan Nilai Ujian</h5>
                             </div>
                             <div class="col-md-3 col-12">
-                                <a :href="`/admin/reports/export?exam_id=${form.exam_id}`" target="_blank" class="btn btn-success btn-md border-0 shadow w-100 text-white"><i class="fa fa-file-excel"></i> DOWNLOAD EXCEL</a>
+                                <a :href="`/admin/reports/export?exam_id=${form.exam_id}`" target="_blank" class="btn btn-success btn-md border-0 shadow w-100 text-white"><i class="fas fa-file-excel"></i> DOWNLOAD EXCEL</a>
                             </div>
                         </div>
                         <hr>

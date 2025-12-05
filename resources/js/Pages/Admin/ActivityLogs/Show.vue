@@ -9,7 +9,7 @@
                 <ol class="breadcrumb breadcrumb-dark breadcrumb-transparent">
                     <li class="breadcrumb-item">
                         <Link href="/admin/dashboard">
-                            <i class="fa fa-home"></i>
+                            <i class="fas fa-home"></i>
                         </Link>
                     </li>
                     <li class="breadcrumb-item">
@@ -26,7 +26,7 @@
                 </div>
                 <div>
                     <Link href="/admin/activity-logs" class="btn btn-sm btn-secondary">
-                        <i class="fa fa-arrow-left me-1"></i> Kembali
+                        <i class="fas fa-arrow-left me-1"></i> Kembali
                     </Link>
                 </div>
             </div>
@@ -38,7 +38,7 @@
                 <div class="card border-0 shadow mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">
-                            <i class="fa fa-info-circle me-2"></i>
+                            <i class="fas fa-info-circle me-2"></i>
                             Informasi Aktivitas
                         </h5>
                     </div>
@@ -76,7 +76,7 @@
                 <div class="card border-0 shadow mb-4" v-if="log.old_values && Object.keys(log.old_values).length > 0">
                     <div class="card-header bg-danger text-white">
                         <h5 class="mb-0">
-                            <i class="fa fa-history me-2"></i>
+                            <i class="fas fa-history me-2"></i>
                             Data Sebelumnya
                         </h5>
                     </div>
@@ -89,7 +89,7 @@
                 <div class="card border-0 shadow mb-4" v-if="log.new_values && Object.keys(log.new_values).length > 0">
                     <div class="card-header bg-success text-white">
                         <h5 class="mb-0">
-                            <i class="fa fa-check-circle me-2"></i>
+                            <i class="fas fa-check-circle me-2"></i>
                             Data Baru
                         </h5>
                     </div>
@@ -102,7 +102,7 @@
                 <div class="card border-0 shadow mb-4" v-if="log.metadata && Object.keys(log.metadata).length > 0">
                     <div class="card-header bg-info text-white">
                         <h5 class="mb-0">
-                            <i class="fa fa-database me-2"></i>
+                            <i class="fas fa-database me-2"></i>
                             Metadata
                         </h5>
                     </div>
@@ -118,7 +118,7 @@
                 <div class="card border-0 shadow mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">
-                            <i class="fa fa-user me-2"></i>
+                            <i class="fas fa-user me-2"></i>
                             Informasi User
                         </h5>
                     </div>
@@ -150,7 +150,7 @@
                 <div class="card border-0 shadow mb-4" v-if="log.subject_type">
                     <div class="card-header">
                         <h5 class="mb-0">
-                            <i class="fa fa-link me-2"></i>
+                            <i class="fas fa-link me-2"></i>
                             Subject Terkait
                         </h5>
                     </div>
@@ -174,7 +174,7 @@
                 <div class="card border-0 shadow mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">
-                            <i class="fa fa-globe me-2"></i>
+                            <i class="fas fa-globe me-2"></i>
                             Informasi Request
                         </h5>
                     </div>
@@ -206,7 +206,7 @@
                 <div class="card border-0 shadow mb-4" v-if="log.user_agent">
                     <div class="card-header">
                         <h5 class="mb-0">
-                            <i class="fa fa-desktop me-2"></i>
+                            <i class="fas fa-desktop me-2"></i>
                             User Agent
                         </h5>
                     </div>

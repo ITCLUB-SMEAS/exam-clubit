@@ -85,7 +85,7 @@
     <div class="row" v-else>
         <div class="col-md-12">
             <div class="alert alert-danger border-0 shadow">
-                <i class="fa fa-info-circle"></i> Tidak ada ujian yang tersedia
+                <i class="fas fa-info-circle"></i> Tidak ada ujian yang tersedia
             </div>
         </div>
     </div>

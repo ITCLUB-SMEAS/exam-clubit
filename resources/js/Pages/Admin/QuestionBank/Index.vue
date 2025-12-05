@@ -6,7 +6,7 @@
         <div class="row mb-3">
             <div class="col-md-2">
                 <Link href="/admin/question-bank/create" class="btn btn-primary w-100">
-                    <i class="fa fa-plus-circle"></i> Tambah Soal
+                    <i class="fas fa-plus-circle"></i> Tambah Soal
                 </Link>
             </div>
             <div class="col-md-3">
@@ -30,7 +30,7 @@
                 <form @submit.prevent="applyFilter">
                     <div class="input-group">
                         <input type="text" class="form-control" v-model="filters.search" placeholder="Cari soal...">
-                        <button class="btn btn-outline-secondary"><i class="fa fa-search"></i></button>
+                        <button class="btn btn-outline-secondary"><i class="fas fa-search"></i></button>
                     </div>
                 </form>
             </div>
@@ -60,10 +60,10 @@
                                         <td class="text-center">{{ q.points }}</td>
                                         <td class="text-center">
                                             <Link :href="`/admin/question-bank/${q.id}/edit`" class="btn btn-sm btn-info me-1">
-                                                <i class="fa fa-pencil-alt"></i>
+                                                <i class="fas fa-pencil-alt"></i>
                                             </Link>
                                             <button @click="destroy(q.id)" class="btn btn-sm btn-danger">
-                                                <i class="fa fa-trash"></i>
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </td>
                                     </tr>

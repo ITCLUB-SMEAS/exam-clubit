@@ -7,14 +7,14 @@
             <div class="col-md-12">
                 <div class="card border-0 shadow">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fa fa-bell me-2"></i> Notifikasi</h5>
+                        <h5 class="mb-0"><i class="fas fa-bell me-2"></i> Notifikasi</h5>
                         <button v-if="notifications.data.length > 0" @click="deleteAll" class="btn btn-sm btn-outline-danger">
-                            <i class="fa fa-trash me-1"></i> Hapus Semua
+                            <i class="fas fa-trash me-1"></i> Hapus Semua
                         </button>
                     </div>
                     <div class="card-body">
                         <div v-if="notifications.data.length === 0" class="text-center py-5 text-muted">
-                            <i class="fa fa-bell-slash fa-3x mb-3"></i>
+                            <i class="fas fa-bell-slash fa-3x mb-3"></i>
                             <p>Tidak ada notifikasi</p>
                         </div>
                         
@@ -33,7 +33,7 @@
                                     </div>
                                 </div>
                                 <button @click="deleteNotif(notif.id)" class="btn btn-sm btn-link text-danger">
-                                    <i class="fa fa-times"></i>
+                                    <i class="fas fa-times"></i>
                                 </button>
                             </div>
                         </div>

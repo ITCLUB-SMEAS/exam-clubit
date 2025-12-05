@@ -6,11 +6,11 @@
         <div class="row">
             <div class="col-md-12">
 
-                <Link href="/admin/exams" class="btn btn-md btn-primary border-0 shadow mb-3" type="button"><i class="fa fa-long-arrow-alt-left me-2"></i> Kembali</Link>
+                <Link href="/admin/exams" class="btn btn-md btn-primary border-0 shadow mb-3" type="button"><i class="fas fa-long-arrow-alt-left me-2"></i> Kembali</Link>
 
                 <div class="card border-0 shadow mb-4">
                     <div class="card-body">
-                        <h5> <i class="fa fa-edit"></i> Detail Ujian</h5>
+                        <h5> <i class="fas fa-edit"></i> Detail Ujian</h5>
                         <hr>
                         <div class="table-responsive">
                             <table class="table table-bordered table-centered table-nowrap mb-0 rounded">
@@ -45,21 +45,21 @@
                 <div class="card border-0 shadow">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0"><i class="fa fa-question-circle"></i> Soal Ujian</h5>
+                            <h5 class="mb-0"><i class="fas fa-question-circle"></i> Soal Ujian</h5>
                             <div>
                                 <Link :href="`/admin/exams/${exam.id}/analysis`" class="btn btn-outline-success btn-sm me-2">
-                                    <i class="fa fa-chart-bar me-1"></i> Analisis Soal
+                                    <i class="fas fa-chart-bar me-1"></i> Analisis Soal
                                 </Link>
                                 <Link :href="`/admin/exams/${exam.id}/preview`" class="btn btn-outline-primary btn-sm">
-                                    <i class="fa fa-eye me-1"></i> Preview Ujian
+                                    <i class="fas fa-eye me-1"></i> Preview Ujian
                                 </Link>
                             </div>
                         </div>
                         <hr>
                         
-                        <Link :href="`/admin/exams/${exam.id}/questions/create`" class="btn btn-md btn-primary border-0 shadow me-2" type="button"><i class="fa fa-plus-circle"></i> Tambah</Link>
-                        <Link :href="`/admin/exams/${exam.id}/questions/import`" class="btn btn-md btn-success border-0 shadow text-white me-2" type="button"><i class="fa fa-file-excel"></i> Import Excel</Link>
-                        <button @click="showBankModal = true" class="btn btn-md btn-info border-0 shadow text-white" type="button"><i class="fa fa-database"></i> Import dari Bank Soal</button>
+                        <Link :href="`/admin/exams/${exam.id}/questions/create`" class="btn btn-md btn-primary border-0 shadow me-2" type="button"><i class="fas fa-plus-circle"></i> Tambah</Link>
+                        <Link :href="`/admin/exams/${exam.id}/questions/import`" class="btn btn-md btn-success border-0 shadow text-white me-2" type="button"><i class="fas fa-file-excel"></i> Import Excel</Link>
+                        <button @click="showBankModal = true" class="btn btn-md btn-info border-0 shadow text-white" type="button"><i class="fas fa-database"></i> Import dari Bank Soal</button>
                         
                         <!-- Modal Import dari Bank Soal -->
                         <div v-if="showBankModal" class="modal fade show d-block" style="background: rgba(0,0,0,0.5)">
@@ -132,8 +132,8 @@
                                         </td>
                                         <td class="text-center">
                                             <Link :href="`/admin/exams/${exam.id}/questions/${question.id}/edit`" class="btn btn-sm btn-info border-0 shadow me-2"
-                                                type="button"><i class="fa fa-pencil-alt"></i></Link>
-                                            <button @click.prevent="destroy(exam.id, question.id)" class="btn btn-sm btn-danger border-0"><i class="fa fa-trash"></i></button>
+                                                type="button"><i class="fas fa-pencil-alt"></i></Link>
+                                            <button @click.prevent="destroy(exam.id, question.id)" class="btn btn-sm btn-danger border-0"><i class="fas fa-trash"></i></button>
                                         </td>
                                     </tr>
                                 </tbody>

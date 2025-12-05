@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ExamSession;
 use App\Models\Grade;
+use App\Models\Answer;
 use App\Models\ExamViolation;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -86,13 +87,16 @@ class ExamMonitorController extends Controller
         if (!$grade->start_time) return 0;
         if ($grade->end_time) return 100;
 
-        $answered = $grade->answers()->where(function ($q) {
+        $baseQuery = Answer::where('student_id', $grade->student_id)
+            ->where('exam_id', $grade->exam_id);
+
+        $answered = (clone $baseQuery)->where(function ($q) {
             $q->where('answer', '!=', 0)
               ->orWhereNotNull('answer_text')
               ->orWhereNotNull('answer_options');
         })->count();
 
-        $total = $grade->answers()->count();
+        $total = (clone $baseQuery)->count();
 
         return $total > 0 ? round(($answered / $total) * 100) : 0;
     }
