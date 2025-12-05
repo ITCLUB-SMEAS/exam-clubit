@@ -1,0 +1,126 @@
+# Functional Source License, Version 1.1, Apache 2.0 Future License
+
+## Abbreviation
+
+FSL-1.1-Apache-2.0
+
+## Notice
+
+Copyright 2024 CBT Ujian Online
+
+## Terms and Conditions
+
+### Licensor ("We")
+
+CBT Ujian Online
+
+### The Software ("Software")
+
+Ujian Online (CBT - Computer Based Test)
+
+### Use Grant
+
+Subject to the terms and conditions of this License, We hereby grant You a non-exclusive, royalty-free, worldwide, non-sublicensable, non-transferable license to use, copy, modify, create derivative works based upon, and distribute the Software, in each case subject to the limitations and conditions below.
+
+### Limitations
+
+You may not make the Software available to third parties as a hosted or managed service, where the service provides users with access to any substantial set of the features or functionality of the Software.
+
+You may not move, change, disable, or circumvent the license key functionality in the Software, and you may not remove or obscure any functionality in the Software that is protected by the license key.
+
+You may not alter, remove, or obscure any licensing, copyright, or other notices of the Licensor in the Software. Any use of the Licensor's trademarks is subject to applicable law.
+
+### Competing Uses
+
+A "Competing Use" means making the Software available to third parties as a hosted or managed service, or using the Software to create or offer a product or service that competes with the Software, including but not limited to:
+
+- Selling, licensing, or distributing exam/CBT software to third parties
+- Offering hosted exam/CBT services (SaaS) to third parties
+- Reselling or white-labeling this software
+- Creating derivative works for commercial distribution to third parties
+
+### Permitted Uses
+
+The following uses are expressly permitted:
+
+- Internal use by educational institutions (schools, universities, training centers)
+- Customization for your own institution's needs
+- Self-hosting for your own organization
+- Non-commercial educational purposes
+- Personal learning and development
+
+### Patents
+
+The Licensor grants You a license, under any patent claims the Licensor can license, or becomes able to license, to make, have made, use, sell, offer for sale, import and have imported the Software, in each case subject to the limitations and conditions in this License. This license does not cover any patent claims that You cause to be infringed by modifications or additions to the Software.
+
+### Fair Use
+
+You may have "fair use" rights for the Software under the law. This License does not limit them.
+
+### No Other Rights
+
+This License does not grant any rights in the trademarks, service marks, or logos of the Licensor.
+
+### Termination
+
+If You violate the terms of this License, Your rights will terminate automatically.
+
+### No Liability
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+## Change Date
+
+Two (2) years from the release date of each version.
+
+Each version of the Software has its own Change Date, calculated as two (2) years from the date that specific version was first publicly released. For example:
+- Version 1.0 released January 2025 → Change Date: January 2027
+- Version 2.0 released July 2025 → Change Date: July 2027
+- Version 3.0 released January 2026 → Change Date: January 2028
+
+On the Change Date for a specific version, the Licensor hereby grants You rights under the terms of the Change License for that version only. Newer versions remain under this FSL License until their own Change Date.
+
+## Change License
+
+Apache License, Version 2.0
+
+After the Change Date for a specific version, that version will be available under the Apache License 2.0, which permits commercial use, modification, distribution, and private use. This does not affect newer versions which remain under FSL until their respective Change Dates.
+
+---
+
+## Commercial License
+
+For commercial licensing inquiries, including:
+- SaaS/hosted service deployment
+- Reselling or white-labeling
+- Commercial distribution
+- Enterprise support
+
+Please contact the Licensor for commercial licensing options.
+
+---
+
+## Attribution
+
+When using this Software, you must:
+1. Retain all copyright notices
+2. Include a copy of this License
+3. Provide attribution to the original project
+
+---
+
+## Summary (Not Legal Advice)
+
+| Permission | Allowed |
+|------------|---------|
+| ✅ Private use | Yes |
+| ✅ Modification | Yes |
+| ✅ Self-hosting | Yes |
+| ✅ Internal use | Yes |
+| ❌ Commercial SaaS | No (until Change Date) |
+| ❌ Reselling | No (until Change Date) |
+| ❌ White-labeling | No (until Change Date) |
+
+This summary is for informational purposes only and is not a substitute for the full license text above.
