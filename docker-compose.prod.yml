@@ -1,0 +1,27 @@
+# ==========================================================================
+# Production Docker Compose with SSL/TLS
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# ==========================================================================
+
+services:
+  nginx:
+    volumes:
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - ./docker/nginx/default-ssl.conf:/etc/nginx/conf.d/default.conf:ro
+    environment:
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx/conf.d
+
+  # ==========================================================================
+  # Certbot for Let's Encrypt SSL
+  # ==========================================================================
+  certbot:
+    image: certbot/certbot:latest
+    container_name: cbt-certbot
+    volumes:
+      - ./docker/nginx/ssl:/etc/letsencrypt
+      - ./public:/var/www/html/public:ro
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    depends_on:
+      - nginx
+    networks:
+      - cbt-network

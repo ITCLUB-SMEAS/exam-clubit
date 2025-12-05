@@ -1,0 +1,66 @@
+# ==========================================================================
+# Docker Ignore - Exclude unnecessary files from build context
+# ==========================================================================
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+
+# Dependencies (will be installed in container)
+node_modules
+vendor
+
+# Build artifacts
+public/build
+public/hot
+
+# Environment files (use docker secrets/env)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+storage/logs/*
+!storage/logs/.gitignore
+
+# Cache
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+bootstrap/cache/*
+!storage/framework/cache/.gitignore
+!storage/framework/sessions/.gitignore
+!storage/framework/views/.gitignore
+!bootstrap/cache/.gitignore
+
+# Testing
+tests
+phpunit.xml
+.phpunit.result.cache
+coverage
+
+# Documentation
+*.md
+!README.md
+docs
+
+# Docker files (not needed inside container)
+docker-compose*.yml
+Dockerfile*
+
+# Misc
+*.bak
+*.sql
+*.zip
+*.tar.gz
+frankenphp
+bun.lock

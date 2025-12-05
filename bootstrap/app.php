@@ -1,5 +1,11 @@
 <?php
 
+// Load Docker secrets if running in container
+$dockerSecretsFile = __DIR__ . '/../docker/php/docker-secrets.php';
+if (file_exists($dockerSecretsFile)) {
+    require_once $dockerSecretsFile;
+}
+
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
