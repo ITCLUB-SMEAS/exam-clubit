@@ -156,6 +156,17 @@
                                 <small class="text-muted">Deteksi wajah siswa via webcam (memerlukan izin kamera)</small>
                             </div>
 
+                            <!-- Audio Detection Option -->
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="audioDetection" v-model="form.audio_detection_enabled">
+                                    <label class="form-check-label" for="audioDetection">
+                                        <i class="fa fa-microphone me-1"></i> Aktifkan Audio Detection
+                                    </label>
+                                </div>
+                                <small class="text-muted">Deteksi suara mencurigakan via mikrofon (memerlukan izin mikrofon)</small>
+                            </div>
+
                             <button type="submit" class="btn btn-md btn-primary border-0 shadow me-2">Simpan</button>
                             <button type="reset" class="btn btn-md btn-warning border-0 shadow">Reset</button>
                         </form>
@@ -223,6 +234,7 @@
                 question_limit: '',
                 time_per_question: '',
                 face_detection_enabled: false,
+                audio_detection_enabled: false,
             });
 
             //method "submit"
@@ -244,6 +256,7 @@
                     question_limit: form.question_limit || null,
                     time_per_question: form.time_per_question || null,
                     face_detection_enabled: form.face_detection_enabled,
+                    audio_detection_enabled: form.audio_detection_enabled,
                 }, {
                     onSuccess: () => {
                         //show success alert

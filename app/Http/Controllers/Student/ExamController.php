@@ -435,6 +435,7 @@ class ExamController extends Controller
             "anticheat_config" => $anticheat_config,
             "initial_violations" => $initial_violations,
             "face_detection_enabled" => $exam_group->exam->face_detection_enabled ?? false,
+            "audio_detection_enabled" => $exam_group->exam->audio_detection_enabled ?? false,
         ]);
     }
 

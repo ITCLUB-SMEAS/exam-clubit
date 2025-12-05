@@ -20,6 +20,7 @@ class ExamViolation extends Model
         'violation_type',
         'description',
         'metadata',
+        'snapshot_path',
         'ip_address',
         'user_agent',
     ];

@@ -22,3 +22,9 @@ Schedule::command('telegram:exam-starting-alert')->everyMinute();
 
 // Backup reminder daily at 22:00
 Schedule::command('telegram:backup-reminder')->dailyAt('22:00');
+
+// Automated database backup daily at 02:00 with cleanup
+Schedule::command('backup:database --cleanup')->dailyAt('02:00');
+
+// Auto cleanup old data (90 days) monthly on 1st at 03:00
+Schedule::command('cleanup:old-data --days=90')->monthlyOn(1, '03:00');

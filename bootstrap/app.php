@@ -35,12 +35,14 @@ return Application::configure(basePath: dirname(__DIR__))
             "admin.or.guru" => \App\Http\Middleware\AdminOrGuru::class,
             "ability" => \App\Http\Middleware\CheckApiAbility::class,
             "turnstile" => \App\Http\Middleware\ValidateTurnstile::class,
+            "2fa" => \App\Http\Middleware\TwoFactorChallenge::class,
+            "file.validate" => \App\Http\Middleware\ValidateFileUpload::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (HttpExceptionInterface $e, $request) {
             $status = $e->getStatusCode();
-            $errorPages = [401, 403, 404, 429, 500, 501, 502, 503, 504];
+            $errorPages = [401, 403, 404, 419, 429, 500, 501, 502, 503, 504];
 
             if (in_array($status, $errorPages) && !$request->expectsJson()) {
                 return response()->view("errors.{$status}", [

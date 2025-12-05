@@ -297,4 +297,73 @@ class StudentController extends Controller
         $students = $classroom->students()->select('id', 'name', 'nisn')->get();
         return response()->json($students);
     }
+
+    /**
+     * Bulk photo upload page
+     */
+    public function bulkPhotoUpload()
+    {
+        return inertia('Admin/Students/BulkPhotoUpload');
+    }
+
+    /**
+     * Process bulk photo upload (ZIP file with NISN-named photos)
+     */
+    public function processBulkPhotoUpload(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:zip|max:51200', // 50MB max
+        ]);
+
+        $zip = new \ZipArchive();
+        $zipPath = $request->file('file')->getRealPath();
+
+        if ($zip->open($zipPath) !== true) {
+            return back()->with('error', 'Gagal membuka file ZIP.');
+        }
+
+        $uploaded = 0;
+        $failed = [];
+        $allowedExt = ['jpg', 'jpeg', 'png', 'webp'];
+
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $filename = $zip->getNameIndex($i);
+            $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+            $nisn = pathinfo($filename, PATHINFO_FILENAME);
+
+            // Skip directories and non-image files
+            if (!in_array($ext, $allowedExt)) continue;
+
+            // Find student by NISN
+            $student = Student::where('nisn', $nisn)->first();
+            if (!$student) {
+                $failed[] = "{$nisn} - Siswa tidak ditemukan";
+                continue;
+            }
+
+            // Extract and save photo
+            $content = $zip->getFromIndex($i);
+            $newFilename = "students/{$nisn}.{$ext}";
+            
+            \Storage::disk('public')->put($newFilename, $content);
+            
+            // Delete old photo if exists
+            if ($student->photo && \Storage::disk('public')->exists($student->photo)) {
+                \Storage::disk('public')->delete($student->photo);
+            }
+
+            $student->update(['photo' => $newFilename]);
+            $uploaded++;
+        }
+
+        $zip->close();
+
+        $message = "{$uploaded} foto berhasil diupload.";
+        if (count($failed) > 0) {
+            $message .= " " . count($failed) . " gagal: " . implode(', ', array_slice($failed, 0, 5));
+            if (count($failed) > 5) $message .= "...";
+        }
+
+        return back()->with('success', $message);
+    }
 }

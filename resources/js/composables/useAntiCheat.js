@@ -68,6 +68,11 @@ export function useAntiCheat(options = {}) {
     const blurCount = ref(0); // Number of times window lost focus
     const BLUR_WARNING_THRESHOLD = 10000; // 10 seconds unfocused triggers warning
     const BLUR_VIOLATION_THRESHOLD = 30000; // 30 seconds total unfocused triggers violation
+
+    // Video stream reference for snapshot
+    const videoStream = ref(null);
+    const videoElement = ref(null);
+
     /**
      * Check if a violation should be recorded (debouncing)
      */
@@ -84,11 +89,55 @@ export function useAntiCheat(options = {}) {
     };
 
     /**
+     * Capture snapshot from webcam
+     */
+    const captureSnapshot = () => {
+        if (!videoElement.value || !videoStream.value) return null;
+        
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = 320; // Small size to reduce bandwidth
+            canvas.height = 240;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoElement.value, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL('image/jpeg', 0.5); // 50% quality
+        } catch (e) {
+            return null;
+        }
+    };
+
+    /**
+     * Initialize video stream for snapshots
+     */
+    const initVideoStream = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { width: 320, height: 240, facingMode: 'user' } 
+            });
+            videoStream.value = stream;
+            
+            // Create hidden video element
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.autoplay = true;
+            video.playsInline = true;
+            video.style.display = 'none';
+            document.body.appendChild(video);
+            videoElement.value = video;
+        } catch (e) {
+            console.warn('Could not init video for snapshots:', e);
+        }
+    };
+
+    /**
      * Record a violation
      */
     const recordViolation = async (type, description = null, metadata = null) => {
         if (!config.value.enabled) return;
         if (!shouldRecordViolation(type)) return;
+
+        // Capture snapshot
+        const snapshot = captureSnapshot();
 
         // Increment local counter immediately
         violationCount.value++;
@@ -138,6 +187,7 @@ export function useAntiCheat(options = {}) {
                     violation_type: type,
                     description: description,
                     metadata: metadata,
+                    snapshot: snapshot,
                 });
 
                 // Check if student got blocked
@@ -983,6 +1033,9 @@ export function useAntiCheat(options = {}) {
     const initialize = async () => {
         if (!config.value.enabled) return;
 
+        // Initialize video stream for snapshots
+        await initVideoStream();
+
         // Add event listeners
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('blur', handleWindowBlur);
@@ -1078,6 +1131,16 @@ export function useAntiCheat(options = {}) {
         document.removeEventListener('contextmenu', handleContextMenu);
         document.removeEventListener('keydown', handleKeyDown);
         document.removeEventListener('keyup', handleKeyUp);
+
+        // Cleanup video stream for snapshots
+        if (videoStream.value) {
+            videoStream.value.getTracks().forEach(track => track.stop());
+            videoStream.value = null;
+        }
+        if (videoElement.value) {
+            videoElement.value.remove();
+            videoElement.value = null;
+        }
 
         // Cleanup screen change listener
         if (screenDetailsRef) {

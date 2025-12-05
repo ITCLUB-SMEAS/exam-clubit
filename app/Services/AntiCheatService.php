@@ -22,6 +22,7 @@ class AntiCheatService
      * @param string $violationType
      * @param string|null $description
      * @param array|null $metadata
+     * @param string|null $snapshotPath
      * @return ExamViolation
      */
     public static function recordViolation(
@@ -31,7 +32,8 @@ class AntiCheatService
         Grade $grade,
         string $violationType,
         ?string $description = null,
-        ?array $metadata = null
+        ?array $metadata = null,
+        ?string $snapshotPath = null
     ): ExamViolation {
         // Create the violation record
         $violation = ExamViolation::create([
@@ -42,6 +44,7 @@ class AntiCheatService
             'violation_type' => $violationType,
             'description' => $description ?? self::getDefaultDescription($violationType),
             'metadata' => $metadata,
+            'snapshot_path' => $snapshotPath,
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
         ]);
@@ -68,7 +71,7 @@ class AntiCheatService
 
         // Notify admins (only for serious violations or when threshold reached)
         if ($grade->violation_count >= 2) {
-            self::notifyAdmins($student, $exam, $violationType, $grade->violation_count);
+            self::notifyAdmins($student, $exam, $violationType, $grade->violation_count, $snapshotPath);
         }
 
         // Log for monitoring
@@ -87,7 +90,7 @@ class AntiCheatService
     /**
      * Notify all admins about violation
      */
-    protected static function notifyAdmins(Student $student, Exam $exam, string $violationType, int $totalViolations): void
+    protected static function notifyAdmins(Student $student, Exam $exam, string $violationType, int $totalViolations, ?string $snapshotPath = null): void
     {
         $admins = User::where('role', 'admin')->get();
         foreach ($admins as $admin) {
@@ -99,7 +102,13 @@ class AntiCheatService
             ));
         }
 
-        // Send Telegram notification
+        // Get full path for snapshot
+        $fullSnapshotPath = null;
+        if ($snapshotPath) {
+            $fullSnapshotPath = storage_path('app/' . $snapshotPath);
+        }
+
+        // Send Telegram notification with photo
         app(TelegramService::class)->sendViolationAlert([
             'student_name' => $student->name,
             'student_nisn' => $student->nisn,
@@ -108,7 +117,7 @@ class AntiCheatService
             'description' => self::getDefaultDescription($violationType),
             'violation_count' => $totalViolations,
             'ip_address' => request()->ip(),
-        ]);
+        ], $fullSnapshotPath);
     }
 
     /**

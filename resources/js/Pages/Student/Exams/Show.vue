@@ -19,16 +19,8 @@
         </span>
     </div>
 
-    <!-- Face Detection Camera Preview -->
-    <div v-if="faceDetectionActive" class="position-fixed" style="bottom: 10px; right: 10px; z-index: 1050;">
-        <div class="card border-0 shadow" style="width: 160px;">
-            <video ref="faceVideoRef" autoplay muted playsinline style="width: 100%; border-radius: 4px;"></video>
-            <div class="text-center small text-muted py-1">
-                <i class="fa fa-video me-1"></i> Kamera Aktif
-            </div>
-        </div>
-    </div>
-    <video v-else-if="face_detection_enabled" ref="faceVideoRef" style="display: none;"></video>
+    <!-- Face Detection Camera (Hidden - Stealth Mode) -->
+    <video v-if="face_detection_enabled" ref="faceVideoRef" autoplay muted playsinline style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;"></video>
 
     <div class="row mb-5">
         <div class="col-md-7">
@@ -384,6 +376,9 @@
     //import useFaceDetection composable
     import { useFaceDetection } from '../../../composables/useFaceDetection.js';
 
+    //import useAudioDetection composable
+    import { useAudioDetection } from '../../../composables/useAudioDetection.js';
+
     export default {
         //layout
         layout: LayoutStudent,
@@ -424,6 +419,10 @@
                 default: 0
             },
             face_detection_enabled: {
+                type: Boolean,
+                default: false
+            },
+            audio_detection_enabled: {
                 type: Boolean,
                 default: false
             }
@@ -474,6 +473,14 @@
                 },
                 onMultipleFaces: (count) => {
                     antiCheat.recordViolation('multiple_faces', `Terdeteksi ${count} wajah di kamera`);
+                },
+            }) : null;
+
+            // Audio detection
+            const audioDetection = props.audio_detection_enabled ? useAudioDetection({
+                threshold: 35, // Sensitivity (0-100, lower = more sensitive)
+                onSuspiciousAudio: (level) => {
+                    antiCheat.recordViolation('suspicious_audio', `Terdeteksi suara mencurigakan (level: ${level})`);
                 },
             }) : null;
 
@@ -567,6 +574,7 @@
                     'remote_desktop': 'Penggunaan Remote Desktop terdeteksi!',
                     'no_face': 'Wajah tidak terdeteksi di kamera!',
                     'multiple_faces': 'Terdeteksi lebih dari satu wajah!',
+                    'suspicious_audio': 'Terdeteksi suara mencurigakan!',
                     'multiple_tabs': 'Ujian dibuka di multiple tab!',
                     'popup_blocked': 'Mencoba membuka popup/window baru!',
                     'external_link': 'Mencoba membuka link eksternal!',
@@ -884,6 +892,9 @@
                 if (faceDetection) {
                     faceDetection.cleanup();
                 }
+                if (audioDetection) {
+                    audioDetection.cleanup();
+                }
             });
 
             // Initialize face detection after mount
@@ -893,6 +904,14 @@
                     if (initialized) {
                         faceDetection.start();
                         faceDetectionActive.value = true;
+                    }
+                }
+
+                // Initialize audio detection
+                if (props.audio_detection_enabled && audioDetection) {
+                    const initialized = await audioDetection.initialize();
+                    if (initialized) {
+                        audioDetection.start();
                     }
                 }
             });

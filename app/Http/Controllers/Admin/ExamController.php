@@ -375,6 +375,9 @@ class ExamController extends Controller
             $correctAnswers = array_filter(array_map("trim", explode(",", $correctAnswers)));
         }
 
+        // Create version before update
+        $question->createVersion(auth()->id(), 'Updated via form');
+
         $question->update([
             "question" => $request->question,
             "question_type" => $questionType,

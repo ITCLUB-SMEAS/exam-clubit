@@ -128,7 +128,38 @@ class TelegramService
 
     // ==================== VIOLATION ALERTS ====================
 
-    public function sendViolationAlert(array $data): bool
+    public function sendPhoto(string $filePath, ?string $caption = null, ?string $chatId = null, ?int $topicId = null, ?array $buttons = null): bool
+    {
+        if (!$this->token || !file_exists($filePath)) {
+            return false;
+        }
+
+        try {
+            $payload = [
+                'chat_id' => $chatId ?? $this->chatId,
+                'caption' => $caption,
+                'parse_mode' => 'HTML',
+            ];
+
+            if ($topicId) {
+                $payload['message_thread_id'] = $topicId;
+            }
+
+            if ($buttons) {
+                $payload['reply_markup'] = json_encode(['inline_keyboard' => $buttons]);
+            }
+
+            $response = Http::attach('photo', file_get_contents($filePath), 'snapshot.jpg')
+                ->post("https://api.telegram.org/bot{$this->token}/sendPhoto", $payload);
+
+            return $response->successful();
+        } catch (\Exception $e) {
+            Log::error('Telegram send photo failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function sendViolationAlert(array $data, ?string $snapshotPath = null): bool
     {
         if ($this->isMuted()) {
             return false;
@@ -145,6 +176,7 @@ class TelegramService
 
         // Inline keyboard buttons
         $nisn = $data['student_nisn'] ?? null;
+        $buttons = null;
         if ($nisn) {
             $buttons = [
                 [
@@ -155,6 +187,12 @@ class TelegramService
                     ['text' => '🚫 Kick dari Ujian', 'callback_data' => "kick_{$nisn}"],
                 ]
             ];
+        }
+
+        // Send with photo if snapshot exists
+        if ($snapshotPath && file_exists($snapshotPath)) {
+            $this->sendPhotoToAll($snapshotPath, $message, $buttons);
+        } elseif ($buttons) {
             $this->sendToAllWithKeyboard($message, $buttons);
         } else {
             $this->sendToAll($message);
@@ -164,6 +202,18 @@ class TelegramService
         $this->checkMassViolation();
         
         return true;
+    }
+
+    public function sendPhotoToAll(string $filePath, string $caption, ?array $buttons = null): void
+    {
+        $notifyIds = array_filter(explode(',', config('services.telegram.notify_ids', '')));
+        $groupTopicId = config('services.telegram.group_topic_id');
+        
+        foreach ($notifyIds as $chatId) {
+            $chatId = trim($chatId);
+            $topicId = (str_starts_with($chatId, '-') && $groupTopicId) ? (int) $groupTopicId : null;
+            $this->sendPhoto($filePath, $caption, $chatId, $topicId, $buttons);
+        }
     }
 
     public function sendToAllWithKeyboard(string $message, array $buttons): void

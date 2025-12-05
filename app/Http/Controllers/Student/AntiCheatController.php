@@ -11,6 +11,7 @@ use App\Services\AntiCheatService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class AntiCheatController extends Controller
 {
@@ -29,6 +30,7 @@ class AntiCheatController extends Controller
             'violation_type' => 'required|string|max:50',
             'description' => 'nullable|string|max:500',
             'metadata' => 'nullable|array',
+            'snapshot' => 'nullable|string', // Base64 image
         ]);
 
         $student = auth()->guard('student')->user();
@@ -66,6 +68,12 @@ class AntiCheatController extends Controller
             ], 400);
         }
 
+        // Save snapshot if provided
+        $snapshotPath = null;
+        if ($request->snapshot) {
+            $snapshotPath = $this->saveSnapshot($request->snapshot, $student->id, $request->exam_id);
+        }
+
         // Record the violation
         $violation = AntiCheatService::recordViolation(
             $student,
@@ -74,7 +82,8 @@ class AntiCheatController extends Controller
             $grade,
             $request->violation_type,
             $request->description,
-            $request->metadata
+            $request->metadata,
+            $snapshotPath
         );
 
         // Check if auto-submit should be triggered
@@ -333,5 +342,40 @@ class AntiCheatController extends Controller
             'server_time' => (int) (microtime(true) * 1000), // milliseconds
             'timestamp' => now()->toIso8601String(),
         ]);
+    }
+
+    /**
+     * Save snapshot from base64 image
+     */
+    protected function saveSnapshot(string $base64Image, int $studentId, int $examId): ?string
+    {
+        try {
+            // Remove data URL prefix if present
+            if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $matches)) {
+                $base64Image = substr($base64Image, strpos($base64Image, ',') + 1);
+            }
+
+            $imageData = base64_decode($base64Image);
+            if ($imageData === false) return null;
+
+            // Validate it's actually an image (check magic bytes)
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+            $mimeType = $finfo->buffer($imageData);
+            if (!in_array($mimeType, ['image/jpeg', 'image/png', 'image/webp'])) {
+                return null;
+            }
+
+            // Limit size to 100KB
+            if (strlen($imageData) > 102400) {
+                return null;
+            }
+
+            $filename = sprintf('violations/%d/%d_%s.jpg', $examId, $studentId, now()->format('Ymd_His'));
+            Storage::disk('local')->put($filename, $imageData);
+
+            return $filename;
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 }

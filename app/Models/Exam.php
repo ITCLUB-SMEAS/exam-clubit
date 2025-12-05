@@ -32,6 +32,7 @@ class Exam extends Model
         // Anti-cheat settings
         "anticheat_enabled",
         "face_detection_enabled",
+        "audio_detection_enabled",
         "fullscreen_required",
         "block_tab_switch",
         "block_copy_paste",

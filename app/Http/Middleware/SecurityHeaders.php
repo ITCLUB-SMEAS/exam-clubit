@@ -28,14 +28,15 @@ class SecurityHeaders
         $response->headers->set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
 
         // Content Security Policy
-        if (app()->environment('production')) {
-            $response->headers->set('Content-Security-Policy', $this->getCSP());
-        }
+        $response->headers->set('Content-Security-Policy', $this->getCSP());
 
         // Strict Transport Security (HTTPS only)
-        if ($request->secure() || app()->environment('production')) {
-            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        if ($request->secure()) {
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
         }
+
+        // Additional security headers
+        $response->headers->set('X-Permitted-Cross-Domain-Policies', 'none');
 
         return $response;
     }
@@ -44,17 +45,17 @@ class SecurityHeaders
     {
         return implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tiny.cloud https://cdnjs.cloudflare.com https://challenges.cloudflare.com",
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tiny.cloud https://cdnjs.cloudflare.com",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://*.cloudflare.com",
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
             "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:",
-            "img-src 'self' data: blob: https:",
-            "connect-src 'self' https://cdn.tiny.cloud https://challenges.cloudflare.com",
-            "frame-src 'self' https://challenges.cloudflare.com",
+            "img-src 'self' data: blob: https: http:",
+            "connect-src 'self' https://challenges.cloudflare.com https://*.cloudflare.com wss: ws:",
+            "frame-src 'self' https://challenges.cloudflare.com https://*.cloudflare.com",
             "frame-ancestors 'self'",
             "form-action 'self'",
             "base-uri 'self'",
             "object-src 'none'",
-            "upgrade-insecure-requests",
+            "media-src 'self' blob:",
         ]);
     }
 }

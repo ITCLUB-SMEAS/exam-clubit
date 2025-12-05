@@ -64,16 +64,46 @@ class ExamSessionController extends Controller
             'end_time'      => 'required',
         ]);
 
+        $startTime = date('Y-m-d H:i:s', strtotime($request->start_time));
+        $endTime = date('Y-m-d H:i:s', strtotime($request->end_time));
+
+        // Check for scheduling conflicts
+        $exam = Exam::findOrFail($request->exam_id);
+        $conflicts = $this->checkScheduleConflicts($exam->classroom_id, $startTime, $endTime);
+        
+        if ($conflicts->isNotEmpty()) {
+            $conflictList = $conflicts->map(fn($c) => $c->title . ' (' . $c->start_time->format('H:i') . '-' . $c->end_time->format('H:i') . ')')->join(', ');
+            return back()->withErrors(['start_time' => "Jadwal bentrok dengan: {$conflictList}"])->withInput();
+        }
+
         //create exam_session
         ExamSession::create([
             'title'         => $request->title,
             'exam_id'       => $request->exam_id,
-            'start_time'    => date('Y-m-d H:i:s', strtotime($request->start_time)),
-            'end_time'      => date('Y-m-d H:i:s', strtotime($request->end_time)),
+            'start_time'    => $startTime,
+            'end_time'      => $endTime,
         ]);
 
         //redirect
         return redirect()->route('admin.exam_sessions.index');
+    }
+
+    /**
+     * Check for scheduling conflicts in the same classroom
+     */
+    protected function checkScheduleConflicts(int $classroomId, string $startTime, string $endTime, ?int $excludeId = null)
+    {
+        return ExamSession::whereHas('exam', fn($q) => $q->where('classroom_id', $classroomId))
+            ->where(function ($q) use ($startTime, $endTime) {
+                $q->whereBetween('start_time', [$startTime, $endTime])
+                  ->orWhereBetween('end_time', [$startTime, $endTime])
+                  ->orWhere(function ($q2) use ($startTime, $endTime) {
+                      $q2->where('start_time', '<=', $startTime)
+                         ->where('end_time', '>=', $endTime);
+                  });
+            })
+            ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+            ->get();
     }
 
     /**
@@ -157,13 +187,25 @@ class ExamSessionController extends Controller
             'start_time'    => 'required',
             'end_time'      => 'required',
         ]);
+
+        $startTime = date('Y-m-d H:i:s', strtotime($request->start_time));
+        $endTime = date('Y-m-d H:i:s', strtotime($request->end_time));
+
+        // Check for scheduling conflicts (exclude current session)
+        $exam = Exam::findOrFail($request->exam_id);
+        $conflicts = $this->checkScheduleConflicts($exam->classroom_id, $startTime, $endTime, $exam_session->id);
+        
+        if ($conflicts->isNotEmpty()) {
+            $conflictList = $conflicts->map(fn($c) => $c->title . ' (' . $c->start_time->format('H:i') . '-' . $c->end_time->format('H:i') . ')')->join(', ');
+            return back()->withErrors(['start_time' => "Jadwal bentrok dengan: {$conflictList}"])->withInput();
+        }
         
         //update exam_session
         $exam_session->update([
             'title'         => $request->title,
             'exam_id'       => $request->exam_id,
-            'start_time'    => date('Y-m-d H:i:s', strtotime($request->start_time)),
-            'end_time'      => date('Y-m-d H:i:s', strtotime($request->end_time)),
+            'start_time'    => $startTime,
+            'end_time'      => $endTime,
         ]);
         
         //redirect

@@ -97,6 +97,9 @@ class ActivityLogService
                 ? "{$userName} berhasil login"
                 : "Percobaan login gagal untuk {$userName}";
 
+        // Record to login_histories table
+        \App\Models\LoginHistory::record($userType, $user->id ?? 0, $status, request());
+
         /** @var ActivityLog $log */
         $log = ActivityLog::query()->create([
             "user_type" => $userType,

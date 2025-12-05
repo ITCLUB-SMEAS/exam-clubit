@@ -16,6 +16,16 @@ Route::prefix("admin")->group(function () {
             App\Http\Controllers\Admin\DashboardController::class,
         )->name("admin.dashboard");
 
+        // Profile
+        Route::get("/profile", [\App\Http\Controllers\Admin\ProfileController::class, "index"])->name("admin.profile.index");
+        Route::put("/profile", [\App\Http\Controllers\Admin\ProfileController::class, "update"])->name("admin.profile.update");
+        Route::put("/profile/password", [\App\Http\Controllers\Admin\ProfileController::class, "updatePassword"])->name("admin.profile.password");
+        Route::post("/profile/photo", [\App\Http\Controllers\Admin\ProfileController::class, "updatePhoto"])->name("admin.profile.photo");
+        Route::get("/profile/2fa/setup", [\App\Http\Controllers\Admin\ProfileController::class, "setup2FA"])->name("admin.profile.2fa.setup");
+        Route::post("/profile/2fa/enable", [\App\Http\Controllers\Admin\ProfileController::class, "enable2FA"])->name("admin.profile.2fa.enable");
+        Route::post("/profile/2fa/disable", [\App\Http\Controllers\Admin\ProfileController::class, "disable2FA"])->name("admin.profile.2fa.disable");
+        Route::post("/profile/2fa/regenerate", [\App\Http\Controllers\Admin\ProfileController::class, "regenerateCodes"])->name("admin.profile.2fa.regenerate");
+
         // ============================================
         // ADMIN ONLY ROUTES (User & Student Management)
         // ============================================
@@ -37,6 +47,17 @@ Route::prefix("admin")->group(function () {
                 \App\Http\Controllers\Admin\StudentController::class,
                 "storeImport",
             ])->name("admin.students.storeImport");
+
+            // Bulk Photo Upload
+            Route::get("/students/bulk-photo", [
+                \App\Http\Controllers\Admin\StudentController::class,
+                "bulkPhotoUpload",
+            ])->name("admin.students.bulkPhotoUpload");
+
+            Route::post("/students/bulk-photo", [
+                \App\Http\Controllers\Admin\StudentController::class,
+                "processBulkPhotoUpload",
+            ])->name("admin.students.bulkPhotoUpload.process");
 
             Route::post("/students/{student}/toggle-block", [
                 \App\Http\Controllers\Admin\StudentController::class,
@@ -70,6 +91,28 @@ Route::prefix("admin")->group(function () {
                 \App\Http\Controllers\Admin\ActivityLogController::class,
                 "cleanup",
             ])->name("admin.activity-logs.cleanup");
+
+            // Maintenance Mode
+            Route::get("/maintenance", [
+                \App\Http\Controllers\Admin\MaintenanceController::class,
+                "index",
+            ])->name("admin.maintenance.index");
+
+            Route::post("/maintenance/toggle", [
+                \App\Http\Controllers\Admin\MaintenanceController::class,
+                "toggle",
+            ])->name("admin.maintenance.toggle");
+
+            // Cleanup Old Data
+            Route::get("/cleanup", [
+                \App\Http\Controllers\Admin\CleanupController::class,
+                "index",
+            ])->name("admin.cleanup.index");
+
+            Route::post("/cleanup", [
+                \App\Http\Controllers\Admin\CleanupController::class,
+                "cleanup",
+            ])->name("admin.cleanup.run");
         });
 
         // ============================================
@@ -308,6 +351,11 @@ Route::prefix("admin")->group(function () {
             "index",
         ])->name("admin.violation-logs.index");
 
+        Route::get("/violation-logs/{violation}/snapshot", [
+            \App\Http\Controllers\Admin\ViolationLogController::class,
+            "snapshot",
+        ])->name("admin.violation-logs.snapshot");
+
         // Analytics & Statistics
         Route::get("/analytics", [
             \App\Http\Controllers\Admin\AnalyticsController::class,
@@ -455,7 +503,30 @@ Route::prefix("admin")->group(function () {
             \App\Http\Controllers\Admin\EssayGradingController::class,
             "bulkGrade",
         ])->name("admin.essay-grading.bulk");
+
+        // Real-time Exam Monitor
+        Route::get("/monitor", [\App\Http\Controllers\Admin\ExamMonitorController::class, "index"])->name("admin.monitor.index");
+        Route::get("/monitor/{examSession}", [\App\Http\Controllers\Admin\ExamMonitorController::class, "show"])->name("admin.monitor.show");
+        Route::get("/monitor/{examSession}/participants", [\App\Http\Controllers\Admin\ExamMonitorController::class, "participants"])->name("admin.monitor.participants");
+        Route::get("/monitor/{examSession}/violations", [\App\Http\Controllers\Admin\ExamMonitorController::class, "violations"])->name("admin.monitor.violations");
+
+        // Backup Management (Admin Only)
+        Route::middleware(['admin.only'])->group(function () {
+            Route::get("/backup", [\App\Http\Controllers\Admin\BackupController::class, "index"])->name("admin.backup.index");
+            Route::post("/backup", [\App\Http\Controllers\Admin\BackupController::class, "create"])->name("admin.backup.create");
+            Route::get("/backup/{filename}/download", [\App\Http\Controllers\Admin\BackupController::class, "download"])->name("admin.backup.download");
+            Route::delete("/backup/{filename}", [\App\Http\Controllers\Admin\BackupController::class, "destroy"])->name("admin.backup.destroy");
+            Route::post("/backup/cleanup", [\App\Http\Controllers\Admin\BackupController::class, "cleanup"])->name("admin.backup.cleanup");
+        });
+
+        // Question Version History
+        Route::get("/questions/{question}/versions", [\App\Http\Controllers\Admin\QuestionVersionController::class, "index"])->name("admin.questions.versions");
+        Route::post("/questions/{question}/restore/{version}", [\App\Http\Controllers\Admin\QuestionVersionController::class, "restore"])->name("admin.questions.restore");
     });
+
+    // 2FA Challenge (outside main auth middleware)
+    Route::get("/two-factor/challenge", [\App\Http\Controllers\Admin\TwoFactorChallengeController::class, "show"])->name("admin.two-factor.challenge")->middleware('auth');
+    Route::post("/two-factor/challenge", [\App\Http\Controllers\Admin\TwoFactorChallengeController::class, "verify"])->name("admin.two-factor.verify")->middleware('auth');
 });
 
 //route homepage (student login)

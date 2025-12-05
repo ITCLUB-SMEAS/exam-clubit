@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ExamViolation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ViolationLogController extends Controller
 {
@@ -35,5 +36,14 @@ class ViolationLogController extends Controller
             'filters' => $request->only(['student_id', 'exam_id', 'violation_type']),
             'violationTypes' => ExamViolation::getViolationTypes(),
         ]);
+    }
+
+    public function snapshot(ExamViolation $violation)
+    {
+        if (!$violation->snapshot_path || !Storage::disk('local')->exists($violation->snapshot_path)) {
+            abort(404);
+        }
+
+        return response()->file(Storage::disk('local')->path($violation->snapshot_path));
     }
 }

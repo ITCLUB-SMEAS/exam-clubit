@@ -56,4 +56,39 @@ class Question extends Model
     {
         return $this->belongsTo(Exam::class);
     }
+
+    public function versions()
+    {
+        return $this->hasMany(QuestionVersion::class)->orderBy('version_number', 'desc');
+    }
+
+    public function createVersion(?int $userId = null, ?string $reason = null): QuestionVersion
+    {
+        $versionNumber = ($this->current_version ?? 0) + 1;
+
+        $version = QuestionVersion::create([
+            'question_id' => $this->id,
+            'user_id' => $userId,
+            'version_number' => $versionNumber,
+            'data' => $this->only([
+                'question', 'question_type', 'points',
+                'option_1', 'option_2', 'option_3', 'option_4', 'option_5',
+                'answer', 'correct_answers', 'matching_pairs',
+            ]),
+            'change_reason' => $reason,
+        ]);
+
+        $this->update(['current_version' => $versionNumber]);
+
+        return $version;
+    }
+
+    public function restoreVersion(int $versionNumber): bool
+    {
+        $version = $this->versions()->where('version_number', $versionNumber)->first();
+        if (!$version) return false;
+
+        $this->update($version->data);
+        return true;
+    }
 }
