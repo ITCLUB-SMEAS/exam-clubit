@@ -13,6 +13,7 @@ Aplikasi Ujian Online berbasis web untuk sekolah/institusi pendidikan. Dibangun 
 - Maatwebsite Excel (Import/Export)
 - Barryvdh DomPDF (Export PDF)
 - Redis (Session & Cache)
+- PragmaRX Google2FA (Two-Factor Auth)
 
 **Frontend:**
 - Vue.js 3 (Composition API)
@@ -27,21 +28,21 @@ Aplikasi Ujian Online berbasis web untuk sekolah/institusi pendidikan. Dibangun 
 
 **Integrasi:**
 - Cloudflare Turnstile (CAPTCHA)
-- Telegram Bot (Notifikasi)
+- Telegram Bot (Notifikasi & Remote Control)
 - Google Gemini AI (Question Generator)
 
 ## 📊 Statistik Project
 
 | Metric | Jumlah |
 |--------|--------|
-| Total Lines of Code | ~22,000 |
-| PHP Files | 94 |
-| Vue Components | 66 |
-| Database Models | 14 |
-| Database Migrations | 44 |
-| Controllers | 30+ |
-| Services | 12 |
-| Middleware | 10 |
+| Total Lines of Code | ~26,000 |
+| PHP Files | 121 |
+| Vue Components | 73 |
+| Database Models | 17 |
+| Database Migrations | 58 |
+| Controllers | 46 |
+| Services | 14 |
+| Middleware | 12 |
 
 ## ✨ Fitur Lengkap
 
@@ -60,6 +61,8 @@ Aplikasi Ujian Online berbasis web untuk sekolah/institusi pendidikan. Dibangun 
 - Role-based access control:
   - **Admin**: Akses penuh ke semua fitur
   - **Guru**: Akses terbatas (tidak bisa kelola user & siswa)
+- Two-Factor Authentication (2FA) dengan Google Authenticator
+- Recovery codes untuk backup 2FA
 
 #### 📚 Manajemen Mata Pelajaran
 - CRUD mata pelajaran/lesson
@@ -70,10 +73,16 @@ Aplikasi Ujian Online berbasis web untuk sekolah/institusi pendidikan. Dibangun 
 - Relasi dengan siswa
 - Filter siswa berdasarkan kelas
 
+#### 🏢 Manajemen Ruangan
+- CRUD ruangan ujian
+- Kapasitas ruangan
+- Assign siswa ke ruangan
+
 #### 👨‍🎓 Manajemen Siswa
 - CRUD data siswa lengkap
 - Import siswa via Excel (bulk)
-- Assign siswa ke kelas
+- Bulk upload foto siswa
+- Assign siswa ke kelas & ruangan
 - Reset password (individual & bulk)
 - Blokir/unblokir siswa
 - Filter & search
@@ -102,6 +111,7 @@ Aplikasi Ujian Online berbasis web untuk sekolah/institusi pendidikan. Dibangun 
 - Duplikasi ujian (clone)
 - Bulk update poin soal
 - Bulk delete soal
+- Question versioning (riwayat perubahan soal)
 
 #### 🗃️ Bank Soal
 - Kategori soal (CRUD)
@@ -119,6 +129,35 @@ Aplikasi Ujian Online berbasis web untuk sekolah/institusi pendidikan. Dibangun 
 - Pause/Resume ujian:
   - Per siswa
   - Semua siswa dalam sesi
+- Cetak kartu peserta ujian (PDF)
+
+#### 📋 Sistem Absensi
+- Token absensi 6 digit per sesi
+- QR Code dinamis (rotasi setiap 30 detik)
+- Check-in via token atau QR code
+- Manual check-in oleh admin
+- Monitoring kehadiran real-time
+- Regenerate token absensi
+
+#### 👁️ Monitoring Real-time
+- Dashboard monitoring ujian aktif
+- Status peserta (belum mulai, sedang mengerjakan, selesai, pause)
+- Progress pengerjaan per siswa
+- Violation count real-time
+- Flag siswa mencurigakan
+- Last activity tracking
+
+#### ⏱️ Perpanjangan Waktu
+- Interface khusus untuk extend waktu
+- Perpanjangan per siswa
+- Alasan perpanjangan (wajib)
+- Riwayat perpanjangan
+
+#### ⏸️ Pause/Resume Ujian
+- Pause ujian per siswa dengan alasan
+- Pause semua siswa dalam sesi
+- Resume individual atau bulk
+- Tracking waktu pause
 
 #### ✍️ Penilaian Essay
 - Interface khusus untuk menilai soal essay/short answer
@@ -170,6 +209,7 @@ Sistem anti-kecurangan komprehensif yang **otomatis aktif** untuk semua ujian:
   - Tanggal
 - Detail: waktu, siswa, ujian, tipe, deskripsi, IP address
 - Badge warna berbeda per tipe pelanggaran
+- Snapshot wajah saat pelanggaran (jika tersedia)
 
 #### 📈 Laporan & Export
 - Laporan nilai per ujian
@@ -177,9 +217,11 @@ Sistem anti-kecurangan komprehensif yang **otomatis aktif** untuk semua ujian:
 - **Export ke Excel:**
   - Nilai per ujian
   - Rekap nilai siswa
+  - Activity logs
 - **Export ke PDF:**
   - Nilai individu siswa (dengan detail jawaban)
   - Hasil ujian keseluruhan
+  - Kartu peserta ujian
   - Laporan per siswa
 - Rate limited (10 request/menit) untuk mencegah abuse
 
@@ -188,11 +230,18 @@ Sistem anti-kecurangan komprehensif yang **otomatis aktif** untuk semua ujian:
   - Login/logout
   - CRUD operations
   - Export data
+  - Pause/resume ujian
   - dll
 - Filter & search logs
 - Export logs ke Excel
 - Cleanup logs lama (Admin only)
 - Detail: user, action, IP address, user agent, timestamp
+
+#### 🔐 Login History
+- Riwayat login admin & siswa
+- Status login (success/failed)
+- IP address & user agent
+- Statistik login harian
 
 #### 📊 Analytics & Statistik
 - Overview performa keseluruhan
@@ -228,11 +277,68 @@ Sistem anti-kecurangan komprehensif yang **otomatis aktif** untuk semua ujian:
 - Mark as read
 - Bulk delete
 
+#### 💾 Backup & Restore
+- Backup database manual
+- Download backup file
+- List semua backup
+- Hapus backup lama
+- Auto cleanup backup > 7 hari
+
+#### 🔧 Maintenance Mode
+- Toggle maintenance mode
+- Custom maintenance message
+- Secret bypass URL
+- Allowed IPs whitelist
+
+#### 🧹 Data Cleanup
+- Cleanup data lama (configurable days)
+- Statistik data yang akan dihapus:
+  - Activity logs
+  - Login history
+  - Violation logs
+  - Backup files
+
 #### 📱 Telegram Integration
 - Notifikasi ujian akan dimulai
 - Daily summary (scheduled)
 - Weekly report (scheduled)
 - Server health check alerts
+- **Token absensi** (lihat & generate token baru via bot)
+- Alert pelanggaran anti-cheat real-time (dengan foto)
+- Mass violation alert (5+ siswa dalam 5 menit)
+- Quick actions via inline buttons
+
+**Bot Commands:**
+| Command | Deskripsi |
+|---------|-----------|
+| `/start` | Mulai bot |
+| `/help` | Daftar lengkap perintah |
+| `/status` | Ujian aktif saat ini |
+| `/students_online` | Siswa sedang mengerjakan |
+| `/summary` | Rekap hari ini |
+| `/violations` | Pelanggaran hari ini |
+| `/health` | Server health check |
+| `/token` | Lihat token absensi aktif |
+| `/token [session_id]` | Token sesi tertentu |
+| `/new_token [session_id]` | Generate token baru |
+| `/search [nama]` | Cari siswa |
+| `/score [nisn]` | Nilai siswa |
+| `/exam_list` | Ujian mendatang |
+| `/class [nama]` | Info kelas |
+| `/stats [exam_id]` | Statistik ujian |
+| `/top [exam_id]` | Top 5 nilai |
+| `/failed [exam_id]` | Siswa tidak lulus |
+| `/block [nisn]` | Blokir siswa |
+| `/unblock [nisn]` | Unblock siswa |
+| `/extend [nisn] [menit]` | Tambah waktu ujian |
+| `/pause [nisn]` | Pause ujian siswa |
+| `/resume [nisn]` | Resume ujian siswa |
+| `/kick [nisn]` | Force submit ujian |
+| `/reset_violation [nisn]` | Reset pelanggaran |
+| `/export [exam_id]` | Export PDF hasil ujian |
+| `/broadcast [pesan]` | Kirim ke semua admin |
+| `/mute` | Matikan notifikasi 24 jam |
+| `/unmute` | Nyalakan notifikasi |
 
 ---
 
@@ -256,6 +362,7 @@ Sistem anti-kecurangan komprehensif yang **otomatis aktif** untuk semua ujian:
 
 #### ✏️ Mengerjakan Ujian
 - Konfirmasi sebelum mulai (dengan rules)
+- Absensi via token/QR code (jika diwajibkan)
 - Timer countdown (real-time)
 - Navigasi soal (numbered buttons)
 - Indikator soal sudah/belum dijawab
@@ -264,6 +371,7 @@ Sistem anti-kecurangan komprehensif yang **otomatis aktif** untuk semua ujian:
 - Auto-submit saat waktu habis
 - Auto-submit saat max violations
 - Remedial/retry (jika diizinkan admin)
+- Halaman pause (jika di-pause admin)
 - **Anti-cheat protection aktif:**
   - Fullscreen mode
   - Face detection monitoring
@@ -317,6 +425,7 @@ API endpoints untuk integrasi dengan sistem lain:
 | `/api/students/{id}` | PUT | Update siswa |
 | `/api/grades` | GET | List nilai |
 | `/api/grades/{id}` | GET | Detail nilai |
+| `/api/exams` | GET | List ujian |
 
 - Authentication via Laravel Sanctum (Bearer Token)
 - Rate limited
@@ -377,6 +486,8 @@ TURNSTILE_SECRET_KEY=your-secret-key
 # Telegram (opsional)
 TELEGRAM_BOT_TOKEN=your-bot-token
 TELEGRAM_CHAT_ID=your-chat-id
+TELEGRAM_NOTIFY_IDS=chat_id_1,chat_id_2
+TELEGRAM_GROUP_TOPIC_ID=topic_id
 
 # Google Gemini AI (opsional)
 GEMINI_API_KEY=your-api-key
@@ -421,27 +532,45 @@ ujian-online/
 ├── app/
 │   ├── Console/Commands/       # Artisan commands
 │   │   ├── BackupReminder.php
+│   │   ├── CleanupExpiredTokens.php
+│   │   ├── CleanupOldData.php
+│   │   ├── DatabaseBackup.php
 │   │   ├── ExamStartingAlert.php
+│   │   ├── GeneratePwaIcons.php
+│   │   ├── HashExistingPasswords.php
 │   │   ├── SendTelegramDailySummary.php
 │   │   ├── SendTelegramWeeklyReport.php
 │   │   └── ServerHealthCheck.php
 │   ├── Exports/                # Excel exports
+│   ├── Imports/                # Excel imports
+│   ├── Jobs/                   # Queue jobs
+│   │   ├── ExportPdfJob.php
+│   │   ├── ProcessViolation.php
+│   │   └── SendTelegramNotification.php
 │   ├── Http/
 │   │   ├── Controllers/
-│   │   │   ├── Admin/          # 21 controllers
-│   │   │   ├── Api/            # API controllers
-│   │   │   └── Student/        # 5 controllers
+│   │   │   ├── Admin/          # 32 controllers
+│   │   │   ├── Api/            # 4 API controllers
+│   │   │   └── Student/        # 7 controllers
 │   │   └── Middleware/
 │   │       ├── AdminOnly.php
 │   │       ├── AdminOrGuru.php
 │   │       ├── AuthStudent.php
+│   │       ├── CheckApiAbility.php
 │   │       ├── SecurityHeaders.php
 │   │       ├── SanitizeInput.php
+│   │       ├── StudentSingleSession.php
+│   │       ├── ThrottleStudentLogin.php
+│   │       ├── TwoFactorChallenge.php
+│   │       ├── ValidateFileUpload.php
 │   │       └── ValidateTurnstile.php
-│   ├── Models/                 # 14 Eloquent models
-│   └── Services/               # 12 service classes
+│   ├── Models/                 # 17 Eloquent models
+│   ├── Notifications/          # Notification classes
+│   ├── Policies/               # Authorization policies
+│   └── Services/               # 14 service classes
 │       ├── ActivityLogService.php
 │       ├── AntiCheatService.php
+│       ├── BackupService.php
 │       ├── BehaviorAnalysisService.php
 │       ├── DuplicateQuestionService.php
 │       ├── ExamCompletionService.php
@@ -451,9 +580,10 @@ ujian-online/
 │       ├── ItemAnalysisService.php
 │       ├── PlagiarismService.php
 │       ├── SanitizationService.php
-│       └── TelegramService.php
+│       ├── TelegramService.php
+│       └── TwoFactorService.php
 ├── database/
-│   ├── migrations/             # 44 migrations
+│   ├── migrations/             # 58 migrations
 │   └── seeders/
 ├── public/
 │   ├── sw.js                   # Service Worker
@@ -466,12 +596,48 @@ ujian-online/
 │   │   ├── Components/         # Reusable Vue components
 │   │   ├── Layouts/            # Layout components
 │   │   ├── composables/
-│   │   │   ├── useAntiCheat.js      # Anti-cheat (1,161 lines)
+│   │   │   ├── useAntiCheat.js      # Anti-cheat system
 │   │   │   ├── useFaceDetection.js  # Face detection
 │   │   │   └── usePWA.js            # PWA install prompt
-│   │   └── Pages/              # 66 Vue pages
+│   │   └── Pages/              # 73 Vue pages
 │   │       ├── Admin/
+│   │       │   ├── ActivityLogs/
+│   │       │   ├── AIGenerator/
+│   │       │   ├── Analytics/
+│   │       │   ├── Attendance/
+│   │       │   ├── Backup/
+│   │       │   ├── Classrooms/
+│   │       │   ├── Cleanup/
+│   │       │   ├── Dashboard/
+│   │       │   ├── EssayGrading/
+│   │       │   ├── ExamCards/
+│   │       │   ├── ExamGroups/
+│   │       │   ├── ExamPause/
+│   │       │   ├── Exams/
+│   │       │   ├── ExamSessions/
+│   │       │   ├── ItemAnalysis/
+│   │       │   ├── Lessons/
+│   │       │   ├── LoginHistory/
+│   │       │   ├── Maintenance/
+│   │       │   ├── Monitor/
+│   │       │   ├── Notifications/
+│   │       │   ├── Plagiarism/
+│   │       │   ├── Profile/
+│   │       │   ├── QuestionBank/
+│   │       │   ├── QuestionCategories/
+│   │       │   ├── Questions/
+│   │       │   ├── Reports/
+│   │       │   ├── Rooms/
+│   │       │   ├── Students/
+│   │       │   ├── TimeExtension/
+│   │       │   ├── TwoFactor/
+│   │       │   ├── Users/
+│   │       │   └── ViolationLogs/
 │   │       └── Student/
+│   │           ├── Dashboard/
+│   │           ├── Exams/
+│   │           ├── Login/
+│   │           └── Profile/
 │   └── views/
 │       └── exports/            # PDF templates
 └── routes/
@@ -506,6 +672,7 @@ Middleware `SanitizeInput` membersihkan input:
 - Password Hashing (Bcrypt/Argon2)
 - Session Security (encrypted, secure cookie)
 - Single Device Login (siswa)
+- Two-Factor Authentication (admin)
 - Rate Limiting:
   - Login: 5 attempts/5 minutes
   - PDF Export: 10 requests/minute
@@ -518,12 +685,14 @@ Middleware `SanitizeInput` membersihkan input:
 - Server-side violation logging
 - Auto-submit on max violations
 - IP logging per violation
+- Snapshot capture on violation
 
 ### Other Security
 - SQL Injection Prevention (Eloquent ORM)
 - Role-based Authorization
 - Activity Logging
 - IP Logging
+- Login History Tracking
 - Global 419 (CSRF) error handling
 
 ---
@@ -531,6 +700,9 @@ Middleware `SanitizeInput` membersihkan input:
 ## 🔧 Artisan Commands
 
 ```bash
+# Backup database
+php artisan db:backup
+
 # Kirim reminder backup
 php artisan backup:reminder
 
@@ -549,8 +721,14 @@ php artisan server:health-check
 # Cleanup expired tokens
 php artisan tokens:cleanup
 
+# Cleanup old data (logs, violations, etc)
+php artisan cleanup:old-data --days=90
+
 # Generate PWA icons
 php artisan pwa:icons
+
+# Hash existing plain passwords
+php artisan passwords:hash
 ```
 
 ---
