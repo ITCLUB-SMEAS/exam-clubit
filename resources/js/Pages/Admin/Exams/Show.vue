@@ -21,15 +21,15 @@
                                     </tr>
                                     <tr>
                                         <td class="fw-bold">Mata Pelajaran</td>
-                                        <td>{{ exam.lesson.title }}</td>
+                                        <td>{{ exam.lesson?.title || '-' }}</td>
                                     </tr>
                                     <tr>
                                         <td class="fw-bold">Kelas</td>
-                                        <td>{{ exam.classroom.title }}</td>
+                                        <td>{{ exam.classroom?.title || '-' }}</td>
                                     </tr>
                                     <tr>
                                         <td class="fw-bold">Jumlah Soal</td>
-                                        <td>{{ exam.questions.data.length }}</td>
+                                        <td>{{ totalQuestions }}</td>
                                     </tr>
                                     <tr>
                                         <td class="fw-bold">Durasi (Menit)</td>
@@ -161,6 +161,7 @@
         props: {
             errors: Object,
             exam: Object,
+            totalQuestions: { type: Number, default: 0 },
             bankQuestions: { type: Array, default: () => [] },
             categories: { type: Array, default: () => [] }
         },

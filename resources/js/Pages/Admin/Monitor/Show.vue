@@ -1,6 +1,6 @@
 <template>
     <Head>
-        <title>Monitor: {{ examSession.exam.title }} - Aplikasi Ujian Online</title>
+        <title>Monitor: {{ examSession.exam?.title || 'Ujian' }} - Aplikasi Ujian Online</title>
     </Head>
     <div class="container-fluid mb-5 mt-5">
         <!-- Header -->
@@ -10,8 +10,8 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h4 class="mb-1">{{ examSession.exam.title }}</h4>
-                                <p class="text-muted mb-0">{{ examSession.exam.lesson?.name }} | {{ examSession.exam.classroom?.name }}</p>
+                                <h4 class="mb-1">{{ examSession.exam?.title || 'Ujian tidak ditemukan' }}</h4>
+                                <p class="text-muted mb-0">{{ examSession.exam?.lesson?.name || '-' }} | {{ examSession.exam?.classroom?.name || '-' }}</p>
                             </div>
                             <div class="text-end">
                                 <span class="badge bg-success fs-6"><i class="fas fa-circle me-1"></i>Live</span>
@@ -97,7 +97,7 @@
                                 <tbody>
                                     <tr v-for="p in participantList" :key="p.id" :class="{'table-danger': p.is_flagged, 'table-warning': p.is_paused}">
                                         <td>
-                                            <strong>{{ p.student.name }}</strong>
+                                            <strong>{{ p.student?.name || '-' }}</strong>
                                             <br><small class="text-muted">{{ p.student.nisn }} | {{ p.student.classroom }}</small>
                                         </td>
                                         <td>

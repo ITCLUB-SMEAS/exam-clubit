@@ -48,10 +48,10 @@
                                     <tr v-for="(exam_session, index) in exam_sessions.data" :key="index">
                                         <td class="fw-bold text-center">{{ ++index + (exam_sessions.current_page - 1) * exam_sessions.per_page }}</td>
                                         <td>
-                                            <strong class="fw-bold">{{ exam_session.exam.title }}</strong>
+                                            <strong class="fw-bold">{{ exam_session.exam?.title ?? 'Ujian Dihapus' }}</strong>
                                             <ul class="mt-2">
-                                                <li>Kelas : <strong class="fw-bold">{{ exam_session.exam.classroom.title }}</strong></li>
-                                                <li>Pelajaran : <strong class="fw-bold">{{ exam_session.exam.lesson.title }}</strong></li>
+                                                <li>Kelas : <strong class="fw-bold">{{ exam_session.exam?.classroom?.title ?? '-' }}</strong></li>
+                                                <li>Pelajaran : <strong class="fw-bold">{{ exam_session.exam?.lesson?.title ?? '-' }}</strong></li>
                                             </ul>
                                         </td>
                                         <td>{{ exam_session.title }}</td>

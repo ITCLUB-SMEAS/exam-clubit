@@ -1127,6 +1127,7 @@ class TelegramService
         // If no session ID, show active sessions with tokens
         if (!$sessionId) {
             $sessions = ExamSession::with('exam')
+                ->whereHas('exam')
                 ->where('start_time', '<=', now())
                 ->where('end_time', '>=', now())
                 ->get();
@@ -1134,6 +1135,7 @@ class TelegramService
             if ($sessions->isEmpty()) {
                 // Check upcoming sessions
                 $upcoming = ExamSession::with('exam')
+                    ->whereHas('exam')
                     ->where('start_time', '>', now())
                     ->where('start_time', '<=', now()->addHours(24))
                     ->get();

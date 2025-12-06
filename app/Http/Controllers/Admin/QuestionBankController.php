@@ -8,12 +8,20 @@ use App\Models\QuestionCategory;
 use App\Models\Question;
 use App\Models\Exam;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class QuestionBankController extends Controller
 {
+    protected function getCategories()
+    {
+        return Cache::remember('question_categories', 300, fn() => 
+            QuestionCategory::select('id', 'name')->get()
+        );
+    }
+
     public function index(Request $request)
     {
-        $query = QuestionBank::with('category');
+        $query = QuestionBank::with('category:id,name');
 
         if ($request->category_id) {
             $query->where('category_id', $request->category_id);
@@ -26,14 +34,14 @@ class QuestionBankController extends Controller
         }
 
         $questions = $query->latest()->paginate(10)->withQueryString();
-        $categories = QuestionCategory::all();
+        $categories = $this->getCategories();
 
         return inertia('Admin/QuestionBank/Index', compact('questions', 'categories'));
     }
 
     public function create()
     {
-        $categories = QuestionCategory::all();
+        $categories = $this->getCategories();
         return inertia('Admin/QuestionBank/Create', compact('categories'));
     }
 
@@ -63,10 +71,9 @@ class QuestionBankController extends Controller
 
     public function edit(QuestionBank $questionBank)
     {
-        $categories = QuestionCategory::all();
         return inertia('Admin/QuestionBank/Edit', [
             'question' => $questionBank,
-            'categories' => $categories,
+            'categories' => $this->getCategories(),
         ]);
     }
 

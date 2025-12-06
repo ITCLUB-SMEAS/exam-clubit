@@ -20,7 +20,7 @@
                                 <table class="table table-sm table-borderless">
                                     <tr>
                                         <td width="150">Nama Ujian</td>
-                                        <td>: <strong>{{ examSession.exam.title }}</strong></td>
+                                        <td>: <strong>{{ examSession.exam?.title || '-' }}</strong></td>
                                     </tr>
                                     <tr>
                                         <td>Mata Pelajaran</td>

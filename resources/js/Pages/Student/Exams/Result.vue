@@ -21,11 +21,11 @@
                                 </tr>
                                 <tr>
                                     <td class="fw-bold">Kelas</td>
-                                    <td>{{ exam_group.student.classroom.title }}</td>
+                                    <td>{{ exam_group.student?.classroom?.title || '-' }}</td>
                                 </tr>
                                 <tr>
                                     <td class="fw-bold">Ujian</td>
-                                    <td>{{ exam_group.exam.title }}</td>
+                                    <td>{{ exam_group.exam?.title || '-' }}</td>
                                 </tr>
                                 <tr>
                                     <td class="fw-bold">Mata Pelajaran</td>

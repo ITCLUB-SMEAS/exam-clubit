@@ -12,7 +12,7 @@
     </div>
 
     <!-- Violation Counter Badge -->
-    <div v-if="antiCheatConfig.enabled" class="position-fixed" style="top: 10px; right: 10px; z-index: 1050;">
+    <div v-if="antiCheatConfig.enabled" class="position-fixed d-none d-md-block" style="top: 10px; right: 10px; z-index: 1050;">
         <span :class="violationBadgeClass" class="badge p-2">
             <i class="fas fa-shield-alt me-1"></i>
             Pelanggaran: {{ antiCheat.violationCount.value }}/{{ antiCheatConfig.max_violations }}
@@ -23,24 +23,32 @@
     <video v-if="face_detection_enabled" ref="faceVideoRef" autoplay muted playsinline style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;"></video>
 
     <div class="row mb-5">
-        <div class="col-md-7">
+        <div class="col-12 col-md-7 mb-3 mb-md-0">
             <div class="card border-0 shadow">
                 <div class="card-header">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
                         <div>
                             <h5 class="mb-0">Soal No. <strong class="fw-bold">{{ page }}</strong></h5>
                         </div>
-                        <div class="d-flex gap-2">
+                        <div class="d-flex flex-wrap gap-2">
+                            <!-- Violation counter for mobile -->
+                            <span v-if="antiCheatConfig.enabled" :class="violationBadgeClass" class="badge p-2 d-md-none">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                {{ antiCheat.violationCount.value }}/{{ antiCheatConfig.max_violations }}
+                            </span>
                             <!-- Timer per soal (jika aktif) -->
                             <VueCountdown v-if="questionTimeLimit > 0" :time="questionTimeRemaining" @end="handleQuestionTimeEnd" v-slot="{ minutes, seconds }">
                                 <span class="badge bg-warning text-dark p-2">
-                                    <i class="fas fa-stopwatch"></i> Soal: {{ minutes }}:{{ String(seconds).padStart(2, '0') }}
+                                    <i class="fas fa-stopwatch"></i> <span class="d-none d-sm-inline">Soal:</span> {{ minutes }}:{{ String(seconds).padStart(2, '0') }}
                                 </span>
                             </VueCountdown>
                             <!-- Timer total ujian -->
                             <VueCountdown :time="duration" @progress="handleChangeDuration" @end="showModalEndTimeExam = true" v-slot="{ hours, minutes, seconds }">
-                                <span class="badge bg-info p-2"> <i class="fas fa-clock"></i> {{ hours }} jam,
-                                    {{ minutes }} menit, {{ seconds }} detik.</span>
+                                <span class="badge bg-info p-2">
+                                    <i class="fas fa-clock"></i>
+                                    <span class="d-none d-sm-inline">{{ hours }}j {{ minutes }}m {{ seconds }}d</span>
+                                    <span class="d-sm-none">{{ hours }}:{{ String(minutes).padStart(2, '0') }}:{{ String(seconds).padStart(2, '0') }}</span>
+                                </span>
                             </VueCountdown>
                         </div>
                     </div>
@@ -151,26 +159,19 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-5">
+        <div class="col-12 col-md-5">
             <div class="card border-0 shadow">
                 <div class="card-header text-center">
                     <div class="badge bg-success p-2"> {{ question_answered }} dikerjakan</div>
                 </div>
-                <div class="card-body" style="height: 330px;overflow-y: auto">
-
-                    <div v-for="(question, index) in all_questions" :key="index">
-                        <div width="20%" style="width: 20%; float: left;">
-                            <div style="padding: 5px;">
-
-                                <button @click.prevent="clickQuestion(index)" v-if="index+1 == page" class="btn btn-gray-400 btn-sm w-100">{{ index + 1 }}</button>
-
-                                <button @click.prevent="clickQuestion(index)" v-if="index+1 != page && !isAnswered(question)" class="btn btn-outline-info btn-sm w-100">{{ index + 1 }}</button>
-
-                                <button @click.prevent="clickQuestion(index)" v-if="index+1 != page && isAnswered(question)" class="btn btn-info btn-sm w-100">{{ index + 1 }}</button>
-                            </div>
+                <div class="card-body" style="max-height: 330px; overflow-y: auto">
+                    <div class="d-flex flex-wrap">
+                        <div v-for="(question, index) in all_questions" :key="index" class="p-1" style="width: 20%; min-width: 45px;">
+                            <button @click.prevent="clickQuestion(index)" v-if="index+1 == page" class="btn btn-gray-400 btn-sm w-100">{{ index + 1 }}</button>
+                            <button @click.prevent="clickQuestion(index)" v-else-if="!isAnswered(question)" class="btn btn-outline-info btn-sm w-100">{{ index + 1 }}</button>
+                            <button @click.prevent="clickQuestion(index)" v-else class="btn btn-info btn-sm w-100">{{ index + 1 }}</button>
                         </div>
                     </div>
-
                 </div>
                 <div class="card-footer">
                     <button @click="showModalEndExam = true" class="btn btn-danger btn-md border-0 shadow w-100">Akhiri Ujian</button>
@@ -467,7 +468,8 @@
             const faceVideoRef = ref(null);
             const faceDetectionActive = ref(false);
             const faceDetection = props.face_detection_enabled ? useFaceDetection({
-                checkInterval: 30000, // Check every 30 seconds
+                checkInterval: 20000, // Check every 20 seconds
+                consecutiveThreshold: 2, // 2 consecutive fails = violation
                 onNoFace: () => {
                     antiCheat.recordViolation('no_face', 'Wajah tidak terdeteksi di kamera');
                 },
@@ -478,7 +480,8 @@
 
             // Audio detection
             const audioDetection = props.audio_detection_enabled ? useAudioDetection({
-                threshold: 35, // Sensitivity (0-100, lower = more sensitive)
+                threshold: 45, // Voice level threshold (0-100)
+                sustainedDuration: 2000, // Must sustain 2 seconds to trigger
                 onSuspiciousAudio: (level) => {
                     antiCheat.recordViolation('suspicious_audio', `Terdeteksi suara mencurigakan (level: ${level})`);
                 },
@@ -504,6 +507,20 @@
 
                 // Callbacks
                 onViolation: (data) => {
+                    // Handle warning-only (no violation recorded)
+                    if (data.isWarningOnly) {
+                        Swal.fire({
+                            title: 'Peringatan!',
+                            text: data.description,
+                            icon: 'warning',
+                            confirmButtonText: 'Saya Mengerti',
+                            allowOutsideClick: false,
+                            timer: 5000,
+                            timerProgressBar: true,
+                        });
+                        return;
+                    }
+                    
                     lastViolationMessage.value = getViolationMessage(data.type);
                     showViolationWarning.value = true;
                 },
@@ -535,6 +552,18 @@
 
                 onAutoSubmit: () => {
                     endExam();
+                },
+
+                onBlocked: () => {
+                    Swal.fire({
+                        title: 'Akun Diblokir!',
+                        text: 'Akun Anda telah diblokir karena terlalu banyak pelanggaran. Ujian akan diakhiri.',
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                        allowOutsideClick: false,
+                    }).then(() => {
+                        endExam();
+                    });
                 },
 
                 onBlockedEnvironment: (data) => {
@@ -825,6 +854,18 @@
                     question_id: props.question_active.question.id,
                     answer_options: selectedOptions.value,
                     duration: duration.value
+                }, {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'Jawaban tersimpan',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                    }
                 });
             });
 
@@ -836,6 +877,18 @@
                     question_id: props.question_active.question.id,
                     answer_text: textAnswer.value,
                     duration: duration.value
+                }, {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'Jawaban tersimpan',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                    }
                 });
             });
 
@@ -847,6 +900,18 @@
                     question_id: props.question_active.question.id,
                     matching_answers: matchingAnswers.value,
                     duration: duration.value
+                }, {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'Jawaban tersimpan',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                    }
                 });
             });
 

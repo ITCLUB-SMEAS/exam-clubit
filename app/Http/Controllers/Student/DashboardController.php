@@ -11,45 +11,42 @@ class DashboardController extends Controller
 {
     /**
      * Handle the incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
      */
     public function __invoke(Request $request)
     {
-        //get exam groups
-        $exam_groups = ExamGroup::with(
-            "exam.lesson",
-            "exam_session",
-            "student.classroom",
-        )
-            ->where("student_id", auth()->guard("student")->user()->id)
+        $studentId = auth()->guard("student")->user()->id;
+
+        // Get exam groups with eager loading
+        $exam_groups = ExamGroup::with("exam.lesson", "exam_session", "student.classroom")
+            ->where("student_id", $studentId)
             ->get();
 
-        //define variable array
+        // Fetch all grades in ONE query (fix N+1)
+        $grades = Grade::where("student_id", $studentId)
+            ->whereIn("exam_id", $exam_groups->pluck("exam_id"))
+            ->get()
+            ->keyBy(fn($g) => $g->exam_id . "_" . $g->exam_session_id);
+
         $data = [];
+        $gradesToCreate = [];
 
-        //get nilai
         foreach ($exam_groups as $exam_group) {
-            //get data nilai / grade
-            $grade = Grade::where("exam_id", $exam_group->exam_id)
-                ->where("exam_session_id", $exam_group->exam_session_id)
-                ->where("student_id", auth()->guard("student")->user()->id)
-                ->first();
+            $key = $exam_group->exam_id . "_" . $exam_group->exam_session_id;
+            $grade = $grades->get($key);
 
-            //jika nilai / grade kosong, maka buat baru
-            if ($grade == null) {
-                //create defaul grade
-                $grade = new Grade();
-                $grade->exam_id = $exam_group->exam_id;
-                $grade->exam_session_id = $exam_group->exam_session_id;
-                $grade->student_id = auth()->guard("student")->user()->id;
-                $grade->duration = $exam_group->exam->duration * 60000;
-                $grade->total_correct = 0;
-                $grade->grade = 0;
-                $grade->attempt_status = "not_started";
-                $grade->attempt_count = 0;
-                $grade->save();
+            if (!$grade) {
+                // Collect grades to create (batch insert later)
+                $grade = new Grade([
+                    'exam_id' => $exam_group->exam_id,
+                    'exam_session_id' => $exam_group->exam_session_id,
+                    'student_id' => $studentId,
+                    'duration' => $exam_group->exam->duration * 60000,
+                    'total_correct' => 0,
+                    'grade' => 0,
+                    'attempt_status' => 'not_started',
+                    'attempt_count' => 0,
+                ]);
+                $gradesToCreate[] = $grade->toArray();
             }
 
             $data[] = [
@@ -58,7 +55,23 @@ class DashboardController extends Controller
             ];
         }
 
-        //return with inertia
+        // Batch insert new grades
+        if (!empty($gradesToCreate)) {
+            Grade::insert($gradesToCreate);
+            // Refresh grades for newly created
+            $newGrades = Grade::where("student_id", $studentId)
+                ->whereIn("exam_id", collect($gradesToCreate)->pluck("exam_id"))
+                ->get()
+                ->keyBy(fn($g) => $g->exam_id . "_" . $g->exam_session_id);
+            
+            foreach ($data as &$item) {
+                if (!$item['grade']->exists) {
+                    $key = $item['exam_group']->exam_id . "_" . $item['exam_group']->exam_session_id;
+                    $item['grade'] = $newGrades->get($key) ?? $item['grade'];
+                }
+            }
+        }
+
         return inertia("Student/Dashboard/Index", [
             "exam_groups" => $data,
         ]);

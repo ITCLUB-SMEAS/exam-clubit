@@ -15,6 +15,7 @@ class ExamMonitorController extends Controller
     public function index()
     {
         $activeSessions = ExamSession::with(['exam.lesson', 'exam.classroom'])
+            ->whereHas('exam')
             ->where('start_time', '<=', now())
             ->where('end_time', '>=', now())
             ->get();
@@ -27,6 +28,11 @@ class ExamMonitorController extends Controller
     public function show(ExamSession $examSession)
     {
         $examSession->load(['exam.lesson', 'exam.classroom']);
+
+        if (!$examSession->exam) {
+            return redirect()->route('admin.monitor.index')
+                ->with('error', 'Ujian tidak ditemukan.');
+        }
 
         return Inertia::render('Admin/Monitor/Show', [
             'examSession' => $examSession,
@@ -44,34 +50,78 @@ class ExamMonitorController extends Controller
 
     protected function getParticipants(ExamSession $examSession): array
     {
-        return Grade::with(['student.classroom'])
+        $grades = Grade::with(['student.classroom'])
             ->where('exam_session_id', $examSession->id)
-            ->get()
-            ->map(function ($grade) {
-                $progress = $this->calculateProgress($grade);
-                
-                return [
-                    'id' => $grade->id,
-                    'student' => [
-                        'id' => $grade->student->id,
-                        'name' => $grade->student->name,
-                        'nisn' => $grade->student->nisn,
-                        'classroom' => $grade->student->classroom?->name,
-                    ],
-                    'status' => $this->getStatus($grade),
-                    'progress' => $progress,
-                    'duration_remaining' => $grade->duration,
-                    'violation_count' => $grade->violation_count,
-                    'is_flagged' => $grade->is_flagged,
-                    'is_paused' => $grade->is_paused,
-                    'start_time' => $grade->start_time?->format('H:i:s'),
-                    'end_time' => $grade->end_time?->format('H:i:s'),
-                    'last_activity' => $grade->updated_at->diffForHumans(),
-                ];
+            ->get();
+
+        // Batch calculate progress for all students
+        $progressData = $this->batchCalculateProgress($grades, $examSession->exam_id);
+
+        return $grades->map(function ($grade) use ($progressData) {
+            $key = $grade->student_id;
+            $progress = $progressData[$key] ?? 0;
+            
+            if (!$grade->start_time) $progress = 0;
+            if ($grade->end_time) $progress = 100;
+            
+            return [
+                'id' => $grade->id,
+                'student' => [
+                    'id' => $grade->student->id,
+                    'name' => $grade->student->name,
+                    'nisn' => $grade->student->nisn,
+                    'classroom' => $grade->student->classroom?->title ?? $grade->student->classroom?->name,
+                ],
+                'status' => $this->getStatus($grade),
+                'progress' => $progress,
+                'duration_remaining' => $grade->duration,
+                'violation_count' => $grade->violation_count,
+                'is_flagged' => $grade->is_flagged,
+                'is_paused' => $grade->is_paused,
+                'start_time' => $grade->start_time?->format('H:i:s'),
+                'end_time' => $grade->end_time?->format('H:i:s'),
+                'last_activity' => $grade->updated_at->diffForHumans(),
+            ];
+        })
+        ->sortBy('student.name')
+        ->values()
+        ->all();
+    }
+
+    protected function batchCalculateProgress($grades, int $examId): array
+    {
+        $studentIds = $grades->pluck('student_id')->toArray();
+        
+        if (empty($studentIds)) return [];
+
+        // Get total and answered counts in 2 queries instead of N*2
+        $totals = Answer::where('exam_id', $examId)
+            ->whereIn('student_id', $studentIds)
+            ->selectRaw('student_id, COUNT(*) as total')
+            ->groupBy('student_id')
+            ->pluck('total', 'student_id')
+            ->toArray();
+
+        $answered = Answer::where('exam_id', $examId)
+            ->whereIn('student_id', $studentIds)
+            ->where(function ($q) {
+                $q->where('answer', '!=', 0)
+                  ->orWhereNotNull('answer_text')
+                  ->orWhereNotNull('answer_options');
             })
-            ->sortBy('student.name')
-            ->values()
-            ->all();
+            ->selectRaw('student_id, COUNT(*) as answered')
+            ->groupBy('student_id')
+            ->pluck('answered', 'student_id')
+            ->toArray();
+
+        $result = [];
+        foreach ($studentIds as $sid) {
+            $total = $totals[$sid] ?? 0;
+            $ans = $answered[$sid] ?? 0;
+            $result[$sid] = $total > 0 ? round(($ans / $total) * 100) : 0;
+        }
+
+        return $result;
     }
 
     protected function getStatus(Grade $grade): string
@@ -80,25 +130,6 @@ class ExamMonitorController extends Controller
         if ($grade->is_paused) return 'paused';
         if ($grade->start_time) return 'in_progress';
         return 'not_started';
-    }
-
-    protected function calculateProgress(Grade $grade): int
-    {
-        if (!$grade->start_time) return 0;
-        if ($grade->end_time) return 100;
-
-        $baseQuery = Answer::where('student_id', $grade->student_id)
-            ->where('exam_id', $grade->exam_id);
-
-        $answered = (clone $baseQuery)->where(function ($q) {
-            $q->where('answer', '!=', 0)
-              ->orWhereNotNull('answer_text')
-              ->orWhereNotNull('answer_options');
-        })->count();
-
-        $total = (clone $baseQuery)->count();
-
-        return $total > 0 ? round(($answered / $total) * 100) : 0;
     }
 
     protected function getSessionStats(ExamSession $examSession): array

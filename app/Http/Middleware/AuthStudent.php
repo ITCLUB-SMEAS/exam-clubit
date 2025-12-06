@@ -77,6 +77,23 @@ class AuthStudent
             );
         }
 
+        // Check if student is blocked
+        if ($student->is_blocked) {
+            Auth::guard("student")->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    "success" => false,
+                    "message" => "Akun Anda telah diblokir. Hubungi admin.",
+                    "is_blocked" => true,
+                ], 403);
+            }
+
+            return redirect("/")->with("error", "Akun Anda telah diblokir: " . ($student->block_reason ?? "Hubungi admin untuk informasi lebih lanjut."));
+        }
+
         // If student has no session_id stored (legacy data), update it
         if (!$student->session_id) {
             $student->updateSessionInfo($currentSessionId, $request->ip());

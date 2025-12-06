@@ -10,33 +10,33 @@
         </div>
     </div>
     <div class="row" v-if="exam_groups.length > 0">
-        <div class="col-md-6" v-for="(data, index) in exam_groups" :key="index">
+        <div class="col-12 col-md-6 mb-3" v-for="(data, index) in exam_groups" :key="index">
             <div class="card border-0 shadow">
                 <div class="card-body">
-                    <h5>{{ data.exam_group.exam.title }}</h5>
+                    <h5 class="text-truncate">{{ data.exam_group.exam?.title || '-' }}</h5>
                     <hr>
                     <div class="table-responsive">
                         <table class="table table-centered table-nowrap mb-0 rounded">
                             <thead>
                                 <tr>
-                                    <td class="fw-bold">Mata Pelajaran</td>
-                                    <td>{{ data.exam_group.exam.lesson.title }}</td>
+                                    <td class="fw-bold" style="white-space: nowrap;">Mata Pelajaran</td>
+                                    <td>{{ data.exam_group.exam?.lesson?.title || '-' }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="fw-bold">Kelas</td>
-                                    <td>{{ data.exam_group.student.classroom.title }}</td>
+                                    <td class="fw-bold" style="white-space: nowrap;">Kelas</td>
+                                    <td>{{ data.exam_group.student?.classroom?.title || '-' }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="fw-bold">Sesi</td>
-                                    <td>{{ data.exam_group.exam_session.title }}</td>
+                                    <td class="fw-bold" style="white-space: nowrap;">Sesi</td>
+                                    <td>{{ data.exam_group.exam_session?.title || '-' }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="fw-bold">Mulai</td>
-                                    <td>{{ data.exam_group.exam_session.start_time }}</td>
+                                    <td class="fw-bold" style="white-space: nowrap;">Mulai</td>
+                                    <td>{{ data.exam_group.exam_session?.start_time || '-' }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="fw-bold">Selesai</td>
-                                    <td>{{ data.exam_group.exam_session.end_time }}</td>
+                                    <td class="fw-bold" style="white-space: nowrap;">Selesai</td>
+                                    <td>{{ data.exam_group.exam_session?.end_time || '-' }}</td>
                                 </tr>
                             </thead>
                         </table>

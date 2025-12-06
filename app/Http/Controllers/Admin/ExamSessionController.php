@@ -8,6 +8,7 @@ use App\Models\ExamGroup;
 use App\Models\ExamSession;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Cache;
 
 class ExamSessionController extends Controller
 {
@@ -18,10 +19,11 @@ class ExamSessionController extends Controller
      */
     public function index()
     {
-        //get exam_sessions
-        $exam_sessions = ExamSession::when(request()->q, function($exam_sessions) {
-            $exam_sessions = $exam_sessions->where('title', 'like', '%'. request()->q . '%');
-        })->with('exam.classroom', 'exam.lesson', 'exam_groups')->latest()->paginate(5);
+        //get exam_sessions (only those with existing exam)
+        $exam_sessions = ExamSession::whereHas('exam')
+            ->when(request()->q, function($exam_sessions) {
+                $exam_sessions = $exam_sessions->where('title', 'like', '%'. request()->q . '%');
+            })->with('exam.classroom', 'exam.lesson', 'exam_groups')->latest()->paginate(5);
 
         //append query string to pagination links
         $exam_sessions->appends(['q' => request()->q]);
@@ -39,10 +41,10 @@ class ExamSessionController extends Controller
      */
     public function create()
     {
-        //get exams
-        $exams = Exam::all();
+        $exams = Cache::remember('exams_dropdown', 300, fn() => 
+            Exam::select('id', 'title')->get()
+        );
         
-        //render with inertia
         return inertia('Admin/ExamSessions/Create', [
             'exams' => $exams,
         ]);
@@ -158,13 +160,12 @@ class ExamSessionController extends Controller
      */
     public function edit($id)
     {
-        //get exam_session
         $exam_session = ExamSession::findOrFail($id);
         
-        //get exams
-        $exams = Exam::all();
+        $exams = Cache::remember('exams_dropdown', 300, fn() => 
+            Exam::select('id', 'title')->get()
+        );
         
-        //render with inertia
         return inertia('Admin/ExamSessions/Edit', [
             'exam_session'  => $exam_session,
             'exams'         => $exams,
@@ -264,28 +265,34 @@ class ExamSessionController extends Controller
     public function storeEnrolle(Request $request, ExamSession $exam_session)
     {
         $request->validate([
-            'student_id'    => 'required|array|max:100', // Limit 100 students per request
+            'student_id'    => 'required|array|max:100',
             'student_id.*'  => 'exists:students,id',
         ]);
         
         $exam = $exam_session->exam;
+        $studentIds = $request->student_id;
         
-        foreach($request->student_id as $student_id) {
-            $student = Student::findOrFail($student_id);
-
-            // Prevent duplicate enrollment
-            $exists = ExamGroup::where('exam_id', $exam->id)
-                ->where('exam_session_id', $exam_session->id)
-                ->where('student_id', $student->id)
-                ->exists();
-                
-            if (!$exists) {
-                ExamGroup::create([
-                    'exam_id'         => $exam->id,  // Use exam from session, not from request
-                    'exam_session_id' => $exam_session->id,
-                    'student_id'      => $student->id,
-                ]);
-            }
+        // Get existing enrollments in ONE query
+        $existingEnrollments = ExamGroup::where('exam_id', $exam->id)
+            ->where('exam_session_id', $exam_session->id)
+            ->whereIn('student_id', $studentIds)
+            ->pluck('student_id')
+            ->toArray();
+        
+        // Filter out already enrolled students
+        $newStudentIds = array_diff($studentIds, $existingEnrollments);
+        
+        // Batch insert new enrollments
+        if (!empty($newStudentIds)) {
+            $enrollments = array_map(fn($sid) => [
+                'exam_id' => $exam->id,
+                'exam_session_id' => $exam_session->id,
+                'student_id' => $sid,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ], $newStudentIds);
+            
+            ExamGroup::insert($enrollments);
         }
         
         return redirect()->route('admin.exam_sessions.show', $exam_session->id);

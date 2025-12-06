@@ -102,10 +102,10 @@ class AntiCheatService
             ));
         }
 
-        // Get full path for snapshot
+        // Get full path for snapshot (local disk root is storage/app/private)
         $fullSnapshotPath = null;
         if ($snapshotPath) {
-            $fullSnapshotPath = storage_path('app/' . $snapshotPath);
+            $fullSnapshotPath = storage_path('app/private/' . $snapshotPath);
         }
 
         // Send Telegram notification with photo
@@ -207,7 +207,7 @@ class AntiCheatService
      */
     public static function hasExceededLimit(Grade $grade, Exam $exam): bool
     {
-        $maxViolations = $exam->max_violations ?? 10;
+        $maxViolations = $exam->max_violations ?? 3;
         return $grade->violation_count >= $maxViolations;
     }
 
@@ -233,7 +233,7 @@ class AntiCheatService
      */
     public static function getRemainingViolations(Grade $grade, Exam $exam): int
     {
-        $maxViolations = $exam->max_violations ?? 10;
+        $maxViolations = $exam->max_violations ?? 3;
         return max(0, $maxViolations - $grade->violation_count);
     }
 
@@ -247,7 +247,7 @@ class AntiCheatService
     protected static function checkAndFlagIfNeeded(Grade $grade, Exam $exam): void
     {
         $warningThreshold = $exam->warning_threshold ?? 3;
-        $maxViolations = $exam->max_violations ?? 10;
+        $maxViolations = $exam->max_violations ?? 3;
 
         // Flag if exceeded warning threshold but not yet flagged
         if ($grade->violation_count >= $warningThreshold && !$grade->is_flagged) {
@@ -323,7 +323,7 @@ class AntiCheatService
             'block_copy_paste' => $exam->block_copy_paste ?? true,
             'block_right_click' => $exam->block_right_click ?? true,
             'detect_devtools' => $exam->detect_devtools ?? true,
-            'max_violations' => $exam->max_violations ?? 10,
+            'max_violations' => $exam->max_violations ?? 3,
             'warning_threshold' => $exam->warning_threshold ?? 3,
             'auto_submit_on_max_violations' => $exam->auto_submit_on_max_violations ?? false,
         ];
@@ -352,6 +352,10 @@ class AntiCheatService
             ExamViolation::TYPE_NO_FACE => 'Wajah siswa tidak terdeteksi di kamera',
             ExamViolation::TYPE_MULTIPLE_FACES => 'Terdeteksi lebih dari satu wajah di kamera',
             ExamViolation::TYPE_SUSPICIOUS_AUDIO => 'Terdeteksi suara mencurigakan (berbicara/berbisik)',
+            ExamViolation::TYPE_TIME_MANIPULATION => 'Terdeteksi manipulasi waktu sistem',
+            ExamViolation::TYPE_EXTENDED_BLUR => 'Window tidak fokus dalam waktu lama',
+            ExamViolation::TYPE_PROLONGED_BLUR => 'Window tidak fokus berkepanjangan',
+            ExamViolation::TYPE_EXCESSIVE_BLUR => 'Total waktu tidak fokus melebihi batas',
         ];
 
         return $descriptions[$type] ?? 'Pelanggaran tidak diketahui';
@@ -469,6 +473,10 @@ class AntiCheatService
             ExamViolation::TYPE_POPUP_BLOCKED,
             ExamViolation::TYPE_EXTERNAL_LINK,
             ExamViolation::TYPE_SUSPICIOUS_AUDIO,
+            ExamViolation::TYPE_TIME_MANIPULATION,
+            ExamViolation::TYPE_EXTENDED_BLUR,
+            ExamViolation::TYPE_PROLONGED_BLUR,
+            ExamViolation::TYPE_EXCESSIVE_BLUR,
         ]);
     }
 }

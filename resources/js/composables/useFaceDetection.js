@@ -7,7 +7,8 @@ import { ref, onUnmounted } from 'vue';
  */
 export function useFaceDetection(options = {}) {
     const config = {
-        checkInterval: options.checkInterval ?? 30000,
+        checkInterval: options.checkInterval ?? 20000, // 20 seconds default
+        consecutiveThreshold: options.consecutiveThreshold ?? 2, // Consecutive fails before trigger
         onNoFace: options.onNoFace ?? null,
         onMultipleFaces: options.onMultipleFaces ?? null,
         onFaceDetected: options.onFaceDetected ?? null,
@@ -21,13 +22,16 @@ export function useFaceDetection(options = {}) {
     const faceCount = ref(0);
     const lastCheckTime = ref(null);
     const consecutiveNoFace = ref(0);
+    const consecutiveMultipleFaces = ref(0);
 
     let checkIntervalId = null;
     let faceapi = null;
+    let lastNoFaceTrigger = 0;
+    let lastMultipleFacesTrigger = 0;
+    const TRIGGER_COOLDOWN = 60000; // 60 seconds cooldown between same violation type
 
     const loadModels = async () => {
         try {
-            // Lazy load face-api.js
             const module = await import('face-api.js');
             faceapi = module;
             await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
@@ -66,18 +70,33 @@ export function useFaceDetection(options = {}) {
 
             faceCount.value = detections.length;
             lastCheckTime.value = new Date();
+            const now = Date.now();
 
             if (detections.length === 0) {
                 consecutiveNoFace.value++;
-                if (consecutiveNoFace.value >= 2 && config.onNoFace) {
-                    config.onNoFace();
-                    consecutiveNoFace.value = 0;
+                consecutiveMultipleFaces.value = 0; // Reset other counter
+                
+                if (consecutiveNoFace.value >= config.consecutiveThreshold) {
+                    if ((now - lastNoFaceTrigger) > TRIGGER_COOLDOWN && config.onNoFace) {
+                        config.onNoFace();
+                        lastNoFaceTrigger = now;
+                    }
+                    // Don't reset - keep counting for severity tracking
                 }
             } else if (detections.length > 1) {
-                consecutiveNoFace.value = 0;
-                if (config.onMultipleFaces) config.onMultipleFaces(detections.length);
+                consecutiveMultipleFaces.value++;
+                consecutiveNoFace.value = 0; // Reset other counter
+                
+                if (consecutiveMultipleFaces.value >= config.consecutiveThreshold) {
+                    if ((now - lastMultipleFacesTrigger) > TRIGGER_COOLDOWN && config.onMultipleFaces) {
+                        config.onMultipleFaces(detections.length);
+                        lastMultipleFacesTrigger = now;
+                    }
+                }
             } else {
+                // Exactly 1 face - all good
                 consecutiveNoFace.value = 0;
+                consecutiveMultipleFaces.value = 0;
                 if (config.onFaceDetected) config.onFaceDetected();
             }
         } catch (error) {
@@ -99,6 +118,7 @@ export function useFaceDetection(options = {}) {
     const start = () => {
         if (!isInitialized.value) return;
         isRunning.value = true;
+        // First check after 5 seconds (give time to position)
         setTimeout(detectFaces, 5000);
         checkIntervalId = setInterval(detectFaces, config.checkInterval);
     };
@@ -128,6 +148,8 @@ export function useFaceDetection(options = {}) {
         isRunning,
         faceCount,
         lastCheckTime,
+        consecutiveNoFace,
+        consecutiveMultipleFaces,
         initialize,
         start,
         stop,

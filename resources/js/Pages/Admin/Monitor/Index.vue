@@ -18,7 +18,7 @@
                             <div v-for="session in activeSessions" :key="session.id" class="col-md-6 col-lg-4 mb-4">
                                 <div class="card h-100 border-primary">
                                     <div class="card-header bg-primary text-white">
-                                        <h6 class="mb-0">{{ session.exam.title }}</h6>
+                                        <h6 class="mb-0">{{ session.exam?.title || 'Ujian tidak ditemukan' }}</h6>
                                     </div>
                                     <div class="card-body">
                                         <p class="mb-1"><i class="fas fa-book me-2"></i>{{ session.exam.lesson?.title || '-' }}</p>

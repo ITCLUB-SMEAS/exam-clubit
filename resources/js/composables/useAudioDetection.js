@@ -2,12 +2,13 @@ import { ref, onUnmounted } from 'vue';
 
 /**
  * Audio Detection Composable
- * Detects suspicious audio levels (talking, whispering) during exams
+ * Detects suspicious audio (talking, whispering) during exams
+ * Focuses on human voice frequencies (85Hz - 3000Hz)
  */
 export function useAudioDetection(options = {}) {
     const config = {
-        threshold: options.threshold ?? 30,        // Audio level threshold (0-100)
-        silenceDuration: options.silenceDuration ?? 2000,  // ms of silence before reset
+        threshold: options.threshold ?? 40,              // Audio level threshold (0-100)
+        sustainedDuration: options.sustainedDuration ?? 2000, // ms of sustained audio to trigger
         onSuspiciousAudio: options.onSuspiciousAudio ?? null,
     };
 
@@ -21,7 +22,8 @@ export function useAudioDetection(options = {}) {
     let stream = null;
     let animationFrame = null;
     let lastTriggerTime = 0;
-    const TRIGGER_COOLDOWN = 10000; // 10 seconds between triggers
+    let sustainedStartTime = null;
+    const TRIGGER_COOLDOWN = 15000; // 15 seconds between triggers
 
     const initialize = async () => {
         try {
@@ -30,7 +32,7 @@ export function useAudioDetection(options = {}) {
             analyser = audioContext.createAnalyser();
             microphone = audioContext.createMediaStreamSource(stream);
             
-            analyser.fftSize = 256;
+            analyser.fftSize = 512; // More frequency resolution
             analyser.smoothingTimeConstant = 0.8;
             microphone.connect(analyser);
             
@@ -46,25 +48,48 @@ export function useAudioDetection(options = {}) {
         if (!analyser || !isActive.value) return;
         
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const sampleRate = audioContext.sampleRate;
+        const binSize = sampleRate / analyser.fftSize;
+        
+        // Calculate bin indices for human voice range (85Hz - 3000Hz)
+        const minBin = Math.floor(85 / binSize);
+        const maxBin = Math.min(Math.ceil(3000 / binSize), dataArray.length - 1);
         
         const checkAudio = () => {
             analyser.getByteFrequencyData(dataArray);
             
-            // Calculate average audio level
-            const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+            // Calculate average only for voice frequency range
+            let sum = 0;
+            let count = 0;
+            for (let i = minBin; i <= maxBin; i++) {
+                sum += dataArray[i];
+                count++;
+            }
+            const average = count > 0 ? sum / count : 0;
             const level = Math.min(100, Math.round((average / 128) * 100));
             audioLevel.value = level;
             
-            // Check if suspicious
             const now = Date.now();
-            if (level > config.threshold && (now - lastTriggerTime) > TRIGGER_COOLDOWN) {
-                isSuspicious.value = true;
-                lastTriggerTime = now;
-                
-                if (config.onSuspiciousAudio) {
-                    config.onSuspiciousAudio(level);
+            
+            // Check for sustained audio above threshold
+            if (level > config.threshold) {
+                if (!sustainedStartTime) {
+                    sustainedStartTime = now;
+                } else if ((now - sustainedStartTime) >= config.sustainedDuration) {
+                    // Sustained audio detected
+                    if ((now - lastTriggerTime) > TRIGGER_COOLDOWN) {
+                        isSuspicious.value = true;
+                        lastTriggerTime = now;
+                        
+                        if (config.onSuspiciousAudio) {
+                            config.onSuspiciousAudio(level);
+                        }
+                    }
+                    sustainedStartTime = null; // Reset for next detection
                 }
-            } else if (level <= config.threshold) {
+            } else {
+                // Audio dropped below threshold, reset sustained timer
+                sustainedStartTime = null;
                 isSuspicious.value = false;
             }
             
@@ -79,6 +104,7 @@ export function useAudioDetection(options = {}) {
             cancelAnimationFrame(animationFrame);
             animationFrame = null;
         }
+        sustainedStartTime = null;
     };
 
     const cleanup = () => {

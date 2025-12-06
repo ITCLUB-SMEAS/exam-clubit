@@ -382,7 +382,7 @@ class ExamController extends Controller
         }
 
         //get all questions - single query with eager loading
-        $all_questions = Answer::with("question:id,question,question_type,option_1,option_2,option_3,option_4,option_5,correct_answer,points,matching_pairs")
+        $all_questions = Answer::with("question:id,question,question_type,option_1,option_2,option_3,option_4,option_5,correct_answers,points,matching_pairs")
             ->where("student_id", auth()->guard("student")->user()->id)
             ->where("exam_id", $exam_group->exam->id)
             ->orderBy("question_order", "ASC")
@@ -564,6 +564,11 @@ class ExamController extends Controller
                 "student.exams.resultExam",
                 $exam_group->id,
             );
+        }
+
+        // Check if exam is paused
+        if ($grade->is_paused) {
+            return redirect()->back()->with("error", "Ujian sedang di-pause.");
         }
 
         if ($redirect = $this->guardExamSchedule($exam_group, $grade)) {

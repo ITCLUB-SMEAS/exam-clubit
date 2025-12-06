@@ -35,6 +35,7 @@ export function useAntiCheat(options = {}) {
         onWarningThreshold: options.onWarningThreshold ?? null,
         onMaxViolations: options.onMaxViolations ?? null,
         onAutoSubmit: options.onAutoSubmit ?? null,
+        onBlocked: options.onBlocked ?? null,
         onBlockedEnvironment: options.onBlockedEnvironment ?? null,
         onDuplicateTab: options.onDuplicateTab ?? null,
     });
@@ -61,6 +62,9 @@ export function useAntiCheat(options = {}) {
     // Blocked environment state
     const isBlockedEnvironment = ref(false);
     const blockedReason = ref('');
+
+    // Fullscreen warning counter (warn first, then violation)
+    const fullscreenExitCount = ref(0);
 
     // Window Focus Duration tracking
     const windowFocused = ref(true);
@@ -202,10 +206,43 @@ export function useAntiCheat(options = {}) {
                 if (response.data?.data?.is_blocked && config.value.onBlocked) {
                     config.value.onBlocked();
                 }
+
+                // Try to send pending violations after successful request
+                retryPendingViolations();
             } catch (error) {
                 console.error('Failed to record violation:', error);
-                // Queue for retry
-                pendingViolations.value.push({ type, description, metadata, timestamp: Date.now() });
+                // Queue for retry (max 10 pending)
+                if (pendingViolations.value.length < 10) {
+                    pendingViolations.value.push({ type, description, metadata, timestamp: Date.now() });
+                }
+            }
+        }
+    };
+
+    /**
+     * Retry sending pending violations
+     */
+    const retryPendingViolations = async () => {
+        if (pendingViolations.value.length === 0) return;
+        
+        const toRetry = [...pendingViolations.value];
+        pendingViolations.value = [];
+        
+        for (const v of toRetry) {
+            try {
+                await axios.post('/student/anticheat/violation', {
+                    exam_id: config.value.examId,
+                    exam_session_id: config.value.examSessionId,
+                    grade_id: config.value.gradeId,
+                    violation_type: v.type,
+                    description: v.description,
+                    metadata: v.metadata,
+                });
+            } catch (e) {
+                // Re-queue if still failing (only if not too old - 5 min max)
+                if (Date.now() - v.timestamp < 300000) {
+                    pendingViolations.value.push(v);
+                }
             }
         }
     };
@@ -303,7 +340,21 @@ export function useAntiCheat(options = {}) {
         isFullscreen.value = !!document.fullscreenElement;
 
         if (!isFullscreen.value && config.value.fullscreenRequired && isInitialized.value) {
-            recordViolation('fullscreen_exit', 'Siswa keluar dari mode fullscreen');
+            fullscreenExitCount.value++;
+            
+            // First exit = warning only, subsequent exits = violation
+            if (fullscreenExitCount.value === 1) {
+                // Just show warning via onViolation callback without recording
+                if (config.value.onViolation) {
+                    config.value.onViolation({
+                        type: 'fullscreen_warning',
+                        description: 'Peringatan: Jangan keluar dari mode fullscreen! Pelanggaran berikutnya akan dicatat.',
+                        isWarningOnly: true
+                    });
+                }
+            } else {
+                recordViolation('fullscreen_exit', 'Siswa keluar dari mode fullscreen');
+            }
         }
     };
 

@@ -15,7 +15,7 @@
                                 <div class="col-md-9">
                                     <label class="control-label" for="name">Ujian</label>
                                     <select class="form-select" v-model="form.exam_id">
-                                        <option v-for="(exam, index) in exams" :key="index" :value="exam.id">{{ exam.title }} — Kelas : {{ exam.classroom.title }} — Pelajaran : {{ exam.lesson.title }}</option>
+                                        <option v-for="(exam, index) in exams" :key="index" :value="exam.id">{{ exam.title }} — Kelas : {{ exam.classroom?.title || '-' }} — Pelajaran : {{ exam.lesson?.title || '-' }}</option>
                                     </select>
                                     <div v-if="errors.exam_id" class="alert alert-danger mt-2">
                                         {{ errors.exam_id }}
@@ -61,11 +61,11 @@
                                         <td class="fw-bold text-center">
                                             {{ index + 1 }}
                                         </td>
-                                        <td>{{ grade.exam.title }}</td>
-                                        <td>{{ grade.exam_session.title }}</td>
-                                        <td>{{ grade.student.name }}</td>
-                                        <td class="text-center">{{ grade.exam.classroom.title }}</td>
-                                        <td>{{ grade.exam.lesson.title }}</td>
+                                        <td>{{ grade.exam?.title || '-' }}</td>
+                                        <td>{{ grade.exam_session?.title || '-' }}</td>
+                                        <td>{{ grade.student?.name || '-' }}</td>
+                                        <td class="text-center">{{ grade.exam?.classroom?.title || '-' }}</td>
+                                        <td>{{ grade.exam?.lesson?.title || '-' }}</td>
                                         <td class="fw-bold text-center">{{ grade.grade }}</td>
                                     </tr>
                                 </tbody>

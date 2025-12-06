@@ -46,15 +46,15 @@
                                 <tbody>
                                     <tr>
                                         <td style="width:30%" class="fw-bold">Nama Ujian</td>
-                                        <td>{{ exam_session.exam.title }}</td>
+                                        <td>{{ exam_session.exam?.title || '-' }}</td>
                                     </tr>
                                     <tr>
                                         <td class="fw-bold">Mata Pelajaran</td>
-                                        <td>{{ exam_session.exam.lesson.title }}</td>
+                                        <td>{{ exam_session.exam?.lesson?.title || '-' }}</td>
                                     </tr>
                                     <tr>
                                         <td class="fw-bold">Kelas</td>
-                                        <td>{{ exam_session.exam.classroom.title }}</td>
+                                        <td>{{ exam_session.exam?.classroom?.title || '-' }}</td>
                                     </tr>
                                     <tr>
                                         <td class="fw-bold">Sesi</td>
@@ -156,7 +156,7 @@
                                 <tbody>
                                     <tr v-for="(data, index) in exam_session.exam_groups.data" :key="data.id">
                                         <td class="text-center">{{ ++index + (exam_session.exam_groups.current_page - 1) * exam_session.exam_groups.per_page }}</td>
-                                        <td>{{ data.student.name }}</td>
+                                        <td>{{ data.student?.name || '-' }}</td>
                                         <td class="text-center">{{ data.student.classroom?.title }}</td>
                                         <td class="text-center">{{ data.student.gender === 'L' ? 'Laki-laki' : 'Perempuan' }}</td>
                                         <td class="text-center">

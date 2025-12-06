@@ -46,9 +46,9 @@
                                     <tr v-for="(exam, index) in exams.data" :key="index">
                                         <td class="fw-bold text-center">{{ ++index + (exams.current_page - 1) * exams.per_page }}</td>
                                         <td>{{ exam.title }}</td>
-                                        <td>{{ exam.lesson.title }}</td>
-                                        <td class="text-center">{{ exam.classroom.title }}</td>
-                                        <td class="text-center">{{ exam.questions.length }}</td>
+                                        <td>{{ exam.lesson?.title || '-' }}</td>
+                                        <td class="text-center">{{ exam.classroom?.title || '-' }}</td>
+                                        <td class="text-center">{{ exam.questions?.length || 0 }}</td>
                                         <td class="text-center">
                                             <Link :href="`/admin/exams/${exam.id}`" class="btn btn-sm btn-primary border-0 shadow me-2" type="button" title="Detail"><i class="fas fa-plus-circle"></i></Link>
                                             <Link :href="`/admin/exams/${exam.id}/edit`" class="btn btn-sm btn-info border-0 shadow me-2" type="button" title="Edit"><i class="fas fa-pencil-alt"></i></Link>

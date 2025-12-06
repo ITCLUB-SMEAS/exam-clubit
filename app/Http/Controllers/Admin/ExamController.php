@@ -124,12 +124,16 @@ class ExamController extends Controller
         //get exam
         $exam = Exam::with("lesson", "classroom")->findOrFail($id);
 
+        //get total questions count
+        $totalQuestions = $exam->questions()->count();
+
         //get relation questions with pagination
         $exam->setRelation("questions", $exam->questions()->paginate(5));
 
         //render with inertia
         return inertia("Admin/Exams/Show", [
             "exam" => $exam,
+            "totalQuestions" => $totalQuestions,
             "bankQuestions" => QuestionBank::all(),
             "categories" => QuestionCategory::all(),
         ]);

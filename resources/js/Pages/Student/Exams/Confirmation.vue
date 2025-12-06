@@ -115,31 +115,31 @@
                                 </tr>
                                 <tr>
                                     <td class="fw-bold">Nama Lengkap</td>
-                                    <td>{{ exam_group.student.name }}</td>
+                                    <td>{{ exam_group.student?.name || '-' }}</td>
                                 </tr>
                                 <tr>
                                     <td class="fw-bold">Kelas</td>
-                                    <td>{{ exam_group.student.classroom.title }}</td>
+                                    <td>{{ exam_group.student?.classroom?.title || '-' }}</td>
                                 </tr>
                                 <tr>
                                     <td class="fw-bold">Ujian</td>
-                                    <td>{{ exam_group.exam.title }}</td>
+                                    <td>{{ exam_group.exam?.title || '-' }}</td>
                                 </tr>
                                 <tr>
                                     <td class="fw-bold">Mata Pelajaran</td>
-                                    <td>{{ exam_group.exam.lesson.title }}</td>
+                                    <td>{{ exam_group.exam?.lesson?.title || '-' }}</td>
                                 </tr>
                                 <tr>
                                     <td class="fw-bold">Durasi</td>
-                                    <td>{{ exam_group.exam.duration }} Menit</td>
+                                    <td>{{ exam_group.exam?.duration || 0 }} Menit</td>
                                 </tr>
-                                <tr v-if="exam_group.exam.passing_grade > 0">
+                                <tr v-if="exam_group.exam?.passing_grade > 0">
                                     <td class="fw-bold">KKM</td>
-                                    <td>{{ exam_group.exam.passing_grade }}</td>
+                                    <td>{{ exam_group.exam?.passing_grade }}</td>
                                 </tr>
-                                <tr v-if="exam_group.exam.max_attempts > 1">
+                                <tr v-if="exam_group.exam?.max_attempts > 1">
                                     <td class="fw-bold">Maks. Percobaan</td>
-                                    <td>{{ exam_group.exam.max_attempts }}x</td>
+                                    <td>{{ exam_group.exam?.max_attempts }}x</td>
                                 </tr>
                             </thead>
                         </table>

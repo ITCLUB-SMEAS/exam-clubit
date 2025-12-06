@@ -75,13 +75,17 @@ class EssayGradingController extends Controller
     public function bulkGrade(Request $request)
     {
         $request->validate([
-            'grades' => 'required|array|max:50', // Limit 50 items per request
+            'grades' => 'required|array|max:50',
             'grades.*.answer_id' => 'required|exists:answers,id',
             'grades.*.points' => 'required|numeric|min:0',
         ]);
 
+        $answerIds = collect($request->grades)->pluck('answer_id');
+        $answers = Answer::with('question')->whereIn('id', $answerIds)->get()->keyBy('id');
+        $gradesToRecalc = collect();
+
         foreach ($request->grades as $item) {
-            $answer = Answer::find($item['answer_id']);
+            $answer = $answers->get($item['answer_id']);
             if ($answer) {
                 $maxPoints = $answer->question->points ?? 1;
                 $points = min($item['points'], $maxPoints);
@@ -91,11 +95,24 @@ class EssayGradingController extends Controller
                     'is_correct' => $points >= ($maxPoints * 0.5) ? 'Y' : 'N',
                 ]);
 
-                $this->recalculateGrade($answer);
+                $gradesToRecalc->push($answer);
             }
         }
 
+        // Batch recalculate grades
+        $this->batchRecalculateGrades($gradesToRecalc);
+
         return back()->with('success', count($request->grades) . ' jawaban berhasil dinilai.');
+    }
+
+    private function batchRecalculateGrades($answers): void
+    {
+        $grouped = $answers->groupBy(fn($a) => $a->exam_id . '_' . $a->exam_session_id . '_' . $a->student_id);
+        
+        foreach ($grouped as $key => $group) {
+            $first = $group->first();
+            $this->recalculateGrade($first);
+        }
     }
 
     private function recalculateGrade(Answer $answer): void

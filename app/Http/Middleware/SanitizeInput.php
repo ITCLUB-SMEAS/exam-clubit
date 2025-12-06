@@ -61,8 +61,9 @@ class SanitizeInput
     public function handle(Request $request, Closure $next): Response
     {
         // Skip sanitization for question-related routes (preserve code content)
-        if ($request->is('admin/exams/*/questions/*') || 
-            $request->is('admin/question-bank*')) {
+        if ($request->is('admin/exams/*/questions*') || 
+            $request->is('admin/question-bank*') ||
+            $request->is('admin/ai/*')) {
             return $next($request);
         }
 
