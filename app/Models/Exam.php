@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Exam extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasFactory;
     /**
      * fillable
      *
@@ -29,6 +30,10 @@ class Exam extends Model
         "max_attempts",
         "question_limit",
         "time_per_question",
+        // Scoring options
+        "enable_partial_credit",
+        "enable_negative_marking",
+        "negative_marking_percentage",
         // Anti-cheat settings
         "anticheat_enabled",
         "face_detection_enabled",
@@ -55,6 +60,9 @@ class Exam extends Model
         "max_attempts" => "integer",
         "question_limit" => "integer",
         "time_per_question" => "integer",
+        "enable_partial_credit" => "boolean",
+        "enable_negative_marking" => "boolean",
+        "negative_marking_percentage" => "float",
         "anticheat_enabled" => "boolean",
         "face_detection_enabled" => "boolean",
         "fullscreen_required" => "boolean",

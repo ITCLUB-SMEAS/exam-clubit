@@ -26,6 +26,9 @@ Route::prefix("admin")->group(function () {
         Route::post("/profile/2fa/disable", [\App\Http\Controllers\Admin\ProfileController::class, "disable2FA"])->name("admin.profile.2fa.disable");
         Route::post("/profile/2fa/regenerate", [\App\Http\Controllers\Admin\ProfileController::class, "regenerateCodes"])->name("admin.profile.2fa.regenerate");
 
+        // Test Math Editor (Development only - remove in production)
+        Route::get("/test-math-editor", fn() => Inertia::render('Admin/TestMathEditor'))->name("admin.test.math");
+
         // ============================================
         // ADMIN ONLY ROUTES (User & Student Management)
         // ============================================

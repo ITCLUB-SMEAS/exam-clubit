@@ -35,6 +35,17 @@
                                             </td>
                                         </tr>
                                         <tr>
+                                            <td style="width:20%" class="fw-bold">Tingkat Kesulitan</td>
+                                            <td>
+                                                <select class="form-control" v-model="form.difficulty">
+                                                    <option value="easy">Mudah (Easy)</option>
+                                                    <option value="medium">Sedang (Medium)</option>
+                                                    <option value="hard">Sulit (Hard)</option>
+                                                </select>
+                                                <small class="text-muted">Untuk analisis dan filter soal</small>
+                                            </td>
+                                        </tr>
+                                        <tr>
                                             <td style="width:20%" class="fw-bold">Soal</td>
                                             <td>
                                                 <TiptapEditor v-model="form.question" :height="200" />
@@ -151,6 +162,7 @@ export default {
         const form = reactive({
             question: props.question.question || '',
             question_type: props.question.question_type || 'multiple_choice_single',
+            difficulty: props.question.difficulty || 'medium',
             points: props.question.points || 1,
             option_1: props.question.option_1 || '',
             option_2: props.question.option_2 || '',

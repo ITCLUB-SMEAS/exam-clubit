@@ -794,7 +794,8 @@ class ExamController extends Controller
             $submittedAnswer,
             $submittedText,
             $submittedOptions,
-            $matchingAnswers
+            $matchingAnswers,
+            $question->exam
         );
     }
 }

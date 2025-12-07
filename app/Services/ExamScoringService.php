@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Question;
+use App\Models\Exam;
 
 class ExamScoringService
 {
@@ -16,36 +17,76 @@ class ExamScoringService
         $submittedAnswer,
         ?string $submittedText,
         $submittedOptions,
-        $matchingAnswers = null
+        $matchingAnswers = null,
+        ?Exam $exam = null
     ): array {
         $type = $question->question_type ?? Question::TYPE_MULTIPLE_CHOICE_SINGLE;
         $pointsAvailable = $question->points ?? 1;
+        $exam = $exam ?? $question->exam;
 
         return match ($type) {
             Question::TYPE_MULTIPLE_CHOICE_SINGLE,
-            Question::TYPE_TRUE_FALSE => $this->scoreMultipleChoiceSingle($question, $submittedAnswer, $pointsAvailable),
-            Question::TYPE_MULTIPLE_CHOICE_MULTIPLE => $this->scoreMultipleChoiceMultiple($question, $submittedOptions ?? $submittedAnswer, $pointsAvailable),
+            Question::TYPE_TRUE_FALSE => $this->scoreMultipleChoiceSingle($question, $submittedAnswer, $pointsAvailable, $exam),
+            Question::TYPE_MULTIPLE_CHOICE_MULTIPLE => $this->scoreMultipleChoiceMultiple($question, $submittedOptions ?? $submittedAnswer, $pointsAvailable, $exam),
             Question::TYPE_SHORT_ANSWER => $this->scoreShortAnswer($question, $submittedText ?? $submittedAnswer, $pointsAvailable),
             Question::TYPE_ESSAY => ['N', 0, true],
-            Question::TYPE_MATCHING => $this->scoreMatching($question, $matchingAnswers, $pointsAvailable),
-            default => $this->scoreMultipleChoiceSingle($question, $submittedAnswer, $pointsAvailable),
+            Question::TYPE_MATCHING => $this->scoreMatching($question, $matchingAnswers, $pointsAvailable, $exam),
+            default => $this->scoreMultipleChoiceSingle($question, $submittedAnswer, $pointsAvailable, $exam),
         };
     }
 
-    protected function scoreMultipleChoiceSingle(Question $question, $answer, float $points): array
+    protected function scoreMultipleChoiceSingle(Question $question, $answer, float $points, ?Exam $exam): array
     {
-        $isCorrect = (string) $question->answer === (string) $answer ? 'Y' : 'N';
-        return [$isCorrect, $isCorrect === 'Y' ? $points : 0, false];
+        $isCorrect = (string) $question->answer === (string) $answer;
+        
+        if ($isCorrect) {
+            return ['Y', $points, false];
+        }
+        
+        // Apply negative marking if enabled and answer was submitted
+        if ($exam && $exam->enable_negative_marking && $answer !== null && $answer !== '') {
+            $penalty = -1 * ($points * ($exam->negative_marking_percentage / 100));
+            return ['N', $penalty, false];
+        }
+        
+        return ['N', 0, false];
     }
 
-    protected function scoreMultipleChoiceMultiple(Question $question, $submitted, float $points): array
+    protected function scoreMultipleChoiceMultiple(Question $question, $submitted, float $points, ?Exam $exam): array
     {
         $correct = $this->normalizeOptionArray($question->correct_answers);
         $submitted = $this->normalizeOptionArray($submitted);
 
+        // Fully correct
         if (!empty($correct) && $correct === $submitted) {
             return ['Y', $points, false];
         }
+
+        // Partial credit if enabled
+        if ($exam && $exam->enable_partial_credit && !empty($correct) && !empty($submitted)) {
+            $correctCount = count(array_intersect($correct, $submitted));
+            $incorrectCount = count(array_diff($submitted, $correct));
+            $totalCorrect = count($correct);
+
+            if ($correctCount > 0) {
+                $partialPoints = round(($correctCount / $totalCorrect) * $points, 2);
+                
+                // Deduct for incorrect selections if negative marking enabled
+                if ($exam->enable_negative_marking && $incorrectCount > 0) {
+                    $penalty = ($incorrectCount / $totalCorrect) * $points * ($exam->negative_marking_percentage / 100);
+                    $partialPoints = max(0, $partialPoints - $penalty);
+                }
+                
+                return ['N', $partialPoints, false];
+            }
+        }
+
+        // Apply negative marking if enabled and answer was submitted
+        if ($exam && $exam->enable_negative_marking && !empty($submitted)) {
+            $penalty = -1 * ($points * ($exam->negative_marking_percentage / 100));
+            return ['N', $penalty, false];
+        }
+
         return ['N', 0, false];
     }
 
@@ -63,7 +104,7 @@ class ExamScoringService
         return ['N', 0, false];
     }
 
-    protected function scoreMatching(Question $question, $submittedPairs, float $points): array
+    protected function scoreMatching(Question $question, $submittedPairs, float $points, ?Exam $exam): array
     {
         $correctPairs = $question->matching_pairs ?? [];
         
@@ -87,7 +128,7 @@ class ExamScoringService
             return ['Y', $points, false];
         }
         
-        // Partial scoring
+        // Partial scoring (always enabled for matching)
         $partialPoints = $correctCount > 0 ? round(($correctCount / $totalPairs) * $points, 2) : 0;
         return ['N', $partialPoints, false];
     }
@@ -115,3 +156,4 @@ class ExamScoringService
         return $normalized === '' ? null : $normalized;
     }
 }
+

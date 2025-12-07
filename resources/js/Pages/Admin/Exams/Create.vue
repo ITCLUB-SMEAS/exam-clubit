@@ -139,7 +139,38 @@
                                 </div>
                             </div>
 
+                            <!-- Scoring Options -->
+                            <hr>
+                            <h6 class="mb-3"><i class="fas fa-calculator"></i> Pengaturan Penilaian</h6>
+                            
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="partialCredit" v-model="form.enable_partial_credit">
+                                    <label class="form-check-label" for="partialCredit">
+                                        <i class="fas fa-percent me-1"></i> Aktifkan Partial Credit
+                                    </label>
+                                </div>
+                                <small class="text-muted">Untuk soal pilihan ganda multiple: jawaban sebagian benar dapat poin proporsional (misal: 2/3 benar = 66% poin)</small>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="negativeMarking" v-model="form.enable_negative_marking">
+                                    <label class="form-check-label" for="negativeMarking">
+                                        <i class="fas fa-minus-circle me-1"></i> Aktifkan Negative Marking
+                                    </label>
+                                </div>
+                                <small class="text-muted">Jawaban salah akan mengurangi poin (cocok untuk ujian kompetitif seperti SBMPTN/UTBK)</small>
+                            </div>
+
+                            <div class="mb-4" v-if="form.enable_negative_marking">
+                                <label>Persentase Pengurangan Poin (%)</label>
+                                <input type="number" min="0" max="100" step="0.01" class="form-control" placeholder="25" v-model="form.negative_marking_percentage">
+                                <small class="text-muted">Contoh: 25% berarti jawaban salah dikurangi 25% dari poin soal (benar +4, salah -1)</small>
+                            </div>
+
                             <!-- Anti-Cheat Info Banner -->
+                            <hr>
                             <div class="alert alert-info mb-4">
                                 <i class="fas fa-shield-alt me-2"></i>
                                 <strong>Anti-Cheat Otomatis Aktif:</strong> Deteksi pindah tab, fullscreen, copy-paste, multiple monitor, dan virtual machine otomatis aktif.
@@ -233,6 +264,9 @@
                 max_attempts: 1,
                 question_limit: '',
                 time_per_question: '',
+                enable_partial_credit: false,
+                enable_negative_marking: false,
+                negative_marking_percentage: 25,
                 face_detection_enabled: false,
                 audio_detection_enabled: false,
             });
@@ -255,6 +289,9 @@
                     max_attempts: form.max_attempts || 1,
                     question_limit: form.question_limit || null,
                     time_per_question: form.time_per_question || null,
+                    enable_partial_credit: form.enable_partial_credit,
+                    enable_negative_marking: form.enable_negative_marking,
+                    negative_marking_percentage: form.negative_marking_percentage || 25,
                     face_detection_enabled: form.face_detection_enabled,
                     audio_detection_enabled: form.audio_detection_enabled,
                 }, {

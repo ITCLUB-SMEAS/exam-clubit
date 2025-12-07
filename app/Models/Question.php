@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Question extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasFactory;
 
     public const TYPE_MULTIPLE_CHOICE_SINGLE = "multiple_choice_single";
     public const TYPE_MULTIPLE_CHOICE_MULTIPLE = "multiple_choice_multiple";
@@ -15,6 +16,10 @@ class Question extends Model
     public const TYPE_ESSAY = "essay";
     public const TYPE_TRUE_FALSE = "true_false";
     public const TYPE_MATCHING = "matching";
+
+    public const DIFFICULTY_EASY = "easy";
+    public const DIFFICULTY_MEDIUM = "medium";
+    public const DIFFICULTY_HARD = "hard";
 
     /**
      * fillable
@@ -25,6 +30,7 @@ class Question extends Model
         "exam_id",
         "question",
         "question_type",
+        "difficulty",
         "points",
         "option_1",
         "option_2",
