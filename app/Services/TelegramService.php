@@ -522,6 +522,7 @@ class TelegramService
             '/unblock' => $this->cmdUnblock($params[0] ?? null),
             '/extend' => $this->cmdExtend($params[0] ?? null, $params[1] ?? null),
             '/summary' => $this->cmdSummary(),
+            '/performance' => $this->cmdPerformance(),
             // New commands
             '/search' => $this->cmdSearch(implode(' ', $params)),
             '/score' => $this->cmdScore($params[0] ?? null),
@@ -588,7 +589,8 @@ class TelegramService
             . "/students_online - Siswa sedang ujian\n"
             . "/summary - Rekap hari ini\n"
             . "/violations - Pelanggaran hari ini\n"
-            . "/health - Cek server health\n\n"
+            . "/health - Cek server health\n"
+            . "/performance - Performance metrics\n\n"
             . "<b>🎫 Absensi</b>\n"
             . "/token - Lihat token absensi aktif\n"
             . "/token [session_id] - Token sesi tertentu\n"
@@ -1082,25 +1084,16 @@ class TelegramService
         $metrics['disk'] = $diskPercent . '%';
         if ($diskPercent > 80) $status = "⚠️";
 
-        // Memory
-        $memInfo = @file_get_contents('/proc/meminfo');
-        if ($memInfo && preg_match('/MemTotal:\s+(\d+)/', $memInfo, $total) && preg_match('/MemAvailable:\s+(\d+)/', $memInfo, $avail)) {
-            $memPercent = round((1 - $avail[1] / $total[1]) * 100);
-            $metrics['memory'] = $memPercent . '%';
-            if ($memPercent > 80) $status = "⚠️";
-        } else {
-            $metrics['memory'] = 'N/A';
-        }
-
-        // Active exams
-        $activeExams = Grade::whereNotNull('start_time')->whereNull('end_time')->count();
-
-        return "{$status} <b>SERVER HEALTH</b>\n\n"
+        return "{$status} <b>Server Health</b>\n\n"
             . "🗄️ Database: {$metrics['db']}\n"
             . "💾 Disk: {$metrics['disk']}\n"
-            . "🧠 Memory: {$metrics['memory']}\n"
-            . "📝 Ujian Aktif: {$activeExams} siswa\n"
-            . "🕐 " . now()->format('d/m/Y H:i:s');
+            . "🧠 Memory: " . round(memory_get_usage() / 1024 / 1024) . "MB";
+    }
+
+    protected function cmdPerformance(): string
+    {
+        \Artisan::call('performance:report');
+        return "📊 Performance report sedang digenerate...";
     }
 
     protected function cmdExport(?string $examId, ?string $chatId): string

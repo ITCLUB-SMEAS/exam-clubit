@@ -2,12 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Traits\OptimizedQueries;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Grade extends Model
 {
+    use OptimizedQueries, SoftDeletes;
+
+    protected $defaultRelations = ['student', 'exam', 'exam_session'];
     /**
      * fillable
      *

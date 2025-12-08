@@ -1,8 +1,9 @@
 import { createApp, h } from 'vue'
-import { createInertiaApp, router } from '@inertiajs/vue3'
+import { createInertiaApp, router, usePage } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import 'sweetalert2/dist/sweetalert2.min.css';
 import axios from 'axios';
+import { a11yDirective } from './composables/useAccessibility';
 
 // Configure axios
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
@@ -34,12 +35,25 @@ window.axios = axios;
 
 createInertiaApp({
   resolve: name => {
-    const pages = import.meta.glob('./Pages/**/*.vue', { eager: true })
-    return pages[`./Pages/${name}.vue`]
+    const pages = import.meta.glob('./Pages/**/*.vue')
+    return pages[`./Pages/${name}.vue`]()
   },
   setup({ el, App, props, plugin }) {
     const app = createApp({ render: () => h(App, props) })
     app.config.globalProperties.route = route
+    
+    // Translation helper - use this.$page.props.translations
+    app.config.globalProperties.__ = function(key, replacements = {}) {
+        const translations = this.$page?.props?.translations || {};
+        let translation = translations[key] || key;
+        
+        Object.keys(replacements).forEach(r => {
+            translation = translation.replace(`:${r}`, replacements[r]);
+        });
+        
+        return translation;
+    };
+    
     app
     //set mixins
     .mixin({
@@ -60,6 +74,7 @@ createInertiaApp({
         },
     })
     .use(plugin)
+    .directive('a11y', a11yDirective)
     .mount(el)
   },
   progress: {

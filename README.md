@@ -2,6 +2,21 @@
 
 Aplikasi Ujian Online berbasis web untuk sekolah/institusi pendidikan. Dibangun dengan Laravel 12 dan Vue.js 3.
 
+## 📚 Documentation
+
+Dokumentasi lengkap tersedia di folder [`docs/`](docs/):
+
+- [API Documentation](docs/API_DOCUMENTATION.md) - REST API endpoints & usage
+- [Docker Deployment](docs/DOCKER.md) - Docker setup & configuration
+- [Performance Guide](docs/PERFORMANCE.md) - Performance optimizations
+- [Production Setup](docs/PRODUCTION_OPTIMIZATIONS.md) - Production configuration
+- [Security Features](docs/SECURITY_FEATURES.md) - Security implementations
+- [Security Audit](docs/SECURITY_AUDIT.md) - Security checklist
+- [Security Quick Reference](docs/SECURITY_QUICK_REFERENCE.md) - Quick security guide
+- [Immediate Security](docs/IMMEDIATE_SECURITY_IMPLEMENTATION.md) - Critical security fixes
+
+---
+
 ## 📋 Table of Contents
 
 - [Tech Stack](#-tech-stack)
@@ -564,21 +579,52 @@ php artisan passwords:hash
 
 ## 🔌 REST API
 
-API endpoints untuk integrasi dengan sistem lain:
+API endpoints untuk integrasi dengan sistem lain. **Base URL: `/api/v1`**
+
+### Authentication
+
+```bash
+# Login untuk mendapatkan token
+curl -X POST https://your-domain.com/api/v1/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@admin.com", "password": "password"}'
+
+# Response: { "token": "1|abc123..." }
+```
+
+### Endpoints
 
 | Endpoint | Method | Deskripsi |
 |----------|--------|-----------|
-| `/api/students` | GET | List semua siswa |
-| `/api/students/{id}` | GET | Detail siswa |
-| `/api/students` | POST | Tambah siswa |
-| `/api/students/{id}` | PUT | Update siswa |
-| `/api/grades` | GET | List nilai |
-| `/api/grades/{id}` | GET | Detail nilai |
-| `/api/exams` | GET | List ujian |
+| `/api/v1/login` | POST | Login & get token |
+| `/api/v1/logout` | POST | Logout |
+| `/api/v1/me` | GET | Current user info |
+| `/api/v1/students` | GET | List semua siswa |
+| `/api/v1/students/{id}` | GET | Detail siswa |
+| `/api/v1/students` | POST | Tambah siswa |
+| `/api/v1/students/{id}` | PUT | Update siswa |
+| `/api/v1/students/{id}` | DELETE | Hapus siswa |
+| `/api/v1/grades` | GET | List nilai |
+| `/api/v1/grades/{id}` | GET | Detail nilai |
+| `/api/v1/grades-statistics` | GET | Statistik nilai |
+| `/api/v1/exams` | GET | List ujian |
+| `/api/v1/exams/{id}` | GET | Detail ujian |
+| `/api/v1/exam-sessions` | GET | List sesi ujian |
 
+### Usage
+
+```bash
+# Request dengan Bearer Token
+curl -X GET https://your-domain.com/api/v1/students \
+  -H "Authorization: Bearer 1|abc123..." \
+  -H "Accept: application/json"
+```
+
+### Notes
 - Authentication via Laravel Sanctum (Bearer Token)
-- Rate limited
+- Rate limited (60 req/min untuk read, 30 req/min untuk write)
 - JSON response
+- Legacy routes (`/api/*`) redirect ke `/api/v1/*`
 
 ---
 

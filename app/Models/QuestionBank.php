@@ -10,6 +10,7 @@ class QuestionBank extends Model
         'category_id',
         'question',
         'question_type',
+        'difficulty',
         'points',
         'option_1',
         'option_2',
@@ -20,6 +21,9 @@ class QuestionBank extends Model
         'correct_answers',
         'matching_pairs',
         'tags',
+        'usage_count',
+        'success_rate',
+        'last_used_at',
     ];
 
     protected $casts = [
@@ -27,6 +31,9 @@ class QuestionBank extends Model
         'correct_answers' => 'array',
         'matching_pairs' => 'array',
         'tags' => 'array',
+        'usage_count' => 'integer',
+        'success_rate' => 'float',
+        'last_used_at' => 'datetime',
     ];
 
     public function category()

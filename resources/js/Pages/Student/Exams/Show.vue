@@ -3,49 +3,55 @@
         <title>Ujian Dengan Nomor Soal : {{ page }} - Aplikasi Ujian Online</title>
     </Head>
 
+    <!-- Skip to main content link for screen readers -->
+    <a href="#main-question" class="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-50 focus:p-4 focus:bg-white">
+        Langsung ke soal
+    </a>
+
     <!-- Anti-Cheat Warning Banner -->
-    <div v-if="antiCheat.warningReached.value && !showViolationWarning" class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
-        <i class="fas fa-exclamation-triangle me-2"></i>
+    <div v-if="antiCheat.warningReached.value && !showViolationWarning" class="alert alert-warning alert-dismissible fade show mb-3" role="alert" aria-live="assertive">
+        <i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>
         <strong>Peringatan!</strong> Anda telah melakukan {{ antiCheat.violationCount.value }} pelanggaran.
         Sisa pelanggaran yang diizinkan: {{ antiCheat.remainingViolations.value }}
-        <button type="button" class="btn-close" @click="dismissWarningBanner"></button>
+        <button type="button" class="btn-close" @click="dismissWarningBanner" aria-label="Tutup peringatan"></button>
     </div>
 
     <!-- Violation Counter Badge -->
-    <div v-if="antiCheatConfig.enabled" class="position-fixed d-none d-md-block" style="top: 10px; right: 10px; z-index: 1050;">
+    <div v-if="antiCheatConfig.enabled" class="position-fixed d-none d-md-block" style="top: 10px; right: 10px; z-index: 1050;" role="status" aria-live="polite">
         <span :class="violationBadgeClass" class="badge p-2">
-            <i class="fas fa-shield-alt me-1"></i>
+            <i class="fas fa-shield-alt me-1" aria-hidden="true"></i>
+            <span class="sr-only">Jumlah pelanggaran:</span>
             Pelanggaran: {{ antiCheat.violationCount.value }}/{{ antiCheatConfig.max_violations }}
         </span>
     </div>
 
     <!-- Face Detection Camera (Hidden - Stealth Mode) -->
-    <video v-if="face_detection_enabled" ref="faceVideoRef" autoplay muted playsinline style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;"></video>
+    <video v-if="face_detection_enabled" ref="faceVideoRef" autoplay muted playsinline style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;" aria-hidden="true"></video>
 
     <div class="row mb-5">
         <div class="col-12 col-md-7 mb-3 mb-md-0">
-            <div class="card border-0 shadow">
+            <div class="card border-0 shadow" role="main" id="main-question">
                 <div class="card-header">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
                         <div>
-                            <h5 class="mb-0">Soal No. <strong class="fw-bold">{{ page }}</strong></h5>
+                            <h5 class="mb-0" aria-live="polite">Soal No. <strong class="fw-bold">{{ page }}</strong> dari {{ Object.keys(all_questions).length }}</h5>
                         </div>
-                        <div class="d-flex flex-wrap gap-2">
+                        <div class="d-flex flex-wrap gap-2" role="timer" aria-label="Waktu ujian">
                             <!-- Violation counter for mobile -->
-                            <span v-if="antiCheatConfig.enabled" :class="violationBadgeClass" class="badge p-2 d-md-none">
-                                <i class="fas fa-shield-alt me-1"></i>
+                            <span v-if="antiCheatConfig.enabled" :class="violationBadgeClass" class="badge p-2 d-md-none" role="status">
+                                <i class="fas fa-shield-alt me-1" aria-hidden="true"></i>
                                 {{ antiCheat.violationCount.value }}/{{ antiCheatConfig.max_violations }}
                             </span>
                             <!-- Timer per soal (jika aktif) -->
                             <VueCountdown v-if="questionTimeLimit > 0" :time="questionTimeRemaining" @end="handleQuestionTimeEnd" v-slot="{ minutes, seconds }">
-                                <span class="badge bg-warning text-dark p-2">
-                                    <i class="fas fa-stopwatch"></i> <span class="d-none d-sm-inline">Soal:</span> {{ minutes }}:{{ String(seconds).padStart(2, '0') }}
+                                <span class="badge bg-warning text-dark p-2" role="timer" aria-label="Waktu soal">
+                                    <i class="fas fa-stopwatch" aria-hidden="true"></i> <span class="d-none d-sm-inline">Soal:</span> {{ minutes }}:{{ String(seconds).padStart(2, '0') }}
                                 </span>
                             </VueCountdown>
                             <!-- Timer total ujian -->
                             <VueCountdown :time="duration" @progress="handleChangeDuration" @end="showModalEndTimeExam = true" v-slot="{ hours, minutes, seconds }">
-                                <span class="badge bg-info p-2">
-                                    <i class="fas fa-clock"></i>
+                                <span class="badge bg-info p-2" role="timer" aria-label="Sisa waktu ujian">
+                                    <i class="fas fa-clock" aria-hidden="true"></i>
                                     <span class="d-none d-sm-inline">{{ hours }}j {{ minutes }}m {{ seconds }}d</span>
                                     <span class="d-sm-none">{{ hours }}:{{ String(minutes).padStart(2, '0') }}:{{ String(seconds).padStart(2, '0') }}</span>
                                 </span>
@@ -57,19 +63,19 @@
 
                     <div v-if="question_active !== null">
 
-                        <div>
+                        <div role="region" aria-label="Pertanyaan">
                             <p v-html="question_active.question.question"></p>
                         </div>
 
-                        <div v-if="isMultipleChoiceSingle">
+                        <div v-if="isMultipleChoiceSingle" role="radiogroup" aria-label="Pilihan jawaban">
                             <table>
                                 <tbody>
                                     <tr v-for="(answer, index) in answer_order" :key="index">
                                         <td width="50" style="padding: 10px;">
 
-                                            <button v-if="answer == question_active.answer" class="btn btn-info btn-sm w-100 shdaow">{{ options[index] }}</button>
+                                            <button v-if="answer == question_active.answer" class="btn btn-info btn-sm w-100 shdaow" aria-pressed="true" :aria-label="'Pilihan ' + options[index] + ' (terpilih)'">{{ options[index] }}</button>
 
-                                            <button v-else @click.prevent="submitAnswerSingle(answer)" class="btn btn-outline-info btn-sm w-100 shdaow">{{ options[index] }}</button>
+                                            <button v-else @click.prevent="submitAnswerSingle(answer)" class="btn btn-outline-info btn-sm w-100 shdaow" aria-pressed="false" :aria-label="'Pilih jawaban ' + options[index]">{{ options[index] }}</button>
 
                                         </td>
                                         <td style="padding: 10px;">
@@ -80,11 +86,11 @@
                             </table>
                         </div>
 
-                        <div v-else-if="isMultipleChoiceMultiple">
+                        <div v-else-if="isMultipleChoiceMultiple" role="group" aria-label="Pilihan jawaban (pilih lebih dari satu)">
                             <div class="list-group">
                                 <label v-for="(answer, index) in answer_order" :key="index" class="list-group-item d-flex align-items-center">
-                                    <input class="form-check-input me-2" type="checkbox" :value="answer" v-model="selectedOptions">
-                                    <span class="badge bg-secondary me-2">{{ options[index] }}</span>
+                                    <input class="form-check-input me-2" type="checkbox" :value="answer" v-model="selectedOptions" :aria-label="'Pilihan ' + options[index]">
+                                    <span class="badge bg-secondary me-2" aria-hidden="true">{{ options[index] }}</span>
                                     {{ question_active.question['option_'+answer] }}
                                 </label>
                             </div>
@@ -93,8 +99,8 @@
 
                         <div v-else-if="isShortAnswer">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Jawaban Singkat</label>
-                                <input type="text" class="form-control" v-model="textAnswer" placeholder="Ketik jawaban Anda" />
+                                <label class="form-label fw-bold" for="short-answer-input">Jawaban Singkat</label>
+                                <input type="text" id="short-answer-input" class="form-control" v-model="textAnswer" placeholder="Ketik jawaban Anda" aria-describedby="short-answer-help" />
                             </div>
                             <button @click.prevent="submitAnswerText" class="btn btn-info btn-sm">Simpan Jawaban</button>
                         </div>
@@ -181,17 +187,17 @@
     </div>
 
     <!-- modal akhiri ujian -->
-    <div v-if="showModalEndExam" class="modal fade" :class="{ 'show': showModalEndExam }" tabindex="-1" aria-hidden="true" style="display:block;" role="dialog">
+    <div v-if="showModalEndExam" class="modal fade" :class="{ 'show': showModalEndExam }" tabindex="-1" style="display:block;" role="dialog" aria-modal="true" aria-labelledby="endExamModalTitle">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Akhiri Ujian ?</h5>
+                    <h5 class="modal-title" id="endExamModalTitle">Akhiri Ujian ?</h5>
                 </div>
                 <div class="modal-body">
                     Setelah mengakhiri ujian, Anda tidak dapat kembali ke ujian ini lagi. Yakin akan mengakhiri ujian?
                 </div>
                 <div class="modal-footer">
-                    <button @click.prevent="endExam" type="button" class="btn btn-primary">Ya, Akhiri</button>
+                    <button @click.prevent="endExam" type="button" class="btn btn-primary" autofocus>Ya, Akhiri</button>
                     <button @click.prevent="showModalEndExam = false" type="button" class="btn btn-secondary">Tutup</button>
                 </div>
             </div>

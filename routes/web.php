@@ -3,13 +3,19 @@
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+// Health check endpoint (no auth required)
+Route::get('/health', \App\Http\Controllers\HealthCheckController::class)->name('health');
+
+// API Documentation
+Route::post('/language/switch', [\App\Http\Controllers\LanguageController::class, 'switch'])->name('language.switch');
+
 // Offline page for PWA
 Route::get('/offline', fn() => Inertia::render('Offline'))->name('offline');
 
 //prefix "admin"
 Route::prefix("admin")->group(function () {
-    //middleware "auth"
-    Route::group(["middleware" => ["auth"]], function () {
+    //middleware "auth" with rate limiting
+    Route::group(["middleware" => ["auth", "throttle:120,1"]], function () {
         //route dashboard
         Route::get(
             "/dashboard",
@@ -396,6 +402,33 @@ Route::prefix("admin")->group(function () {
             ["as" => "admin"]
         );
 
+        // Question Bank - Export/Import
+        Route::get("/question-bank-export", [
+            \App\Http\Controllers\Admin\QuestionBankController::class,
+            "export",
+        ])->name("admin.question-bank.export");
+
+        Route::post("/question-bank-import", [
+            \App\Http\Controllers\Admin\QuestionBankController::class,
+            "import",
+        ])->name("admin.question-bank.import");
+
+        Route::get("/question-bank-template", [
+            \App\Http\Controllers\Admin\QuestionBankController::class,
+            "downloadTemplate",
+        ])->name("admin.question-bank.template");
+
+        // Question Bank - Preview & Duplicate Check
+        Route::post("/question-bank-preview", [
+            \App\Http\Controllers\Admin\QuestionBankController::class,
+            "preview",
+        ])->name("admin.question-bank.preview");
+
+        Route::post("/question-bank-check-duplicate", [
+            \App\Http\Controllers\Admin\QuestionBankController::class,
+            "checkDuplicate",
+        ])->name("admin.question-bank.checkDuplicate");
+
         // Import from bank to exam
         Route::post("/exams/{exam}/import-from-bank", [
             \App\Http\Controllers\Admin\QuestionBankController::class,
@@ -567,7 +600,7 @@ Route::get("/", function () {
 
 //override fortify login with turnstile middleware
 Route::post('/admin/login', [\Laravel\Fortify\Http\Controllers\AuthenticatedSessionController::class, 'store'])
-    ->middleware(['guest:web', 'turnstile'])
+    ->middleware(['guest:web', 'turnstile', 'throttle:5,1'])
     ->name('login.store');
 
 //redirect /login to admin login
@@ -577,7 +610,7 @@ Route::redirect('/login', '/admin/login');
 Route::post(
     "/students/login",
     \App\Http\Controllers\Student\LoginController::class,
-)->middleware('turnstile')->name("student.login");
+)->middleware(['turnstile', 'throttle:5,1'])->name("student.login");
 
 //prefix "student"
 Route::prefix("student")->group(function () {
@@ -652,17 +685,17 @@ Route::prefix("student")->group(function () {
             "updateDuration",
         ])->name("student.exams.update_duration");
 
-        //route answer question
+        //route answer question (with server-side anti-cheat)
         Route::post("/exam-answer", [
             App\Http\Controllers\Student\ExamController::class,
             "answerQuestion",
-        ])->name("student.exams.answerQuestion");
+        ])->middleware('anticheat.server')->name("student.exams.answerQuestion");
 
-        //route exam end
+        //route exam end (with server-side anti-cheat)
         Route::post("/exam-end", [
             App\Http\Controllers\Student\ExamController::class,
             "endExam",
-        ])->name("student.exams.endExam");
+        ])->middleware('anticheat.server')->name("student.exams.endExam");
 
         //route exam result
         Route::get("/exam-result/{exam_group_id}", [

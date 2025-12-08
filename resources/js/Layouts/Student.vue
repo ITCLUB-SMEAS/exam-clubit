@@ -17,9 +17,11 @@
             <div class="collapse navbar-collapse" :class="{ 'show': isNavbarOpen }" id="navbarCollapse">
                 <ul class="navbar-nav me-auto mb-2 mb-md-0">
                 </ul>
-                <div class="d-flex align-items-center" v-if="$page.props.auth.student">
+                <div class="d-flex align-items-center gap-2" v-if="$page.props.auth.student">
+                    <!-- Language Switcher -->
+                    <LanguageSwitcher />
                     <!-- Profile Link -->
-                    <Link href="/student/profile" class="btn btn-outline-light btn-sm me-2">
+                    <Link href="/student/profile" class="btn btn-outline-light btn-sm">
                         <i class="fa fa-user-circle me-1"></i>
                         <span class="d-none d-md-inline">{{ $page.props.auth.student.name }}</span>
                     </Link>
@@ -114,12 +116,16 @@
     
     //import PWA component
     import PwaInstall from '../Components/PwaInstall.vue';
+    
+    //import Language Switcher
+    import LanguageSwitcher from '../Components/LanguageSwitcher.vue';
 
     export default {
         //register components
         components: {
             Link,
-            PwaInstall
+            PwaInstall,
+            LanguageSwitcher
         },
 
         setup() {

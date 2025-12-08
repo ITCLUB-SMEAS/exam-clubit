@@ -1,0 +1,165 @@
+/* Mobile Optimizations for CBT Exam */
+
+/* Touch-friendly buttons */
+@media (max-width: 767px) {
+    .btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 12px 16px;
+    }
+
+    /* Modal optimizations */
+    .modal-dialog {
+        margin: 0.5rem;
+        max-height: calc(100vh - 1rem);
+    }
+
+    .modal-content {
+        max-height: calc(100vh - 1rem);
+        overflow-y: auto;
+    }
+
+    .modal-body {
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+    }
+
+    /* Question navigation */
+    .question-nav-btn {
+        min-width: 40px;
+        min-height: 40px;
+        margin: 2px;
+    }
+
+    /* Form inputs */
+    input[type="text"],
+    input[type="number"],
+    textarea,
+    select {
+        font-size: 16px; /* Prevent zoom on iOS */
+        min-height: 44px;
+    }
+
+    /* Card spacing */
+    .card {
+        margin-bottom: 1rem;
+    }
+
+    /* Table responsive */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Reduce padding on mobile */
+    .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    /* Sticky header on mobile */
+    .exam-header {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Better spacing for options */
+    .form-check {
+        padding: 12px;
+        margin-bottom: 8px;
+    }
+
+    /* Larger radio/checkbox */
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+        margin-top: 0.15em;
+    }
+
+    /* Prevent text selection on buttons */
+    .btn, .badge, .nav-link {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Smooth scrolling */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* Hide desktop-only elements */
+    .desktop-only {
+        display: none !important;
+    }
+
+    /* Fullscreen warning for mobile */
+    .fullscreen-warning-mobile {
+        display: none; /* Fullscreen not required on mobile */
+    }
+}
+
+/* Landscape mode specific */
+@media (max-width: 767px) and (orientation: landscape) {
+    .modal-dialog {
+        max-height: calc(100vh - 0.5rem);
+    }
+
+    .modal-body {
+        max-height: calc(100vh - 150px);
+    }
+
+    /* Reduce header size in landscape */
+    .exam-header {
+        padding: 0.5rem 0;
+    }
+
+    h1, h2, h3 {
+        font-size: 1.2rem;
+    }
+}
+
+/* Tablet optimizations */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .btn {
+        min-height: 40px;
+        padding: 10px 14px;
+    }
+
+    .form-check-input {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+    /* Fix iOS Safari bottom bar */
+    .exam-container {
+        min-height: -webkit-fill-available;
+    }
+
+    /* Prevent zoom on input focus */
+    input, select, textarea {
+        font-size: 16px !important;
+    }
+}
+
+/* Android specific fixes */
+@media (max-width: 767px) {
+    /* Fix Android keyboard overlay */
+    .exam-footer {
+        position: relative;
+        bottom: auto;
+    }
+}
+
+/* High DPI screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .btn, .badge {
+        border-width: 0.5px;
+    }
+}

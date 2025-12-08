@@ -34,7 +34,10 @@ export function useFaceDetection(options = {}) {
         try {
             const module = await import('face-api.js');
             faceapi = module;
-            await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+            
+            // Use absolute path or relative to public
+            const modelsPath = window.location.origin + '/models';
+            await faceapi.nets.tinyFaceDetector.loadFromUri(modelsPath);
             return true;
         } catch (error) {
             console.error('Failed to load face detection models:', error);
@@ -61,6 +64,12 @@ export function useFaceDetection(options = {}) {
 
     const detectFaces = async () => {
         if (!videoElement.value || !isRunning.value || !faceapi) return;
+        
+        // Check if video is ready
+        if (videoElement.value.readyState < 2) {
+            // Video not ready, skip this check
+            return;
+        }
 
         try {
             const detections = await faceapi.detectAllFaces(

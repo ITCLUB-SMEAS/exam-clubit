@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\HandlesTransactions;
 use App\Models\Answer;
 use App\Models\Grade;
 use App\Models\Exam;
@@ -12,6 +13,7 @@ use Illuminate\Http\Request;
 
 class EssayGradingController extends Controller
 {
+    use HandlesTransactions;
     public function index(Request $request)
     {
         $exams = Exam::whereHas('questions', function ($q) {
@@ -80,29 +82,31 @@ class EssayGradingController extends Controller
             'grades.*.points' => 'required|numeric|min:0',
         ]);
 
-        $answerIds = collect($request->grades)->pluck('answer_id');
-        $answers = Answer::with('question')->whereIn('id', $answerIds)->get()->keyBy('id');
-        $gradesToRecalc = collect();
+        return $this->executeInTransaction(function () use ($request) {
+            $answerIds = collect($request->grades)->pluck('answer_id');
+            $answers = Answer::with('question')->whereIn('id', $answerIds)->get()->keyBy('id');
+            $gradesToRecalc = collect();
 
-        foreach ($request->grades as $item) {
-            $answer = $answers->get($item['answer_id']);
-            if ($answer) {
-                $maxPoints = $answer->question->points ?? 1;
-                $points = min($item['points'], $maxPoints);
+            foreach ($request->grades as $item) {
+                $answer = $answers->get($item['answer_id']);
+                if ($answer) {
+                    $maxPoints = $answer->question->points ?? 1;
+                    $points = min($item['points'], $maxPoints);
 
-                $answer->update([
-                    'points_awarded' => $points,
-                    'is_correct' => $points >= ($maxPoints * 0.5) ? 'Y' : 'N',
-                ]);
+                    $answer->update([
+                        'points_awarded' => $points,
+                        'is_correct' => $points >= ($maxPoints * 0.5) ? 'Y' : 'N',
+                    ]);
 
-                $gradesToRecalc->push($answer);
+                    $gradesToRecalc->push($answer);
+                }
             }
-        }
 
-        // Batch recalculate grades
-        $this->batchRecalculateGrades($gradesToRecalc);
+            // Batch recalculate grades
+            $this->batchRecalculateGrades($gradesToRecalc);
 
-        return back()->with('success', count($request->grades) . ' jawaban berhasil dinilai.');
+            return back()->with('success', count($request->grades) . ' jawaban berhasil dinilai.');
+        }, 'Gagal menyimpan nilai. Silakan coba lagi.');
     }
 
     private function batchRecalculateGrades($answers): void

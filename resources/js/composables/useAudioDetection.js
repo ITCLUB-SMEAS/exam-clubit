@@ -49,11 +49,22 @@ export function useAudioDetection(options = {}) {
         
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
         const sampleRate = audioContext.sampleRate;
-        const binSize = sampleRate / analyser.fftSize;
+        const nyquist = sampleRate / 2;
+        const binSize = nyquist / analyser.frequencyBinCount;
         
         // Calculate bin indices for human voice range (85Hz - 3000Hz)
-        const minBin = Math.floor(85 / binSize);
-        const maxBin = Math.min(Math.ceil(3000 / binSize), dataArray.length - 1);
+        // Ensure we don't go out of bounds
+        const minBin = Math.max(0, Math.floor(85 / binSize));
+        const maxBin = Math.min(
+            Math.ceil(3000 / binSize), 
+            analyser.frequencyBinCount - 1
+        );
+        
+        // Validate range
+        if (minBin >= maxBin) {
+            console.warn('Invalid frequency range for voice detection');
+            return;
+        }
         
         const checkAudio = () => {
             analyser.getByteFrequencyData(dataArray);

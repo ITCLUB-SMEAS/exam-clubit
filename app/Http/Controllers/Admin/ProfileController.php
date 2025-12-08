@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\LoginHistory;
+use App\Rules\StrongPassword;
 use App\Services\TwoFactorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -47,7 +48,7 @@ class ProfileController extends Controller
     {
         $request->validate([
             'current_password' => 'required|current_password',
-            'password' => 'required|min:8|confirmed',
+            'password' => ['required', 'confirmed', new StrongPassword()],
         ]);
 
         auth()->user()->update(['password' => Hash::make($request->password)]);

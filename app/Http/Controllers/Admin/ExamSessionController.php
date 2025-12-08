@@ -8,10 +8,12 @@ use App\Models\ExamGroup;
 use App\Models\ExamSession;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\HandlesTransactions;
 use Illuminate\Support\Facades\Cache;
 
 class ExamSessionController extends Controller
 {
+    use HandlesTransactions;
     /**
      * Display a listing of the resource.
      *
@@ -269,33 +271,35 @@ class ExamSessionController extends Controller
             'student_id.*'  => 'exists:students,id',
         ]);
         
-        $exam = $exam_session->exam;
-        $studentIds = $request->student_id;
-        
-        // Get existing enrollments in ONE query
-        $existingEnrollments = ExamGroup::where('exam_id', $exam->id)
-            ->where('exam_session_id', $exam_session->id)
-            ->whereIn('student_id', $studentIds)
-            ->pluck('student_id')
-            ->toArray();
-        
-        // Filter out already enrolled students
-        $newStudentIds = array_diff($studentIds, $existingEnrollments);
-        
-        // Batch insert new enrollments
-        if (!empty($newStudentIds)) {
-            $enrollments = array_map(fn($sid) => [
-                'exam_id' => $exam->id,
-                'exam_session_id' => $exam_session->id,
-                'student_id' => $sid,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ], $newStudentIds);
+        return $this->executeInTransaction(function () use ($request, $exam_session) {
+            $exam = $exam_session->exam;
+            $studentIds = $request->student_id;
             
-            ExamGroup::insert($enrollments);
-        }
-        
-        return redirect()->route('admin.exam_sessions.show', $exam_session->id);
+            // Get existing enrollments in ONE query
+            $existingEnrollments = ExamGroup::where('exam_id', $exam->id)
+                ->where('exam_session_id', $exam_session->id)
+                ->whereIn('student_id', $studentIds)
+                ->pluck('student_id')
+                ->toArray();
+            
+            // Filter out already enrolled students
+            $newStudentIds = array_diff($studentIds, $existingEnrollments);
+            
+            // Batch insert new enrollments
+            if (!empty($newStudentIds)) {
+                $enrollments = array_map(fn($sid) => [
+                    'exam_id' => $exam->id,
+                    'exam_session_id' => $exam_session->id,
+                    'student_id' => $sid,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ], $newStudentIds);
+                
+                ExamGroup::insert($enrollments);
+            }
+            
+            return redirect()->route('admin.exam_sessions.show', $exam_session->id);
+        }, 'Gagal mendaftarkan siswa. Silakan coba lagi.');
     }
 
     /**
@@ -329,34 +333,38 @@ class ExamSessionController extends Controller
         if ($exam->classroom_id && $exam->classroom_id != $request->classroom_id) {
             return back()->withErrors(['classroom_id' => 'Kelas tidak sesuai dengan ujian ini.']);
         }
-        
-        // Get students already enrolled
-        $enrolledIds = ExamGroup::where('exam_id', $exam->id)
-            ->where('exam_session_id', $exam_session->id)
-            ->pluck('student_id')
-            ->toArray();
 
-        // Get students from selected class not yet enrolled
-        $students = Student::where('classroom_id', $request->classroom_id)
-            ->whereNotIn('id', $enrolledIds)
-            ->get();
+        return $this->executeInTransaction(function () use ($request, $exam_session, $exam) {
+            // Get students already enrolled
+            $enrolledIds = ExamGroup::where('exam_id', $exam->id)
+                ->where('exam_session_id', $exam_session->id)
+                ->pluck('student_id')
+                ->toArray();
 
-        if ($students->isEmpty()) {
-            return back()->with('info', 'Semua siswa di kelas ini sudah terdaftar.');
-        }
+            // Get students from selected class not yet enrolled
+            $students = Student::where('classroom_id', $request->classroom_id)
+                ->whereNotIn('id', $enrolledIds)
+                ->pluck('id')
+                ->toArray();
 
-        $enrolled = 0;
-        foreach ($students as $student) {
-            ExamGroup::create([
+            if (empty($students)) {
+                return back()->with('info', 'Semua siswa di kelas ini sudah terdaftar.');
+            }
+
+            // Batch insert
+            $enrollments = array_map(fn($sid) => [
                 'exam_id' => $exam->id,
                 'exam_session_id' => $exam_session->id,
-                'student_id' => $student->id,
-            ]);
-            $enrolled++;
-        }
+                'student_id' => $sid,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ], $students);
 
-        return redirect()->route('admin.exam_sessions.show', $exam_session->id)
-            ->with('success', "{$enrolled} siswa berhasil didaftarkan.");
+            ExamGroup::insert($enrollments);
+
+            return redirect()->route('admin.exam_sessions.show', $exam_session->id)
+                ->with('success', count($students) . " siswa berhasil didaftarkan.");
+        }, 'Gagal mendaftarkan siswa. Silakan coba lagi.');
     }
 
     /**

@@ -11,6 +11,7 @@ use App\Imports\QuestionsImport;
 use App\Models\QuestionBank;
 use App\Models\QuestionCategory;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\HandlesTransactions;
 use App\Services\DuplicateQuestionService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ExamController extends Controller
 {
+    use HandlesTransactions;
     /**
      * Get cached lessons
      */
@@ -419,15 +421,17 @@ class ExamController extends Controller
             'questions.*.points' => 'required|numeric|min:0',
         ]);
 
-        $updated = 0;
-        foreach ($request->questions as $q) {
-            Question::where('id', $q['id'])
-                ->where('exam_id', $exam->id)
-                ->update(['points' => $q['points']]);
-            $updated++;
-        }
+        return $this->executeInTransaction(function () use ($request, $exam) {
+            $updated = 0;
+            foreach ($request->questions as $q) {
+                Question::where('id', $q['id'])
+                    ->where('exam_id', $exam->id)
+                    ->update(['points' => $q['points']]);
+                $updated++;
+            }
 
-        return back()->with('success', "{$updated} soal berhasil diupdate.");
+            return back()->with('success', "{$updated} soal berhasil diupdate.");
+        }, 'Gagal mengupdate poin soal.');
     }
 
     /**
@@ -440,11 +444,13 @@ class ExamController extends Controller
             'question_ids.*' => 'exists:questions,id',
         ]);
 
-        $deleted = Question::whereIn('id', $request->question_ids)
-            ->where('exam_id', $exam->id)
-            ->delete();
+        return $this->executeInTransaction(function () use ($request, $exam) {
+            $deleted = Question::whereIn('id', $request->question_ids)
+                ->where('exam_id', $exam->id)
+                ->delete();
 
-        return back()->with('success', "{$deleted} soal berhasil dihapus.");
+            return back()->with('success', "{$deleted} soal berhasil dihapus.");
+        }, 'Gagal menghapus soal.');
     }
 
     /**

@@ -21,6 +21,13 @@ export default defineConfig({
     ],
     build: {
         chunkSizeWarningLimit: 500,
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                drop_console: true,
+                drop_debugger: true,
+            },
+        },
         rollupOptions: {
             output: {
                 manualChunks(id) {
@@ -35,5 +42,8 @@ export default defineConfig({
                 },
             },
         },
+    },
+    optimizeDeps: {
+        include: ['vue', '@inertiajs/vue3', 'axios'],
     },
 });

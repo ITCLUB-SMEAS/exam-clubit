@@ -6,7 +6,15 @@ use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\ExamController;
 use App\Http\Controllers\Api\GradeController;
 
-Route::middleware(['api'])->group(function () {
+/*
+|--------------------------------------------------------------------------
+| API Routes - Version 1
+|--------------------------------------------------------------------------
+| All routes are prefixed with /api/v1
+| Example: GET /api/v1/exams
+*/
+
+Route::prefix('v1')->group(function () {
     // Public routes - strict rate limiting for login
     Route::middleware(['throttle:5,1'])->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
@@ -31,4 +39,18 @@ Route::middleware(['api'])->group(function () {
             Route::apiResource('students', StudentController::class);
         });
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Legacy Routes (Backward Compatibility)
+|--------------------------------------------------------------------------
+| Redirect old /api/* routes to /api/v1/* for backward compatibility
+| Will be removed in future version
+*/
+
+Route::middleware(['api'])->group(function () {
+    Route::any('/{any}', function ($any) {
+        return redirect("/api/v1/{$any}", 301);
+    })->where('any', '^(?!v1).*$');
 });

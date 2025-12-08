@@ -9,7 +9,10 @@ if (file_exists($dockerSecretsFile)) {
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Database\QueryException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Illuminate\Support\Facades\Log;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -20,10 +23,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         // Global middleware for all requests
+        $middleware->append(\App\Http\Middleware\PreventDebugInProduction::class);
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
         $middleware->web(
             append: [
+                \App\Http\Middleware\SetLocale::class,
                 \App\Http\Middleware\HandleInertiaRequests::class,
                 \App\Http\Middleware\SanitizeInput::class,
             ],
@@ -43,9 +48,33 @@ return Application::configure(basePath: dirname(__DIR__))
             "turnstile" => \App\Http\Middleware\ValidateTurnstile::class,
             "2fa" => \App\Http\Middleware\TwoFactorChallenge::class,
             "file.validate" => \App\Http\Middleware\ValidateFileUpload::class,
+            "anticheat.server" => \App\Http\Middleware\ServerSideAntiCheat::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        // Handle ModelNotFoundException (404)
+        $exceptions->render(function (ModelNotFoundException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['error' => 'Data tidak ditemukan.'], 404);
+            }
+            return response()->view('errors.404', [], 404);
+        });
+
+        // Handle QueryException (database errors)
+        $exceptions->render(function (QueryException $e, $request) {
+            Log::error('Database error', [
+                'message' => $e->getMessage(),
+                'sql' => $e->getSql(),
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['error' => 'Terjadi kesalahan database.'], 500);
+            }
+
+            return back()->withErrors(['error' => 'Terjadi kesalahan. Silakan coba lagi.'])->withInput();
+        });
+
+        // Handle HTTP exceptions
         $exceptions->render(function (HttpExceptionInterface $e, $request) {
             $status = $e->getStatusCode();
             $errorPages = [401, 403, 404, 419, 429, 500, 501, 502, 503, 504];
@@ -54,6 +83,23 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->view("errors.{$status}", [
                     'exception' => $e
                 ], $status);
+            }
+        });
+
+        // Handle generic exceptions in production
+        $exceptions->render(function (\Throwable $e, $request) {
+            if (app()->environment('production') && !$e instanceof HttpExceptionInterface) {
+                Log::error('Unhandled exception', [
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]);
+
+                if ($request->expectsJson()) {
+                    return response()->json(['error' => 'Terjadi kesalahan. Silakan coba lagi.'], 500);
+                }
+
+                return back()->withErrors(['error' => 'Terjadi kesalahan. Silakan coba lagi.'])->withInput();
             }
         });
     })

@@ -11,6 +11,7 @@
         "concurrently": "^9.2.1",
         "laravel-vite-plugin": "^2.0.1",
         "tailwindcss": "^4.1.17",
+        "terser": "^5.44.1",
         "vite": "^7.2.6"
     },
     "dependencies": {

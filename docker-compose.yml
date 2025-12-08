@@ -131,7 +131,6 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
       - ./docker/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
-      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
     networks:
       - backend
     security_opt:
@@ -172,28 +171,15 @@ services:
     image: redis:7.4-alpine
     container_name: cbt-redis
     restart: unless-stopped
-    command: >
-      sh -c "redis-server
-      --requirepass $$(cat /run/secrets/redis_password)
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
-      --appendonly yes
-      --protected-mode yes
-      --bind 0.0.0.0
-      --rename-command FLUSHDB ''
-      --rename-command FLUSHALL ''
-      --rename-command DEBUG ''
-      --rename-command CONFIG ''
-      --rename-command KEYS ''
-      --rename-command SHUTDOWN ''
-      --rename-command SLAVEOF ''
-      --rename-command REPLICAOF ''
-      --rename-command BGSAVE ''
-      --rename-command BGREWRITEAOF ''"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        redis-server /usr/local/etc/redis/redis.conf --requirepass "$$(cat /run/secrets/redis_password)"
     secrets:
       - redis_password
     volumes:
       - redis-data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     networks:
       - backend
     security_opt:
@@ -369,3 +355,7 @@ volumes:
     driver: local
   logs:
     driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: size=512m,uid=1000,gid=1000

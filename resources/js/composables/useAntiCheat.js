@@ -6,24 +6,32 @@ import axios from 'axios';
  *
  * This composable provides comprehensive anti-cheat functionality for online exams:
  * - Tab/Window switching detection
- * - Fullscreen enforcement
+ * - Fullscreen enforcement (desktop only)
  * - Copy/Paste prevention
  * - Right-click prevention
  * - DevTools detection
  * - Keyboard shortcut blocking
  * - Window blur detection
+ * - Mobile-friendly adaptations
  */
 export function useAntiCheat(options = {}) {
-    // Configuration with defaults
+    // Detect mobile device
+    const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+        navigator.userAgent.toLowerCase()
+    ) || window.innerWidth < 768;
+
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase());
+
+    // Configuration with defaults (mobile-aware)
     const config = ref({
         enabled: options.enabled ?? true,
-        fullscreenRequired: options.fullscreenRequired ?? true,
+        fullscreenRequired: (options.fullscreenRequired ?? true) && !isMobileDevice, // Disable on mobile
         blockTabSwitch: options.blockTabSwitch ?? true,
         blockCopyPaste: options.blockCopyPaste ?? true,
-        blockRightClick: options.blockRightClick ?? true,
-        blockMultipleMonitors: true, // Always enabled
-        blockVirtualMachine: true,   // Always enabled
-        detectDevtools: options.detectDevtools ?? true,
+        blockRightClick: (options.blockRightClick ?? true) && !isMobileDevice, // Not relevant on mobile
+        blockMultipleMonitors: !isMobileDevice, // Only desktop
+        blockVirtualMachine: !isMobileDevice,   // Only desktop
+        detectDevtools: (options.detectDevtools ?? true) && !isMobileDevice,
         maxViolations: options.maxViolations ?? 3,
         warningThreshold: options.warningThreshold ?? 2,
         autoSubmitOnMaxViolations: options.autoSubmitOnMaxViolations ?? false,
@@ -38,6 +46,8 @@ export function useAntiCheat(options = {}) {
         onBlocked: options.onBlocked ?? null,
         onBlockedEnvironment: options.onBlockedEnvironment ?? null,
         onDuplicateTab: options.onDuplicateTab ?? null,
+        isMobile: isMobileDevice,
+        isIOS: isIOS,
     });
 
     // State
@@ -200,6 +210,10 @@ export function useAntiCheat(options = {}) {
                     description: description,
                     metadata: metadata,
                     snapshot: snapshot,
+                }, {
+                    headers: {
+                        'X-Session-ID': sessionStorage.getItem('exam_session_id') || Math.random().toString(36)
+                    }
                 });
 
                 // Check if student got blocked
@@ -1087,10 +1101,15 @@ export function useAntiCheat(options = {}) {
     };
 
     /**
-     * Initialize anti-cheat - Original
+     * Initialize anti-cheat
      */
     const initialize = async () => {
         if (!config.value.enabled) return;
+
+        // Generate and store session ID
+        if (!sessionStorage.getItem('exam_session_id')) {
+            sessionStorage.setItem('exam_session_id', Math.random().toString(36).substring(2) + Date.now().toString(36));
+        }
 
         // Initialize video stream for snapshots
         await initVideoStream();

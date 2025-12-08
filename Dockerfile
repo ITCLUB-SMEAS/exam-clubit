@@ -75,11 +75,11 @@ COPY --from=composer --chown=www:www /app/vendor ./vendor
 COPY --chown=www:www . .
 COPY --from=frontend --chown=www:www /app/public/build ./public/build
 
-# Cleanup unnecessary files (keep docker/php for secrets bootstrap)
+# Cleanup unnecessary files
 RUN rm -rf .git .github .env.example tests phpunit.xml node_modules \
     storage/logs/*.log storage/framework/cache/data/* \
     storage/framework/sessions/* storage/framework/views/* \
-    docker/nginx docker/mysql docker/secrets docker/*.sh \
+    docker/ \
     && mkdir -p storage/app/public storage/framework/{cache/data,sessions,views} storage/logs bootstrap/cache \
     && chown -R www:www storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache

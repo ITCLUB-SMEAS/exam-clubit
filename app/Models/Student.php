@@ -30,7 +30,15 @@ class Student extends Authenticatable
         "session_id",
         "last_login_at",
         "last_login_ip",
+        "locale",
     ];
+
+    /**
+     * Guarded attributes
+     *
+     * @var array
+     */
+    protected $guarded = ['id'];
 
     /**
      * The attributes that should be hidden for serialization.

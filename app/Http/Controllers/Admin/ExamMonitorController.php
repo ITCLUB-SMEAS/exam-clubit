@@ -8,17 +8,20 @@ use App\Models\Grade;
 use App\Models\Answer;
 use App\Models\ExamViolation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class ExamMonitorController extends Controller
 {
     public function index()
     {
-        $activeSessions = ExamSession::with(['exam.lesson', 'exam.classroom'])
-            ->whereHas('exam')
-            ->where('start_time', '<=', now())
-            ->where('end_time', '>=', now())
-            ->get();
+        $activeSessions = Cache::remember('active_exam_sessions', 10, fn() =>
+            ExamSession::with(['exam.lesson', 'exam.classroom'])
+                ->whereHas('exam')
+                ->where('start_time', '<=', now())
+                ->where('end_time', '>=', now())
+                ->get()
+        );
 
         return Inertia::render('Admin/Monitor/Index', [
             'activeSessions' => $activeSessions,
@@ -42,10 +45,16 @@ class ExamMonitorController extends Controller
 
     public function participants(ExamSession $examSession)
     {
-        return response()->json([
+        // Cache for 5 seconds to reduce DB load during polling
+        $cacheKey = "monitor_participants_{$examSession->id}";
+        
+        $data = Cache::remember($cacheKey, 5, fn() => [
             'participants' => $this->getParticipants($examSession),
             'stats' => $this->getSessionStats($examSession),
+            'cached_at' => now()->toIso8601String(),
         ]);
+
+        return response()->json($data);
     }
 
     protected function getParticipants(ExamSession $examSession): array

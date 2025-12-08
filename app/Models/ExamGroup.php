@@ -2,10 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Traits\OptimizedQueries;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ExamGroup extends Model
 {
+    use OptimizedQueries, SoftDeletes;
+
+    protected $defaultRelations = ['exam', 'exam_session', 'student'];
     protected $fillable = [
         'exam_id',
         'exam_session_id',

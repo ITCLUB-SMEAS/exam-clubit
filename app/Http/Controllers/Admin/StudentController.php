@@ -9,10 +9,14 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Imports\StudentsImport;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\HandlesTransactions;
+use App\Http\Controllers\Traits\LogsActivity;
+use Illuminate\Support\Facades\Cache;
 use Maatwebsite\Excel\Facades\Excel;
 
 class StudentController extends Controller
 {
+    use HandlesTransactions, LogsActivity;
     /**
      * Display a listing of the resource.
      *
@@ -39,8 +43,8 @@ class StudentController extends Controller
     public function create()
     {
         return inertia('Admin/Students/Create', [
-            'classrooms' => Classroom::all(),
-            'rooms' => Room::withCount('students')->get(),
+            'classrooms' => Cache::remember('classrooms_all', 3600, fn() => Classroom::all()),
+            'rooms' => Cache::remember('rooms_with_count', 300, fn() => Room::withCount('students')->get()),
         ]);
     }
 
@@ -80,6 +84,8 @@ class StudentController extends Controller
             'classroom_id'  => $request->classroom_id,
             'room_id'       => $roomId,
         ]);
+
+        $this->logCreated('student', null, "Created student: {$request->name} ({$request->nisn})");
 
         return redirect()->route('admin.students.index');
     }
@@ -147,6 +153,8 @@ class StudentController extends Controller
 
         }
 
+        $this->logUpdated('student', $student, "Updated student: {$student->name}");
+
         //redirect
         return redirect()->route('admin.students.index');
 
@@ -162,6 +170,8 @@ class StudentController extends Controller
     {
         //get student
         $student = Student::findOrFail($id);
+
+        $this->logDeleted('student', $student, "Deleted student: {$student->name} ({$student->nisn})");
 
         //delete student
         $student->delete();
@@ -250,36 +260,38 @@ class StudentController extends Controller
             return back()->with('error', 'Pilih kelas atau siswa terlebih dahulu.');
         }
 
-        $students = $query->get();
-        $count = 0;
-        $results = [];
+        return $this->executeInTransaction(function () use ($query, $request) {
+            $students = $query->get();
+            $count = 0;
+            $results = [];
 
-        foreach ($students as $student) {
-            $newPassword = match ($request->password_type) {
-                'nisn' => $student->nisn,
-                'custom' => $request->custom_password,
-                'random' => $this->generateRandomPassword(),
-            };
-
-            $student->update(['password' => $newPassword]);
-            $count++;
-
-            if ($request->password_type === 'random') {
-                $results[] = [
+            foreach ($students as $student) {
+                $newPassword = match ($request->password_type) {
                     'nisn' => $student->nisn,
-                    'name' => $student->name,
-                    'password' => $newPassword,
-                ];
+                    'custom' => $request->custom_password,
+                    'random' => $this->generateRandomPassword(),
+                };
+
+                $student->update(['password' => $newPassword]);
+                $count++;
+
+                if ($request->password_type === 'random') {
+                    $results[] = [
+                        'nisn' => $student->nisn,
+                        'name' => $student->name,
+                        'password' => $newPassword,
+                    ];
+                }
             }
-        }
 
-        $response = ['success' => "{$count} password siswa berhasil direset."];
-        
-        if ($request->password_type === 'random') {
-            $response['results'] = $results;
-        }
+            $response = ['success' => "{$count} password siswa berhasil direset."];
+            
+            if ($request->password_type === 'random') {
+                $response['results'] = $results;
+            }
 
-        return back()->with($response);
+            return back()->with($response);
+        }, 'Gagal mereset password. Silakan coba lagi.');
     }
 
     /**
@@ -316,55 +328,57 @@ class StudentController extends Controller
             'file' => 'required|file|mimes:zip|max:51200', // 50MB max
         ]);
 
-        $zip = new \ZipArchive();
-        $zipPath = $request->file('file')->getRealPath();
+        return $this->safeExecute(function () use ($request) {
+            $zip = new \ZipArchive();
+            $zipPath = $request->file('file')->getRealPath();
 
-        if ($zip->open($zipPath) !== true) {
-            return back()->with('error', 'Gagal membuka file ZIP.');
-        }
-
-        $uploaded = 0;
-        $failed = [];
-        $allowedExt = ['jpg', 'jpeg', 'png', 'webp'];
-
-        for ($i = 0; $i < $zip->numFiles; $i++) {
-            $filename = $zip->getNameIndex($i);
-            $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-            $nisn = pathinfo($filename, PATHINFO_FILENAME);
-
-            // Skip directories and non-image files
-            if (!in_array($ext, $allowedExt)) continue;
-
-            // Find student by NISN
-            $student = Student::where('nisn', $nisn)->first();
-            if (!$student) {
-                $failed[] = "{$nisn} - Siswa tidak ditemukan";
-                continue;
+            if ($zip->open($zipPath) !== true) {
+                return back()->with('error', 'Gagal membuka file ZIP.');
             }
 
-            // Extract and save photo
-            $content = $zip->getFromIndex($i);
-            $newFilename = "students/{$nisn}.{$ext}";
-            
-            \Storage::disk('public')->put($newFilename, $content);
-            
-            // Delete old photo if exists
-            if ($student->photo && \Storage::disk('public')->exists($student->photo)) {
-                \Storage::disk('public')->delete($student->photo);
+            $uploaded = 0;
+            $failed = [];
+            $allowedExt = ['jpg', 'jpeg', 'png', 'webp'];
+
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $filename = $zip->getNameIndex($i);
+                $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                $nisn = pathinfo($filename, PATHINFO_FILENAME);
+
+                // Skip directories and non-image files
+                if (!in_array($ext, $allowedExt)) continue;
+
+                // Find student by NISN
+                $student = Student::where('nisn', $nisn)->first();
+                if (!$student) {
+                    $failed[] = "{$nisn} - Siswa tidak ditemukan";
+                    continue;
+                }
+
+                // Extract and save photo
+                $content = $zip->getFromIndex($i);
+                $newFilename = "students/{$nisn}.{$ext}";
+                
+                \Storage::disk('public')->put($newFilename, $content);
+                
+                // Delete old photo if exists
+                if ($student->photo && \Storage::disk('public')->exists($student->photo)) {
+                    \Storage::disk('public')->delete($student->photo);
+                }
+
+                $student->update(['photo' => $newFilename]);
+                $uploaded++;
             }
 
-            $student->update(['photo' => $newFilename]);
-            $uploaded++;
-        }
+            $zip->close();
 
-        $zip->close();
+            $message = "{$uploaded} foto berhasil diupload.";
+            if (count($failed) > 0) {
+                $message .= " " . count($failed) . " gagal: " . implode(', ', array_slice($failed, 0, 5));
+                if (count($failed) > 5) $message .= "...";
+            }
 
-        $message = "{$uploaded} foto berhasil diupload.";
-        if (count($failed) > 0) {
-            $message .= " " . count($failed) . " gagal: " . implode(', ', array_slice($failed, 0, 5));
-            if (count($failed) > 5) $message .= "...";
-        }
-
-        return back()->with('success', $message);
+            return back()->with('success', $message);
+        }, 'Gagal memproses file ZIP. Silakan coba lagi.');
     }
 }

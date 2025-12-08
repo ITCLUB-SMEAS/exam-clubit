@@ -6,6 +6,10 @@
                 </div>
                 <!-- Navbar links -->
                 <ul class="navbar-nav align-items-center">
+                    <!-- Language Switcher -->
+                    <li class="nav-item me-2">
+                        <LanguageSwitcher />
+                    </li>
                     <!-- Notifications -->
                     <li class="nav-item me-2">
                         <NotificationDropdown />
@@ -52,4 +56,5 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
 import NotificationDropdown from './NotificationDropdown.vue';
+import LanguageSwitcher from './LanguageSwitcher.vue';
 </script>

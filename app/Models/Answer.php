@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasEncryptedAttributes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Answer extends Model
 {
+    use HasEncryptedAttributes, SoftDeletes;
+
     /**
      * fillable
      *
@@ -28,6 +32,15 @@ class Answer extends Model
     ];
 
     /**
+     * Encrypted attributes
+     *
+     * @var array
+     */
+    protected $encrypted = [
+        "answer_text",
+    ];
+
+    /**
      * The attributes that should be cast.
      *
      * @var array<string, string>
@@ -38,6 +51,13 @@ class Answer extends Model
         "points_awarded" => "float",
         "needs_manual_review" => "boolean",
     ];
+
+    /**
+     * Guarded attributes
+     *
+     * @var array
+     */
+    protected $guarded = ['id'];
 
     /**
      * question
