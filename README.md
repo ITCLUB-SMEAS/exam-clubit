@@ -39,34 +39,36 @@ Dokumentasi lengkap tersedia di folder [`docs/`](docs/):
 |------------|---------|---------|
 | PHP | 8.2+ | Server-side language |
 | Laravel | 12 | PHP Framework |
-| Laravel Fortify | - | Authentication |
-| Laravel Sanctum | - | API Token |
-| Laravel Octane | - | High Performance Server |
-| Maatwebsite Excel | - | Import/Export Excel |
-| Barryvdh DomPDF | - | Export PDF |
+| Laravel Fortify | 1.25.4 | Authentication |
+| Laravel Sanctum | 4.2 | API Token |
+| Laravel Octane | 2.13 | High Performance Server |
+| Maatwebsite Excel | 3.1 | Import/Export Excel |
+| Barryvdh DomPDF | 3.1 | Export PDF |
 | Redis | 7.4+ | Session & Cache |
-| PragmaRX Google2FA | - | Two-Factor Auth |
+| PragmaRX Google2FA | 8.0 | Two-Factor Auth |
 
 ### Frontend
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| Vue.js | 3 | Frontend Framework (Composition API) |
-| Inertia.js | - | SPA Bridge |
-| Tailwind CSS | 4 | Styling |
-| TipTap Editor | - | Rich Text Editor |
-| SweetAlert2 | - | Alert/Modal |
-| Chart.js | - | Charts & Graphs |
-| Vue Datepicker | - | Date Picker |
-| Vue Countdown | - | Timer Countdown |
-| face-api.js | - | Face Detection |
-| html5-qrcode | - | QR Code Scanner |
+| Vue.js | 3.5 | Frontend Framework (Composition API) |
+| Inertia.js | 2.2 | SPA Bridge |
+| Tailwind CSS | 4.1 | Styling |
+| Vite | 7.2 | Build Tool |
+| TipTap Editor | 3.13 | Rich Text Editor + Math (KaTeX) |
+| SweetAlert2 | 5.0 | Alert/Modal |
+| Chart.js | 4.5 | Charts & Graphs |
+| Vue Datepicker | 12.1 | Date Picker |
+| Vue Countdown | 2.1 | Timer Countdown |
+| MediaPipe Face Detection | 0.4 | Face Detection |
+| html5-qrcode | 2.3 | QR Code Scanner |
+| KaTeX | 0.16 | Math Rendering |
 
 ### Integrasi
 | Service | Purpose |
 |---------|---------|
 | Cloudflare Turnstile | CAPTCHA Protection |
 | Telegram Bot | Notifikasi & Remote Control |
-| Google Gemini AI | Question Generator |
+| Google Gemini AI | Question Generator & Auto-Tagging |
 
 ---
 
@@ -74,14 +76,16 @@ Dokumentasi lengkap tersedia di folder [`docs/`](docs/):
 
 | Metric | Jumlah |
 |--------|--------|
-| Total Lines of Code | ~27,000 |
-| PHP Files | 123 |
-| Vue Components | 75 |
+| Total Lines of Code | ~33,000 |
+| PHP Files | 152 |
+| Vue Components | 88 |
 | Database Models | 17 |
-| Database Migrations | 58 |
-| Controllers | 47 |
-| Services | 15 |
-| Middleware | 18 |
+| Database Migrations | 65 |
+| Controllers | 50 |
+| Services | 19 |
+| Middleware | 19 |
+| Artisan Commands | 19 |
+| Vue Composables | 11 |
 
 ---
 
@@ -104,6 +108,7 @@ Dokumentasi lengkap tersedia di folder [`docs/`](docs/):
   - **Guru**: Akses terbatas (tidak bisa kelola user & siswa)
 - Two-Factor Authentication (2FA) dengan Google Authenticator
 - Recovery codes untuk backup 2FA
+- Upload foto profil
 
 #### 📚 Manajemen Mata Pelajaran
 - CRUD mata pelajaran/lesson
@@ -127,6 +132,7 @@ Dokumentasi lengkap tersedia di folder [`docs/`](docs/):
 - Reset password (individual & bulk)
 - Blokir/unblokir siswa
 - Filter & search
+- Soft delete dengan restore
 
 #### 📝 Manajemen Ujian
 - CRUD ujian dengan pengaturan lengkap:
@@ -138,6 +144,7 @@ Dokumentasi lengkap tersedia di folder [`docs/`](docs/):
   - Nilai KKM (passing grade)
   - Pengaturan remedial (max attempts)
   - Waktu per soal (opsional)
+  - Scoring options (penalty for wrong answer)
 - **6 Tipe Soal:**
   - ✅ Pilihan Ganda Single (Multiple Choice)
   - ✅ Pilihan Ganda Multiple (Checkbox)
@@ -147,12 +154,14 @@ Dokumentasi lengkap tersedia di folder [`docs/`](docs/):
   - ✅ Matching (Menjodohkan)
 - Import soal via Excel
 - Bobot poin per soal (customizable)
+- Difficulty level per soal (easy/medium/hard)
 - Deteksi soal duplikat (85% similarity threshold)
 - Preview ujian sebagai siswa
 - Duplikasi ujian (clone)
 - Bulk update poin soal
 - Bulk delete soal
 - Question versioning (riwayat perubahan soal)
+- Math equation support (KaTeX)
 
 #### 🗃️ Bank Soal
 - Kategori soal (CRUD)
@@ -211,597 +220,351 @@ Dokumentasi lengkap tersedia di folder [`docs/`](docs/):
 - Auto-recalculation nilai setelah penilaian manual
 - Filter berdasarkan status (belum/sudah dinilai)
 
-#### 🛡️ Anti-Cheat System
-Sistem anti-kecurangan komprehensif yang **otomatis aktif** untuk semua ujian:
+#### 🛡️ Anti-Cheat System (Comprehensive)
 
-| Fitur | Status | Deskripsi |
-|-------|--------|-----------|
-| Deteksi Tab Switch/Blur | ✅ Aktif | Mendeteksi perpindahan tab/window |
-| Fullscreen Enforcement | ✅ Aktif | Wajib mode fullscreen saat ujian |
-| Block Copy/Paste/Cut | ✅ Aktif | Mencegah copy-paste |
-| Block Right Click | ✅ Aktif | Mencegah klik kanan |
-| Block Keyboard Shortcuts | ✅ Aktif | Blokir shortcut berbahaya |
-| Deteksi DevTools | ✅ Aktif | Mendeteksi buka Developer Tools |
-| Block Screenshot | ✅ Aktif | Blokir tombol PrintScreen |
-| Deteksi Multiple Monitor | ✅ Aktif | Mendeteksi monitor tambahan |
-| Deteksi Virtual Machine | ✅ Aktif | Mendeteksi VM (VirtualBox, VMware, dll) |
-| Deteksi Remote Desktop | ✅ Aktif | Mendeteksi remote access |
-| Single Device Login | ✅ Aktif | Hanya 1 device per siswa |
-| Face Detection | ✅ Aktif | Deteksi wajah tidak ada/lebih dari 1 |
-| Duplicate Tab Detection | ✅ Aktif | Mencegah buka ujian di tab lain |
+**Client-Side Detection (Browser):**
+| Feature | Description |
+|---------|-------------|
+| Tab Switch Detection | Deteksi perpindahan tab/window |
+| Fullscreen Enforcement | Wajib fullscreen saat ujian (desktop) |
+| Copy/Paste Block | Blokir copy, paste, cut |
+| Right-Click Block | Blokir klik kanan |
+| DevTools Detection | Deteksi buka developer tools |
+| Keyboard Shortcut Block | Blokir Ctrl+C, Ctrl+V, F12, dll |
+| Window Blur Detection | Deteksi window kehilangan fokus |
+| Multiple Monitor Detection | Deteksi penggunaan multi-monitor |
+| Virtual Machine Detection | Deteksi VM (VirtualBox, VMware, dll) |
+| Face Detection | Deteksi wajah tidak ada / multiple faces (MediaPipe) |
+| Audio Detection | Deteksi suara mencurigakan (voice activity) |
+| Browser Fingerprint | Deteksi pergantian device mid-exam |
+| Network Monitor | Deteksi akses ke ChatGPT, Google, Brainly, dll |
+| Idle Detection | Deteksi siswa AFK > 2 menit |
+| Single Tab Enforcement | Hanya 1 tab ujian yang boleh aktif |
+| Time Anomaly Detection | Deteksi manipulasi waktu sistem |
 
-**Konfigurasi Default:**
-- Max Violations: 3 (auto-submit setelah 3 pelanggaran)
-- Warning Threshold: 2 (peringatan setelah 2 pelanggaran)
-- Face Check Interval: 30 detik
+**Server-Side Validation:**
+| Feature | Description |
+|---------|-------------|
+| Request Timing Analysis | Deteksi jawaban terlalu cepat |
+| IP Address Tracking | Log IP setiap request |
+| User Agent Tracking | Log browser/device info |
+| Session Validation | Validasi session integrity |
+| Duplicate Tab Prevention | Cegah buka ujian di tab lain |
+| Snapshot Capture | Ambil screenshot saat violation |
 
-**Keyboard Shortcuts yang Diblokir:**
-- `Ctrl+C`, `Ctrl+V`, `Ctrl+X` (copy/paste)
-- `Ctrl+A` (select all)
-- `Ctrl+S` (save)
-- `Ctrl+P` (print)
-- `Ctrl+Shift+I`, `F12` (DevTools)
-- `Ctrl+U` (view source)
-- `Alt+Tab` (switch window)
-- `PrintScreen` (screenshot)
-- `Ctrl+Shift+C` (inspect element)
+**Violation Management:**
+- Auto-flag siswa mencurigakan
+- Configurable max violations (default: 3)
+- Warning threshold sebelum auto-submit
+- Auto-submit saat max violations tercapai
+- Violation log dengan timestamp & screenshot
+- Notifikasi real-time ke admin via Telegram
 
-#### 📋 Log Pelanggaran
-- Lihat semua pelanggaran anti-cheat
-- Filter berdasarkan tipe, siswa, ujian, tanggal
-- Detail: waktu, siswa, ujian, tipe, deskripsi, IP address
-- Badge warna berbeda per tipe pelanggaran
-- Snapshot wajah saat pelanggaran (jika tersedia)
+#### 📊 Analytics & Reports
+- Statistik ujian per mata pelajaran
+- Grafik distribusi nilai
+- Analisis butir soal (Item Analysis):
+  - Tingkat kesulitan (difficulty index)
+  - Daya pembeda (discrimination index)
+  - Efektivitas pengecoh
+- Performa siswa per kelas
+- Export laporan ke Excel/PDF
+- Deteksi plagiarisme jawaban essay
 
-#### 📈 Laporan & Export
-- Laporan nilai per ujian
-- Filter berdasarkan kelas, ujian, sesi
-- **Export ke Excel:** Nilai per ujian, Rekap nilai siswa, Activity logs
-- **Export ke PDF:** Nilai individu siswa, Hasil ujian keseluruhan, Kartu peserta ujian
-- Rate limited (10 request/menit)
+#### 🔔 Notifikasi
+- In-app notifications
+- Telegram Bot integration:
+  - Notifikasi ujian dimulai
+  - Notifikasi violation
+  - Daily summary
+  - Weekly report
+  - Remote commands (/status, /stats, dll)
 
-#### 📜 Activity Logs
-- Log semua aktivitas sistem (login/logout, CRUD, export, dll)
-- Filter & search logs
-- Export logs ke Excel
-- Cleanup logs lama (Admin only)
-
-#### 🔐 Login History
-- Riwayat login admin & siswa
-- Status login (success/failed)
-- IP address & user agent
-- Statistik login harian
-
-#### 📊 Analytics & Statistik
-- Overview performa keseluruhan
-- **Analisis per Ujian:** Item Analysis, Daya pembeda soal, Distribusi nilai
-- **Performa per Kelas:** Rata-rata nilai, Tingkat kelulusan, Perbandingan antar kelas
-- **Performa per Siswa:** Riwayat nilai, Trend performa, Ranking
-
-#### 🤖 AI-Powered Features (Google Gemini)
-- **Question Generator** - Generate soal otomatis berdasarkan topik
-- **Auto-Generate Tags** - Analisis soal dan generate tags relevan
-- **Essay Grading** - Penilaian essay otomatis dengan feedback
-- Input: topik, jumlah soal, tipe soal, tingkat kesulitan
-- Review & edit sebelum disimpan
-
-#### 🔍 Plagiarism Detection
-- Deteksi kemiripan jawaban essay antar siswa
-- Similarity percentage
-- Highlight bagian yang mirip
-
-#### 💾 Backup & Restore
-- Backup database manual (encrypted dengan AES-256)
-- Download backup file (auto-decrypt)
-- Auto cleanup backup > 7 hari
-- Path traversal protection
-
-#### 🔧 Maintenance Mode
-- Toggle maintenance mode
-- Custom maintenance message
-- Secret bypass URL
-- Allowed IPs whitelist
-
-#### 📱 Telegram Integration
-- Notifikasi ujian akan dimulai
-- Daily summary & Weekly report (scheduled)
-- Server health check alerts
-- Token absensi (lihat & generate via bot)
-- Alert pelanggaran anti-cheat real-time (dengan foto)
-
-**Bot Commands:**
-| Command | Deskripsi |
-|---------|-----------|
-| `/start` | Mulai bot |
-| `/help` | Daftar lengkap perintah |
-| `/status` | Ujian aktif saat ini |
-| `/students_online` | Siswa sedang mengerjakan |
-| `/summary` | Rekap hari ini |
-| `/violations` | Pelanggaran hari ini |
-| `/health` | Server health check |
-| `/token [session_id]` | Lihat/generate token absensi |
-| `/search [nama]` | Cari siswa |
-| `/score [nisn]` | Nilai siswa |
-| `/block [nisn]` | Blokir siswa |
-| `/unblock [nisn]` | Unblock siswa |
-| `/extend [nisn] [menit]` | Tambah waktu ujian |
-| `/pause [nisn]` | Pause ujian siswa |
-| `/resume [nisn]` | Resume ujian siswa |
-| `/kick [nisn]` | Force submit ujian |
-| `/export [exam_id]` | Export PDF hasil ujian |
-| `/broadcast [pesan]` | Kirim ke semua admin |
+#### 🔧 Maintenance
+- Database backup (manual & scheduled)
+- Cleanup data lama
+- Cache management
+- Activity logs viewer
+- Login history
+- Server health check
 
 ---
 
 ### 👨‍🎓 Panel Siswa
 
-#### 🔐 Login
-- Login dengan NISN & password
-- Session management (single device login)
-- Rate limiting (5 percobaan/5 menit)
-- Cloudflare Turnstile CAPTCHA
-- Auto-logout jika login dari device lain
-
 #### 🏠 Dashboard
 - Daftar ujian yang tersedia
-- Status ujian (belum dikerjakan, sudah dikerjakan, tidak lulus)
-- Riwayat nilai
-- Countdown ke ujian berikutnya
+- Riwayat ujian yang sudah dikerjakan
+- Status enrollment per sesi
 
-#### ✏️ Mengerjakan Ujian
-- Konfirmasi sebelum mulai (dengan rules)
-- Absensi via token/QR code
-- Timer countdown (real-time)
-- Navigasi soal (numbered buttons)
+#### 📝 Mengerjakan Ujian
+- Interface ujian yang clean & responsive
+- Navigasi soal (grid nomor soal)
+- Timer countdown (total & per soal)
 - Auto-save jawaban
-- Auto-submit saat waktu habis / max violations
-- Remedial/retry (jika diizinkan)
-- Anti-cheat protection aktif
+- Mark soal untuk review
+- Konfirmasi sebelum submit
+- Hasil ujian (jika diizinkan admin)
 
-#### 📊 Hasil Ujian
-- Lihat nilai langsung setelah submit
-- Status lulus/tidak lulus
-- Review jawaban (jika diizinkan admin)
+#### 📱 Mobile Friendly
+- Responsive design untuk tablet & smartphone
+- Landscape warning untuk smartphone (tidak untuk tablet)
+- Touch-friendly navigation
+- PWA support (installable)
 
----
-
-### 📱 Progressive Web App (PWA)
-
-| Fitur | Deskripsi |
-|-------|-----------|
-| Installable | Dapat diinstall di desktop/mobile |
-| Offline Support | Halaman offline dengan UI retro pixel art |
-| Service Worker | Caching assets untuk performa optimal |
-| App Icons | Icon berbagai ukuran (72x72 - 512x512) |
-| Standalone Mode | Berjalan tanpa address bar browser |
+#### 🔐 Keamanan Siswa
+- Single session enforcement
+- Login throttling (max 5 attempts)
+- Session timeout warning
+- Secure password hashing
 
 ---
 
-## 📦 Instalasi
+## 🔧 Instalasi
 
-### Prerequisites
-- PHP >= 8.2
-- Composer
-- Node.js >= 18
-- MySQL/MariaDB
-- Redis (untuk session & cache)
+### Requirements
+- PHP 8.2+
+- Composer 2.x
+- Node.js 18+ / Bun 1.x
+- MySQL 8.0+ / MariaDB 10.6+
+- Redis 7.x (untuk session & cache)
 
-### Manual Installation
+### Steps
 
 ```bash
-# 1. Clone repository
+# Clone repository
 git clone <repository-url>
-cd ujian-online
+cd exam
 
-# 2. Install dependencies
+# Install PHP dependencies
 composer install
-npm install
 
-# 3. Setup environment
+# Install Node dependencies
+bun install  # atau npm install
+
+# Copy environment file
 cp .env.example .env
+
+# Generate application key
 php artisan key:generate
 
-# 4. Konfigurasi database di .env
+# Configure database di .env
 # DB_CONNECTION=mysql
 # DB_HOST=127.0.0.1
-# DB_DATABASE=ujian_online
+# DB_PORT=3306
+# DB_DATABASE=exam_cbt
 # DB_USERNAME=root
 # DB_PASSWORD=
 
-# 5. Jalankan migration & seeder
-php artisan migrate:fresh --seed
+# Run migrations
+php artisan migrate
 
-# 6. Build assets
-npm run build
+# Seed initial data (optional)
+php artisan db:seed
 
-# 7. Jalankan server
+# Build frontend assets
+bun run build  # atau npm run build
+
+# Start development server
 php artisan serve
 ```
 
-### Scheduled Tasks
+### Production dengan Octane
 
-Tambahkan ke crontab:
 ```bash
-* * * * * cd /path-to-project && php artisan schedule:run >> /dev/null 2>&1
+# Install Swoole extension
+pecl install swoole
+
+# Start Octane server
+php artisan octane:start --server=swoole --host=0.0.0.0 --port=8000
 ```
-
-### Default Credentials
-
-**Admin:**
-- Email: `admin@admin.com`
-- Password: `password`
 
 ---
 
 ## 🐳 Docker Deployment
 
-### Stack Versions
-
-| Component | Version |
-|-----------|---------|
-| PHP | 8.4-fpm-alpine |
-| Node.js | 22-alpine |
-| Nginx | 1.27-alpine |
-| MySQL | 9.1 |
-| Redis | 7.4-alpine |
-| Composer | 2.8 |
-
-### Docker Security Features
-
-#### Container Security
-- ✅ Non-root user execution
-- ✅ Read-only filesystem
-- ✅ Dropped capabilities (CAP_DROP ALL)
-- ✅ No new privileges (security_opt)
-- ✅ Resource limits (CPU & Memory)
-- ✅ Health checks on all services
-- ✅ Isolated network (frontend/backend)
-- ✅ Docker Secrets for sensitive data
-
-#### PHP Security
-- ✅ Disabled dangerous functions (exec, shell_exec, etc.)
-- ✅ Hidden PHP version (expose_php = Off)
-- ✅ open_basedir restriction
-- ✅ OPcache enabled with JIT
-
-#### Nginx Security
-- ✅ Hidden server version
-- ✅ Security headers (HSTS, CSP, X-Frame-Options)
-- ✅ Rate limiting (login, API, general)
-- ✅ Blocked sensitive files (.env, .git)
-- ✅ SSL/TLS 1.2+ only
-
-#### MySQL Security
-- ✅ Password validation policy
-- ✅ Disabled local_infile
-- ✅ Secure file privileges
-
-#### Redis Security
-- ✅ Password authentication
-- ✅ Disabled dangerous commands (FLUSHDB, CONFIG, etc.)
-- ✅ Memory limits
-
-### Quick Start
-
 ```bash
-# 1. Setup environment
-cp .env.docker .env
+# Build dan start containers
+docker-compose up -d
 
-# 2. Create secrets
-mkdir -p docker/secrets
-echo "base64:YOUR_APP_KEY" > docker/secrets/app_key.txt
-echo "your_db_password" > docker/secrets/db_password.txt
-echo "your_root_password" > docker/secrets/db_root_password.txt
-echo "your_redis_password" > docker/secrets/redis_password.txt
+# Run migrations
+docker-compose exec app php artisan migrate
 
-# 3. Deploy
-docker compose build --no-cache
-docker compose up -d
-
-# 4. Run migrations
-docker compose exec app php artisan migrate --force
-docker compose exec app php artisan config:cache
-docker compose exec app php artisan route:cache
+# Access aplikasi di http://localhost:8000
 ```
 
-### Docker Services
-
-| Service | Container | Purpose |
-|---------|-----------|---------|
-| app | cbt-app | PHP-FPM Application |
-| nginx | cbt-nginx | Web Server |
-| mysql | cbt-mysql | Database |
-| redis | cbt-redis | Cache & Session |
-| queue | cbt-queue | Queue Worker |
-| scheduler | cbt-scheduler | Cron Jobs |
-
-### Useful Commands
-
-```bash
-# View logs
-docker compose logs -f app
-
-# Shell access
-docker compose exec app sh
-
-# Artisan commands
-docker compose exec app php artisan migrate
-docker compose exec app php artisan cache:clear
-
-# Scale queue workers
-docker compose up -d --scale queue=3
-
-# Backup database
-docker compose exec mysql mysqldump -u root -p cbt_ujian > backup.sql
-```
-
-### SSL/TLS Setup (Let's Encrypt)
-
-```bash
-# Generate certificate
-docker compose run --rm certbot certonly \
-    --webroot \
-    --webroot-path=/var/www/html/public \
-    -d your-domain.com \
-    --email admin@your-domain.com \
-    --agree-tos
-
-# Switch to SSL config
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-```
+Lihat [Docker Documentation](docs/DOCKER.md) untuk konfigurasi lengkap.
 
 ---
 
-## 🔧 Artisan Commands
+## ⚡ Artisan Commands
 
-```bash
-# Backup database
-php artisan db:backup
-
-# Kirim alert ujian akan dimulai
-php artisan exam:starting-alert
-
-# Kirim daily summary ke Telegram
-php artisan telegram:daily-summary
-
-# Kirim weekly report ke Telegram
-php artisan telegram:weekly-report
-
-# Server health check
-php artisan server:health-check
-
-# Cleanup expired tokens
-php artisan tokens:cleanup
-
-# Cleanup old data (logs, violations, etc)
-php artisan cleanup:old-data --days=90
-
-# Generate PWA icons
-php artisan pwa:icons
-
-# Hash existing plain passwords
-php artisan passwords:hash
-```
+| Command | Description |
+|---------|-------------|
+| `php artisan exam:backup` | Backup database |
+| `php artisan exam:cleanup` | Cleanup data lama |
+| `php artisan exam:cache-warmup` | Warmup cache |
+| `php artisan exam:health-check` | Server health check |
+| `php artisan exam:performance-report` | Generate performance report |
+| `php artisan telegram:daily-summary` | Kirim daily summary ke Telegram |
+| `php artisan telegram:weekly-report` | Kirim weekly report ke Telegram |
+| `php artisan exam:starting-alert` | Alert ujian akan dimulai |
+| `php artisan hash:passwords` | Hash existing plain passwords |
+| `php artisan optimize:database` | Optimize database tables |
 
 ---
 
 ## 🔌 REST API
 
-API endpoints untuk integrasi dengan sistem lain. **Base URL: `/api/v1`**
-
-### Authentication
-
-```bash
-# Login untuk mendapatkan token
-curl -X POST https://your-domain.com/api/v1/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "admin@admin.com", "password": "password"}'
-
-# Response: { "token": "1|abc123..." }
-```
+API tersedia untuk integrasi dengan sistem lain. Autentikasi menggunakan Laravel Sanctum (Bearer Token).
 
 ### Endpoints
 
-| Endpoint | Method | Deskripsi |
-|----------|--------|-----------|
-| `/api/v1/login` | POST | Login & get token |
-| `/api/v1/logout` | POST | Logout |
-| `/api/v1/me` | GET | Current user info |
-| `/api/v1/students` | GET | List semua siswa |
-| `/api/v1/students/{id}` | GET | Detail siswa |
-| `/api/v1/students` | POST | Tambah siswa |
-| `/api/v1/students/{id}` | PUT | Update siswa |
-| `/api/v1/students/{id}` | DELETE | Hapus siswa |
-| `/api/v1/grades` | GET | List nilai |
-| `/api/v1/grades/{id}` | GET | Detail nilai |
-| `/api/v1/grades-statistics` | GET | Statistik nilai |
-| `/api/v1/exams` | GET | List ujian |
-| `/api/v1/exams/{id}` | GET | Detail ujian |
-| `/api/v1/exam-sessions` | GET | List sesi ujian |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/login` | Login & get token |
+| GET | `/api/exams` | List ujian |
+| GET | `/api/exams/{id}` | Detail ujian |
+| GET | `/api/students` | List siswa |
+| POST | `/api/students` | Create siswa |
+| GET | `/api/exam-sessions` | List sesi ujian |
+| GET | `/api/grades` | List nilai |
 
-### Usage
-
-```bash
-# Request dengan Bearer Token
-curl -X GET https://your-domain.com/api/v1/students \
-  -H "Authorization: Bearer 1|abc123..." \
-  -H "Accept: application/json"
-```
-
-### Notes
-- Authentication via Laravel Sanctum (Bearer Token)
-- Rate limited (60 req/min untuk read, 30 req/min untuk write)
-- JSON response
-- Legacy routes (`/api/*`) redirect ke `/api/v1/*`
+Lihat [API Documentation](docs/API_DOCUMENTATION.md) untuk detail lengkap.
 
 ---
 
-## 🛡️ Security Features
+## 🔒 Security Features
 
-### HTTP Security Headers
-- `X-Frame-Options: SAMEORIGIN` - Mencegah clickjacking
-- `X-Content-Type-Options: nosniff` - Mencegah MIME sniffing
-- `X-XSS-Protection: 1; mode=block` - XSS protection
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Content-Security-Policy` - CSP untuk production
-- `Strict-Transport-Security` - HSTS untuk HTTPS
-- `Cross-Origin-Opener-Policy` - Isolasi cross-origin
-- `Permissions-Policy` - Kontrol akses fitur browser
+### Authentication & Authorization
+- Laravel Fortify untuk authentication
+- Two-Factor Authentication (2FA) dengan Google Authenticator
+- Role-based access control (Admin, Guru)
+- Session management dengan Redis
+- Login throttling & lockout
 
-### Input Sanitization
-- Sanitasi otomatis untuk semua POST/PUT/PATCH request
-- Rich text fields menggunakan HTML Purifier
-- Plain text fields di-strip dari HTML tags
-- Path traversal protection pada file operations
+### Input Validation & Sanitization
+- Request validation di semua endpoint
+- XSS prevention dengan HTML sanitization
+- SQL injection prevention (Eloquent ORM)
+- CSRF protection
 
-### Authentication & Session
-- CSRF Protection
-- Password Hashing (Bcrypt/Argon2)
-- Session Security (encrypted, secure cookie)
-- Single Device Login (siswa)
-- Two-Factor Authentication (admin)
-- Rate Limiting (Login: 5 attempts/5 minutes)
-- Cloudflare Turnstile CAPTCHA
-- Timing attack prevention pada login
-
-### Rate Limiting
-| Endpoint | Limit |
-|----------|-------|
-| Login | 5/menit |
-| API Read | 60/menit |
-| API Write | 30/menit |
-| PDF Export | 10/menit |
-| Bulk Operations | 3-10/menit |
-| AI Generate | 20/menit |
-
-### Anti-Cheat Protection
-- Comprehensive browser-based detection
-- Face detection dengan face-api.js
-- Server-side violation logging
-- Auto-submit on max violations
-- IP logging per violation
-- Snapshot capture on violation
-- Snapshot path validation
+### Security Headers
+- Content-Security-Policy
+- X-Frame-Options
+- X-Content-Type-Options
+- Referrer-Policy
+- Permissions-Policy
 
 ### Data Protection
-- Encrypted database backups (AES-256)
-- Webhook secret validation
-- File upload validation (MIME type, content scanning)
-- Dangerous file extension blocking
+- Password hashing (bcrypt)
+- Sensitive data encryption
+- Soft deletes untuk data recovery
+- Activity logging
+
+### Anti-Cheat Security
+- Client-side + Server-side validation
+- Request timing analysis
+- Browser fingerprinting
+- Network activity monitoring
+
+Lihat [Security Documentation](docs/SECURITY_FEATURES.md) untuk detail lengkap.
 
 ---
 
 ## 📁 Struktur Project
 
 ```
-ujian-online/
+exam/
 ├── app/
-│   ├── Console/Commands/       # 10 Artisan commands
-│   ├── Exports/                # Excel exports
-│   ├── Imports/                # Excel imports
-│   ├── Jobs/                   # Queue jobs
+│   ├── Console/Commands/     # 19 Artisan commands
+│   ├── Exports/              # Excel exports
 │   ├── Http/
 │   │   ├── Controllers/
-│   │   │   ├── Admin/          # 32 controllers
-│   │   │   ├── Api/            # 4 API controllers
-│   │   │   └── Student/        # 7 controllers
-│   │   └── Middleware/         # 12 middleware
-│   ├── Models/                 # 17 Eloquent models
-│   ├── Notifications/
-│   ├── Policies/
-│   └── Services/               # 14 service classes
+│   │   │   ├── Admin/        # 33 Admin controllers
+│   │   │   ├── Student/      # 7 Student controllers
+│   │   │   └── Api/          # API controllers
+│   │   ├── Middleware/       # 19 Custom middleware
+│   │   └── Requests/         # Form requests
+│   ├── Imports/              # Excel imports
+│   ├── Jobs/                 # Queue jobs
+│   ├── Models/               # 17 Eloquent models
+│   ├── Notifications/        # Notification classes
+│   ├── Policies/             # Authorization policies
+│   └── Services/             # 19 Service classes
 ├── database/
-│   ├── migrations/             # 58 migrations
-│   └── seeders/
-├── docker/
-│   ├── nginx/                  # Nginx config
-│   ├── php/                    # PHP config
-│   ├── mysql/                  # MySQL config
-│   └── secrets/                # Docker secrets
-├── public/
-│   ├── sw.js                   # Service Worker
-│   ├── manifest.json           # PWA Manifest
-│   ├── offline.html            # Offline page
-│   ├── icons/                  # PWA icons
-│   └── models/                 # Face detection models
+│   ├── migrations/           # 65 Migration files
+│   └── seeders/              # Database seeders
 ├── resources/
-│   ├── js/
-│   │   ├── Components/         # Reusable Vue components
-│   │   ├── Layouts/
-│   │   ├── composables/        # Vue composables
-│   │   └── Pages/              # 73 Vue pages
-│   └── views/exports/          # PDF templates
+│   └── js/
+│       ├── Components/       # Reusable Vue components
+│       ├── Layouts/          # Layout components
+│       ├── Pages/
+│       │   ├── Admin/        # 34 Admin pages
+│       │   └── Student/      # 6 Student pages
+│       └── composables/      # 11 Vue composables
 ├── routes/
-│   ├── web.php
-│   ├── api.php
-│   └── console.php
-├── docker-compose.yml
-├── docker-compose.prod.yml
-├── Dockerfile
-└── LICENSE
+│   ├── web.php               # Web routes
+│   └── api.php               # API routes
+└── docs/                     # Documentation
 ```
 
 ---
 
 ## 📄 License
 
-### Functional Source License (FSL-1.1-Apache-2.0)
-
-Copyright © 2024 CBT Ujian Online
-
-#### Licensor
-CBT Ujian Online
-
-#### Licensed Work
-Ujian Online (CBT - Computer Based Test)
-
-#### Use Grant
-You may use, copy, modify, and create derivative works of the Licensed Work for any purpose, except for Competing Uses.
-
-#### Competing Uses
-A "Competing Use" means using the Licensed Work to create or offer a product or service that competes with the Licensed Work, including:
-- Selling, licensing, or distributing exam/CBT software to third parties
-- Offering hosted exam/CBT services (SaaS) to third parties
-- Reselling or white-labeling this software
-- Creating derivative works for commercial distribution
-
-#### Permitted Uses
-- ✅ Internal use by educational institutions (schools, universities, training centers)
-- ✅ Customization for your own institution's needs
-- ✅ Self-hosting for your own organization
-- ✅ Non-commercial educational purposes
-- ✅ Personal learning and development
-
-#### Change Date (Per-Version)
-Each version converts to Apache 2.0 after **2 years** from its release date:
-
-```
-Version 1.0 (Jan 2025) ──► Jan 2027: Apache 2.0
-Version 2.0 (Jul 2025) ──► Jul 2027: Apache 2.0
-Version 3.0 (Jan 2026) ──► Jan 2028: Apache 2.0
-```
-
-Newer versions remain under FSL until their own Change Date.
-
-#### Change License
-Apache License, Version 2.0
-
-#### Additional Terms
-- No warranty is provided
-- Licensor may offer commercial licenses for Competing Uses
-- Attribution is required in derivative works
-
-#### Commercial License
-For commercial licensing inquiries (SaaS, reselling, white-labeling), please contact the licensor.
+This project is proprietary software. All rights reserved.
 
 ---
 
-## 👨‍💻 Author
+## 👨‍💻 Development
 
-Developed with ❤️ for Indonesian Education
+### Running Tests
+
+```bash
+php artisan test
+```
+
+### Code Style
+
+```bash
+# Format PHP code
+./vendor/bin/pint
+
+# Build for production
+bun run build
+```
+
+### Environment Variables
+
+Key environment variables:
+
+```env
+# App
+APP_ENV=production
+APP_DEBUG=false
+
+# Database
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_DATABASE=exam_cbt
+
+# Redis
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+
+# Telegram Bot
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_CHAT_ID=your_chat_id
+
+# Cloudflare Turnstile
+TURNSTILE_SITE_KEY=your_site_key
+TURNSTILE_SECRET_KEY=your_secret_key
+
+# Google Gemini AI
+GEMINI_API_KEY=your_api_key
+```
 
 ---
 
-## 🤝 Support
-
-Untuk pertanyaan, bug report, atau feature request, silakan buka issue di repository ini.
+**Built with ❤️ using Laravel 12 & Vue.js 3**

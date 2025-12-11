@@ -6,7 +6,7 @@
                 {{ unreadCount > 9 ? '9+' : unreadCount }}
             </span>
         </button>
-        <div class="dropdown-menu dropdown-menu-end shadow" style="width: 350px; max-height: 400px; overflow-y: auto;">
+        <div class="dropdown-menu dropdown-menu-end shadow" style="width: 100%; min-width: 280px; max-width: 350px; max-height: 400px; overflow-y: auto;">
             <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
                 <h6 class="mb-0">Notifikasi</h6>
                 <button v-if="unreadCount > 0" @click="markAllAsRead" class="btn btn-link btn-sm p-0 text-decoration-none">

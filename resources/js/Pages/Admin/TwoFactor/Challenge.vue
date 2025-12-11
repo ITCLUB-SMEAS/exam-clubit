@@ -3,7 +3,7 @@
         <title>Verifikasi 2FA - Aplikasi Ujian Online</title>
     </Head>
     <div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-        <div class="card border-0 shadow" style="width: 400px;">
+        <div class="card border-0 shadow" style="width: 100%; max-width: 400px;">
             <div class="card-body p-4">
                 <div class="text-center mb-4">
                     <i class="fas fa-shield-alt text-primary" style="font-size: 3rem;"></i>

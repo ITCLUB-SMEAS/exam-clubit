@@ -2,6 +2,10 @@
     <Head>
         <title>Konfirmasi Ujian - Aplikasi Ujian Online</title>
     </Head>
+    
+    <!-- Landscape Warning for Mobile -->
+    <LandscapeWarning />
+    
     <div class="row">
         <div class="col-md-12">
             <Link href="/student/dashboard" class="btn btn-md btn-primary border-0 shadow mb-3" type="button"><i
@@ -190,10 +194,11 @@
     import { Head, Link } from '@inertiajs/vue3';
     import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
     import axios from 'axios';
+    import LandscapeWarning from '../../../Components/LandscapeWarning.vue';
 
     export default {
         layout: LayoutStudent,
-        components: { Head, Link },
+        components: { Head, Link, LandscapeWarning },
         props: {
             exam_group: Object,
             grade: Object,

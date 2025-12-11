@@ -3,6 +3,9 @@
         <title>Ujian Dengan Nomor Soal : {{ page }} - Aplikasi Ujian Online</title>
     </Head>
 
+    <!-- Landscape Warning for Mobile -->
+    <LandscapeWarning />
+
     <!-- Skip to main content link for screen readers -->
     <a href="#main-question" class="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-50 focus:p-4 focus:bg-white">
         Langsung ke soal
@@ -386,6 +389,14 @@
     //import useAudioDetection composable
     import { useAudioDetection } from '../../../composables/useAudioDetection.js';
 
+    //import new anti-cheat composables
+    import { useBrowserFingerprint } from '../../../composables/useBrowserFingerprint.js';
+    import { useNetworkMonitor } from '../../../composables/useNetworkMonitor.js';
+    import { useIdleDetection } from '../../../composables/useIdleDetection.js';
+
+    //import LandscapeWarning component
+    import LandscapeWarning from '../../../Components/LandscapeWarning.vue';
+
     export default {
         //layout
         layout: LayoutStudent,
@@ -394,7 +405,8 @@
         components: {
             Head,
             Link,
-            VueCountdown
+            VueCountdown,
+            LandscapeWarning
         },
 
         //props
@@ -492,6 +504,38 @@
                     antiCheat.recordViolation('suspicious_audio', `Terdeteksi suara mencurigakan (level: ${level})`);
                 },
             }) : null;
+
+            // Browser Fingerprint - detect device change mid-exam
+            const browserFingerprint = useBrowserFingerprint({
+                onDeviceChanged: (data) => {
+                    antiCheat.recordViolation('device_changed', 'Terdeteksi pergantian perangkat/browser');
+                },
+            });
+
+            // Network Monitor - detect suspicious external requests
+            const networkMonitor = useNetworkMonitor({
+                onSuspiciousActivity: (record) => {
+                    antiCheat.recordViolation('suspicious_network', `Terdeteksi akses ke: ${new URL(record.url).hostname}`);
+                },
+            });
+
+            // Idle Detection - detect AFK students
+            const idleDetection = useIdleDetection({
+                idleThreshold: 120000, // 2 minutes idle = violation
+                warningThreshold: 60000, // 1 minute = warning
+                onIdleWarning: (elapsed) => {
+                    Swal.fire({
+                        title: 'Peringatan!',
+                        text: 'Anda tidak aktif selama 1 menit. Silakan lanjutkan mengerjakan ujian.',
+                        icon: 'warning',
+                        timer: 5000,
+                        showConfirmButton: false,
+                    });
+                },
+                onIdle: (elapsed) => {
+                    antiCheat.recordViolation('idle_detected', `Tidak ada aktivitas selama ${Math.round(elapsed/1000)} detik`);
+                },
+            });
 
             // Initialize anti-cheat
             const antiCheat = useAntiCheat({
@@ -967,10 +1011,22 @@
                 if (audioDetection) {
                     audioDetection.cleanup();
                 }
+                // Cleanup new composables
+                networkMonitor.stop();
+                idleDetection.stop();
             });
 
             // Initialize face detection after mount
             onMounted(async () => {
+                // Initialize browser fingerprint
+                await browserFingerprint.initialize();
+
+                // Start network monitoring
+                networkMonitor.start();
+
+                // Start idle detection
+                await idleDetection.start();
+
                 // Initialize face detection with retry
                 if (props.face_detection_enabled && faceDetection) {
                     // Wait for video element to be ready
