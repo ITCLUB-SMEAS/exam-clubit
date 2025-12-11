@@ -971,19 +971,33 @@
 
             // Initialize face detection after mount
             onMounted(async () => {
-                if (props.face_detection_enabled && faceDetection && faceVideoRef.value) {
-                    const initialized = await faceDetection.initialize(faceVideoRef.value);
-                    if (initialized) {
-                        faceDetection.start();
-                        faceDetectionActive.value = true;
+                // Initialize face detection with retry
+                if (props.face_detection_enabled && faceDetection) {
+                    // Wait for video element to be ready
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    if (faceVideoRef.value) {
+                        try {
+                            const initialized = await faceDetection.initialize(faceVideoRef.value);
+                            if (initialized) {
+                                faceDetection.start();
+                                faceDetectionActive.value = true;
+                            }
+                        } catch (e) {
+                            console.warn('Face detection init failed:', e);
+                        }
                     }
                 }
 
                 // Initialize audio detection
                 if (props.audio_detection_enabled && audioDetection) {
-                    const initialized = await audioDetection.initialize();
-                    if (initialized) {
-                        audioDetection.start();
+                    try {
+                        const initialized = await audioDetection.initialize();
+                        if (initialized) {
+                            audioDetection.start();
+                        }
+                    } catch (e) {
+                        console.warn('Audio detection init failed:', e);
                     }
                 }
             });

@@ -1,14 +1,13 @@
 import { ref, onUnmounted } from 'vue';
 
 /**
- * Face Detection Composable for Anti-Cheat
+ * Face Detection Composable for Anti-Cheat using MediaPipe
  * Detects: no face, multiple faces
- * face-api.js is lazy loaded only when needed
  */
 export function useFaceDetection(options = {}) {
     const config = {
-        checkInterval: options.checkInterval ?? 20000, // 20 seconds default
-        consecutiveThreshold: options.consecutiveThreshold ?? 2, // Consecutive fails before trigger
+        checkInterval: options.checkInterval ?? 20000,
+        consecutiveThreshold: options.consecutiveThreshold ?? 2,
         onNoFace: options.onNoFace ?? null,
         onMultipleFaces: options.onMultipleFaces ?? null,
         onFaceDetected: options.onFaceDetected ?? null,
@@ -25,22 +24,27 @@ export function useFaceDetection(options = {}) {
     const consecutiveMultipleFaces = ref(0);
 
     let checkIntervalId = null;
-    let faceapi = null;
+    let faceDetection = null;
     let lastNoFaceTrigger = 0;
     let lastMultipleFacesTrigger = 0;
-    const TRIGGER_COOLDOWN = 60000; // 60 seconds cooldown between same violation type
+    const TRIGGER_COOLDOWN = 60000;
 
     const loadModels = async () => {
         try {
-            const module = await import('face-api.js');
-            faceapi = module;
+            const { FaceDetection } = await import('@mediapipe/face_detection');
             
-            // Use absolute path or relative to public
-            const modelsPath = window.location.origin + '/models';
-            await faceapi.nets.tinyFaceDetector.loadFromUri(modelsPath);
+            faceDetection = new FaceDetection({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
+            });
+
+            await faceDetection.setOptions({
+                model: 'short',
+                minDetectionConfidence: 0.5
+            });
+
             return true;
         } catch (error) {
-            console.error('Failed to load face detection models:', error);
+            console.error('Failed to load MediaPipe face detection:', error);
             if (config.onError) config.onError('Failed to load face detection models');
             return false;
         }
@@ -63,19 +67,27 @@ export function useFaceDetection(options = {}) {
     };
 
     const detectFaces = async () => {
-        if (!videoElement.value || !isRunning.value || !faceapi) return;
-        
-        // Check if video is ready
-        if (videoElement.value.readyState < 2) {
-            // Video not ready, skip this check
-            return;
-        }
+        if (!videoElement.value || !isRunning.value || !faceDetection) return;
+        if (videoElement.value.readyState < 2) return;
 
         try {
-            const detections = await faceapi.detectAllFaces(
-                videoElement.value,
-                new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })
-            );
+            const detections = await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    resolve([]); // Timeout - assume no detection
+                }, 5000);
+                
+                faceDetection.onResults((results) => {
+                    clearTimeout(timeout);
+                    resolve(results.detections || []);
+                });
+                
+                try {
+                    faceDetection.send({ image: videoElement.value });
+                } catch (e) {
+                    clearTimeout(timeout);
+                    reject(e);
+                }
+            });
 
             faceCount.value = detections.length;
             lastCheckTime.value = new Date();
@@ -83,18 +95,17 @@ export function useFaceDetection(options = {}) {
 
             if (detections.length === 0) {
                 consecutiveNoFace.value++;
-                consecutiveMultipleFaces.value = 0; // Reset other counter
+                consecutiveMultipleFaces.value = 0;
                 
                 if (consecutiveNoFace.value >= config.consecutiveThreshold) {
                     if ((now - lastNoFaceTrigger) > TRIGGER_COOLDOWN && config.onNoFace) {
                         config.onNoFace();
                         lastNoFaceTrigger = now;
                     }
-                    // Don't reset - keep counting for severity tracking
                 }
             } else if (detections.length > 1) {
                 consecutiveMultipleFaces.value++;
-                consecutiveNoFace.value = 0; // Reset other counter
+                consecutiveNoFace.value = 0;
                 
                 if (consecutiveMultipleFaces.value >= config.consecutiveThreshold) {
                     if ((now - lastMultipleFacesTrigger) > TRIGGER_COOLDOWN && config.onMultipleFaces) {
@@ -103,7 +114,6 @@ export function useFaceDetection(options = {}) {
                     }
                 }
             } else {
-                // Exactly 1 face - all good
                 consecutiveNoFace.value = 0;
                 consecutiveMultipleFaces.value = 0;
                 if (config.onFaceDetected) config.onFaceDetected();
@@ -127,7 +137,6 @@ export function useFaceDetection(options = {}) {
     const start = () => {
         if (!isInitialized.value) return;
         isRunning.value = true;
-        // First check after 5 seconds (give time to position)
         setTimeout(detectFaces, 5000);
         checkIntervalId = setInterval(detectFaces, config.checkInterval);
     };
@@ -147,6 +156,16 @@ export function useFaceDetection(options = {}) {
             stream.value = null;
         }
         if (videoElement.value) videoElement.value.srcObject = null;
+        if (faceDetection) {
+            try {
+                if (typeof faceDetection.close === 'function') {
+                    faceDetection.close();
+                }
+            } catch (e) {
+                console.warn('FaceDetection cleanup error:', e);
+            }
+            faceDetection = null;
+        }
         isInitialized.value = false;
     };
 

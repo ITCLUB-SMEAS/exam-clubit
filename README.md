@@ -74,14 +74,14 @@ Dokumentasi lengkap tersedia di folder [`docs/`](docs/):
 
 | Metric | Jumlah |
 |--------|--------|
-| Total Lines of Code | ~26,000 |
-| PHP Files | 121 |
-| Vue Components | 73 |
+| Total Lines of Code | ~27,000 |
+| PHP Files | 123 |
+| Vue Components | 75 |
 | Database Models | 17 |
 | Database Migrations | 58 |
-| Controllers | 46 |
-| Services | 14 |
-| Middleware | 12 |
+| Controllers | 47 |
+| Services | 15 |
+| Middleware | 18 |
 
 ---
 
@@ -158,7 +158,12 @@ Dokumentasi lengkap tersedia di folder [`docs/`](docs/):
 - Kategori soal (CRUD)
 - Simpan soal untuk digunakan ulang
 - Import soal dari bank ke ujian
-- Filter berdasarkan kategori & tipe soal
+- Import soal dari ujian ke bank
+- Filter berdasarkan kategori, tipe soal, difficulty, tags
+- **🤖 AI Auto-Generate Tags** - Generate tags otomatis menggunakan Google Gemini AI
+- Bulk operations (delete, update tags)
+- Export/Import via Excel
+- Statistik penggunaan soal (usage count, success rate)
 
 #### 📅 Sesi Ujian
 - Buat sesi ujian dengan waktu mulai & selesai
@@ -273,8 +278,10 @@ Sistem anti-kecurangan komprehensif yang **otomatis aktif** untuk semua ujian:
 - **Performa per Kelas:** Rata-rata nilai, Tingkat kelulusan, Perbandingan antar kelas
 - **Performa per Siswa:** Riwayat nilai, Trend performa, Ranking
 
-#### 🤖 AI Question Generator
-- Generate soal otomatis menggunakan Google Gemini AI
+#### 🤖 AI-Powered Features (Google Gemini)
+- **Question Generator** - Generate soal otomatis berdasarkan topik
+- **Auto-Generate Tags** - Analisis soal dan generate tags relevan
+- **Essay Grading** - Penilaian essay otomatis dengan feedback
 - Input: topik, jumlah soal, tipe soal, tingkat kesulitan
 - Review & edit sebelum disimpan
 
@@ -284,9 +291,10 @@ Sistem anti-kecurangan komprehensif yang **otomatis aktif** untuk semua ujian:
 - Highlight bagian yang mirip
 
 #### 💾 Backup & Restore
-- Backup database manual
-- Download backup file
+- Backup database manual (encrypted dengan AES-256)
+- Download backup file (auto-decrypt)
 - Auto cleanup backup > 7 hari
+- Path traversal protection
 
 #### 🔧 Maintenance Mode
 - Toggle maintenance mode
@@ -637,11 +645,14 @@ curl -X GET https://your-domain.com/api/v1/students \
 - `Referrer-Policy: strict-origin-when-cross-origin`
 - `Content-Security-Policy` - CSP untuk production
 - `Strict-Transport-Security` - HSTS untuk HTTPS
+- `Cross-Origin-Opener-Policy` - Isolasi cross-origin
+- `Permissions-Policy` - Kontrol akses fitur browser
 
 ### Input Sanitization
 - Sanitasi otomatis untuk semua POST/PUT/PATCH request
 - Rich text fields menggunakan HTML Purifier
 - Plain text fields di-strip dari HTML tags
+- Path traversal protection pada file operations
 
 ### Authentication & Session
 - CSRF Protection
@@ -651,6 +662,17 @@ curl -X GET https://your-domain.com/api/v1/students \
 - Two-Factor Authentication (admin)
 - Rate Limiting (Login: 5 attempts/5 minutes)
 - Cloudflare Turnstile CAPTCHA
+- Timing attack prevention pada login
+
+### Rate Limiting
+| Endpoint | Limit |
+|----------|-------|
+| Login | 5/menit |
+| API Read | 60/menit |
+| API Write | 30/menit |
+| PDF Export | 10/menit |
+| Bulk Operations | 3-10/menit |
+| AI Generate | 20/menit |
 
 ### Anti-Cheat Protection
 - Comprehensive browser-based detection
@@ -659,6 +681,13 @@ curl -X GET https://your-domain.com/api/v1/students \
 - Auto-submit on max violations
 - IP logging per violation
 - Snapshot capture on violation
+- Snapshot path validation
+
+### Data Protection
+- Encrypted database backups (AES-256)
+- Webhook secret validation
+- File upload validation (MIME type, content scanning)
+- Dangerous file extension blocking
 
 ---
 

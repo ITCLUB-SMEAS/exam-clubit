@@ -25,18 +25,23 @@
 
     <!-- PWA Install Prompt -->
     <PwaInstall />
+    
+    <!-- Session Timeout Warning -->
+    <SessionTimeoutWarning :session-lifetime="120" :warning-minutes="5" />
 </template>
 
 <script>
 import Navbar from "../Components/Navbar.vue";
 import Sidebar from '../Components/Sidebar.vue';
 import PwaInstall from '../Components/PwaInstall.vue';
+import SessionTimeoutWarning from '../Components/SessionTimeoutWarning.vue';
 
 export default {
     components: {
         Navbar,
         Sidebar,
-        PwaInstall
+        PwaInstall,
+        SessionTimeoutWarning
     },
 }
 </script>

@@ -18,5 +18,14 @@ class AdminSeeder extends Seeder
                 'role' => 'admin',
             ]
         );
+
+        User::firstOrCreate(
+            ['email' => 'guru@admin.com'],
+            [
+                'name' => 'Guru Demo',
+                'password' => Hash::make('password'),
+                'role' => 'guru',
+            ]
+        );
     }
 }

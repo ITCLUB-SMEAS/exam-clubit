@@ -26,17 +26,23 @@ Route::prefix('v1')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
 
-        // Read-only endpoints
-        Route::get('/exams', [ExamController::class, 'index']);
-        Route::get('/exams/{exam}', [ExamController::class, 'show']);
-        Route::get('/exam-sessions', [ExamController::class, 'sessions']);
-        Route::get('/grades', [GradeController::class, 'index']);
-        Route::get('/grades/{grade}', [GradeController::class, 'show']);
-        Route::get('/grades-statistics', [GradeController::class, 'statistics']);
+        // Read-only endpoints (requires 'read' ability)
+        Route::middleware('ability:read')->group(function () {
+            Route::get('/exams', [ExamController::class, 'index']);
+            Route::get('/exams/{exam}', [ExamController::class, 'show']);
+            Route::get('/exam-sessions', [ExamController::class, 'sessions']);
+            Route::get('/grades', [GradeController::class, 'index']);
+            Route::get('/grades/{grade}', [GradeController::class, 'show']);
+            Route::get('/grades-statistics', [GradeController::class, 'statistics']);
+            Route::get('/students', [StudentController::class, 'index']);
+            Route::get('/students/{student}', [StudentController::class, 'show']);
+        });
 
-        // Admin only - stricter rate limit for write operations
-        Route::middleware(['ability:admin', 'throttle:30,1'])->group(function () {
-            Route::apiResource('students', StudentController::class);
+        // Write endpoints (requires 'write' ability)
+        Route::middleware(['ability:write', 'throttle:30,1'])->group(function () {
+            Route::post('/students', [StudentController::class, 'store']);
+            Route::put('/students/{student}', [StudentController::class, 'update']);
+            Route::delete('/students/{student}', [StudentController::class, 'destroy']);
         });
     });
 });

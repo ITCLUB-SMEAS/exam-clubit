@@ -67,6 +67,8 @@ export function useAudioDetection(options = {}) {
         }
         
         const checkAudio = () => {
+            if (!analyser || !isActive.value) return; // Safety check
+            
             analyser.getByteFrequencyData(dataArray);
             
             // Calculate average only for voice frequency range

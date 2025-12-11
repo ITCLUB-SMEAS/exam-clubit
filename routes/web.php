@@ -27,13 +27,22 @@ Route::prefix("admin")->group(function () {
         Route::put("/profile", [\App\Http\Controllers\Admin\ProfileController::class, "update"])->name("admin.profile.update");
         Route::put("/profile/password", [\App\Http\Controllers\Admin\ProfileController::class, "updatePassword"])->name("admin.profile.password");
         Route::post("/profile/photo", [\App\Http\Controllers\Admin\ProfileController::class, "updatePhoto"])->name("admin.profile.photo");
+        
+        // Session extend (for timeout warning)
+        Route::post("/session/extend", function () {
+            request()->session()->regenerate();
+            return response()->json(['success' => true]);
+        })->name("admin.session.extend");
+        
         Route::get("/profile/2fa/setup", [\App\Http\Controllers\Admin\ProfileController::class, "setup2FA"])->name("admin.profile.2fa.setup");
         Route::post("/profile/2fa/enable", [\App\Http\Controllers\Admin\ProfileController::class, "enable2FA"])->name("admin.profile.2fa.enable");
         Route::post("/profile/2fa/disable", [\App\Http\Controllers\Admin\ProfileController::class, "disable2FA"])->name("admin.profile.2fa.disable");
         Route::post("/profile/2fa/regenerate", [\App\Http\Controllers\Admin\ProfileController::class, "regenerateCodes"])->name("admin.profile.2fa.regenerate");
 
-        // Test Math Editor (Development only - remove in production)
-        Route::get("/test-math-editor", fn() => Inertia::render('Admin/TestMathEditor'))->name("admin.test.math");
+        // Test Math Editor (Development only)
+        if (app()->environment('local', 'testing')) {
+            Route::get("/test-math-editor", fn() => Inertia::render('Admin/TestMathEditor'))->name("admin.test.math");
+        }
 
         // ============================================
         // ADMIN ONLY ROUTES (User & Student Management)
@@ -82,7 +91,7 @@ Route::prefix("admin")->group(function () {
             Route::post("/students-bulk-password-reset", [
                 \App\Http\Controllers\Admin\StudentController::class,
                 "executeBulkPasswordReset",
-            ])->name("admin.students.executeBulkPasswordReset");
+            ])->middleware('throttle:5,1')->name("admin.students.executeBulkPasswordReset");
 
             Route::get("/students-by-classroom/{classroom}", [
                 \App\Http\Controllers\Admin\StudentController::class,
@@ -99,7 +108,7 @@ Route::prefix("admin")->group(function () {
             Route::delete("/activity-logs-cleanup", [
                 \App\Http\Controllers\Admin\ActivityLogController::class,
                 "cleanup",
-            ])->name("admin.activity-logs.cleanup");
+            ])->middleware('throttle:3,1')->name("admin.activity-logs.cleanup");
 
             // Maintenance Mode
             Route::get("/maintenance", [
@@ -121,7 +130,7 @@ Route::prefix("admin")->group(function () {
             Route::post("/cleanup", [
                 \App\Http\Controllers\Admin\CleanupController::class,
                 "cleanup",
-            ])->name("admin.cleanup.run");
+            ])->middleware('throttle:3,1')->name("admin.cleanup.run");
         });
 
         // ============================================
@@ -194,7 +203,7 @@ Route::prefix("admin")->group(function () {
         Route::delete("/exams/{exam}/questions/bulk-delete", [
             \App\Http\Controllers\Admin\ExamController::class,
             "bulkDeleteQuestions",
-        ])->name("admin.exams.bulkDeleteQuestions");
+        ])->middleware('throttle:10,1')->name("admin.exams.bulkDeleteQuestions");
 
         //route exam preview
         Route::get("/exams/{exam}/preview", [
@@ -263,7 +272,7 @@ Route::prefix("admin")->group(function () {
         Route::delete("/exam_sessions/{exam_session}/bulk-unenroll", [
             \App\Http\Controllers\Admin\ExamSessionController::class,
             "bulkUnenrollClass",
-        ])->name("admin.exam_sessions.bulkUnenroll");
+        ])->middleware('throttle:10,1')->name("admin.exam_sessions.bulkUnenroll");
 
         // Attendance routes
         Route::get("/exam_sessions/{exam_session}/attendance", [
@@ -386,7 +395,7 @@ Route::prefix("admin")->group(function () {
         Route::get("/notifications/unread", [\App\Http\Controllers\Admin\NotificationController::class, "unread"])->name("admin.notifications.unread");
         Route::post("/notifications/mark-read", [\App\Http\Controllers\Admin\NotificationController::class, "markAsRead"])->name("admin.notifications.markAsRead");
         Route::delete("/notifications/{id}", [\App\Http\Controllers\Admin\NotificationController::class, "destroy"])->name("admin.notifications.destroy");
-        Route::delete("/notifications", [\App\Http\Controllers\Admin\NotificationController::class, "destroyAll"])->name("admin.notifications.destroyAll");
+        Route::delete("/notifications", [\App\Http\Controllers\Admin\NotificationController::class, "destroyAll"])->middleware('throttle:5,1')->name("admin.notifications.destroyAll");
 
         // Question Categories
         Route::resource(
@@ -440,6 +449,45 @@ Route::prefix("admin")->group(function () {
             \App\Http\Controllers\Admin\QuestionBankController::class,
             "getQuestions",
         ])->name("admin.question-bank.list");
+
+        // Question Bank - Import from Exam
+        Route::post("/question-bank-import-from-exam", [
+            \App\Http\Controllers\Admin\QuestionBankController::class,
+            "importFromExam",
+        ])->name("admin.question-bank.importFromExam");
+
+        Route::get("/question-bank-exams", [
+            \App\Http\Controllers\Admin\QuestionBankController::class,
+            "getExamsForImport",
+        ])->name("admin.question-bank.exams");
+
+        Route::get("/question-bank-exam-questions/{exam}", [
+            \App\Http\Controllers\Admin\QuestionBankController::class,
+            "getExamQuestions",
+        ])->name("admin.question-bank.examQuestions");
+
+        // Question Bank - Bulk Operations
+        Route::post("/question-bank-bulk-delete", [
+            \App\Http\Controllers\Admin\QuestionBankController::class,
+            "bulkDelete",
+        ])->middleware('throttle:10,1')->name("admin.question-bank.bulkDelete");
+
+        Route::post("/question-bank-bulk-tags", [
+            \App\Http\Controllers\Admin\QuestionBankController::class,
+            "bulkUpdateTags",
+        ])->name("admin.question-bank.bulkTags");
+
+        // Question Bank - Statistics
+        Route::get("/question-bank/{questionBank}/statistics", [
+            \App\Http\Controllers\Admin\QuestionBankController::class,
+            "statistics",
+        ])->name("admin.question-bank.statistics");
+
+        // AI Generate Tags
+        Route::post("/question-bank-generate-tags", [
+            \App\Http\Controllers\Admin\QuestionBankController::class,
+            "generateTags",
+        ])->middleware('throttle:20,1')->name("admin.question-bank.generateTags");
 
         // Time Extension
         Route::get("/time-extension", [
@@ -561,8 +609,8 @@ Route::prefix("admin")->group(function () {
         Route::get("/monitor/{examSession}/participants", [\App\Http\Controllers\Admin\ExamMonitorController::class, "participants"])->name("admin.monitor.participants");
         Route::get("/monitor/{examSession}/violations", [\App\Http\Controllers\Admin\ExamMonitorController::class, "violations"])->name("admin.monitor.violations");
 
-        // Backup Management (Admin Only)
-        Route::middleware(['admin.only'])->group(function () {
+        // Backup Management (Admin Only) - rate limited
+        Route::middleware(['admin.only', 'throttle:5,1'])->group(function () {
             Route::get("/backup", [\App\Http\Controllers\Admin\BackupController::class, "index"])->name("admin.backup.index");
             Route::post("/backup", [\App\Http\Controllers\Admin\BackupController::class, "create"])->name("admin.backup.create");
             Route::get("/backup/{filename}/download", [\App\Http\Controllers\Admin\BackupController::class, "download"])->name("admin.backup.download");
@@ -643,6 +691,12 @@ Route::prefix("student")->group(function () {
             App\Http\Controllers\Student\ProfileController::class,
             "updatePassword",
         ])->name("student.profile.password");
+
+        // Session extend (for timeout warning)
+        Route::post("/session/extend", function () {
+            request()->session()->regenerate();
+            return response()->json(['success' => true]);
+        })->name("student.session.extend");
 
         //route exam confirmation
         Route::get("/exam-confirmation/{id}", [

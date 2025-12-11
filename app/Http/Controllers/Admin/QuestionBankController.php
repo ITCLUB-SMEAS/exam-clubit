@@ -287,4 +287,121 @@ class QuestionBankController extends Controller
             'template-question-bank.xlsx'
         );
     }
+
+    // Import questions from existing exam to bank
+    public function importFromExam(Request $request)
+    {
+        $request->validate([
+            'exam_id' => 'required|exists:exams,id',
+            'question_ids' => 'nullable|array',
+            'category_id' => 'nullable|exists:question_categories,id',
+        ]);
+
+        $query = Question::where('exam_id', $request->exam_id);
+        
+        if ($request->question_ids) {
+            $query->whereIn('id', $request->question_ids);
+        }
+
+        $questions = $query->get();
+        $imported = 0;
+
+        foreach ($questions as $q) {
+            QuestionBank::create([
+                'category_id' => $request->category_id,
+                'question' => $q->question,
+                'question_type' => $q->question_type,
+                'difficulty' => $q->difficulty ?? 'medium',
+                'points' => $q->points,
+                'option_1' => $q->option_1,
+                'option_2' => $q->option_2,
+                'option_3' => $q->option_3,
+                'option_4' => $q->option_4,
+                'option_5' => $q->option_5,
+                'answer' => $q->answer,
+                'correct_answers' => $q->correct_answers,
+                'matching_pairs' => $q->matching_pairs,
+            ]);
+            $imported++;
+        }
+
+        return back()->with('success', "$imported soal berhasil diimport ke bank soal");
+    }
+
+    // Get exams for import modal
+    public function getExamsForImport()
+    {
+        $exams = Exam::withCount('questions')->having('questions_count', '>', 0)->get(['id', 'title']);
+        return response()->json($exams);
+    }
+
+    // Get questions from exam for selection
+    public function getExamQuestions(Exam $exam)
+    {
+        return response()->json($exam->questions()->select('id', 'question', 'question_type', 'points')->get());
+    }
+
+    // Bulk delete
+    public function bulkDelete(Request $request)
+    {
+        $request->validate(['ids' => 'required|array|min:1']);
+        $deleted = QuestionBank::whereIn('id', $request->ids)->delete();
+        return back()->with('success', "$deleted soal berhasil dihapus");
+    }
+
+    // Bulk update tags
+    public function bulkUpdateTags(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'tags' => 'required|array',
+            'mode' => 'required|in:replace,append',
+        ]);
+
+        $questions = QuestionBank::whereIn('id', $request->ids)->get();
+        
+        foreach ($questions as $q) {
+            if ($request->mode === 'replace') {
+                $q->tags = $request->tags;
+            } else {
+                $q->tags = array_unique(array_merge($q->tags ?? [], $request->tags));
+            }
+            $q->save();
+        }
+
+        return back()->with('success', count($questions) . ' soal berhasil diupdate');
+    }
+
+    // AI Generate Tags
+    public function generateTags(Request $request, \App\Services\GeminiService $gemini)
+    {
+        $request->validate([
+            'question' => 'required|string|min:10',
+            'category' => 'nullable|string',
+        ]);
+
+        $tags = $gemini->generateTags(
+            strip_tags($request->question),
+            $request->category
+        );
+
+        if (!$tags) {
+            return response()->json(['error' => 'Gagal generate tags. Coba lagi.'], 500);
+        }
+
+        return response()->json(['tags' => $tags]);
+    }
+
+    // Get question statistics
+    public function statistics(QuestionBank $questionBank)
+    {
+        $stats = [
+            'usage_count' => $questionBank->usage_count,
+            'success_rate' => $questionBank->success_rate,
+            'last_used_at' => $questionBank->last_used_at?->format('d M Y H:i'),
+            'difficulty' => $questionBank->difficulty,
+        ];
+
+        return response()->json($stats);
+    }
 }

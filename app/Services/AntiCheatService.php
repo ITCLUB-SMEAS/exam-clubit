@@ -104,7 +104,7 @@ class AntiCheatService
 
         // Get full path for snapshot (local disk root is storage/app/private)
         $fullSnapshotPath = null;
-        if ($snapshotPath) {
+        if ($snapshotPath && self::isValidSnapshotPath($snapshotPath)) {
             $fullSnapshotPath = storage_path('app/private/' . $snapshotPath);
         }
 
@@ -478,5 +478,26 @@ class AntiCheatService
             ExamViolation::TYPE_PROLONGED_BLUR,
             ExamViolation::TYPE_EXCESSIVE_BLUR,
         ]);
+    }
+
+    /**
+     * Validate snapshot path to prevent path traversal
+     *
+     * @param string $path
+     * @return bool
+     */
+    public static function isValidSnapshotPath(string $path): bool
+    {
+        // Must be in snapshots directory with valid format
+        if (!preg_match('/^snapshots\/\d+\/[a-zA-Z0-9_-]+\.(jpg|jpeg|png)$/', $path)) {
+            return false;
+        }
+
+        // No path traversal
+        if (str_contains($path, '..') || str_contains($path, "\0")) {
+            return false;
+        }
+
+        return true;
     }
 }

@@ -9,14 +9,14 @@
                     <div class="card-body">
                         <form @submit.prevent="submit">
                             <div class="row mb-3">
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label class="form-label">Kategori</label>
                                     <select class="form-select" v-model="form.category_id">
                                         <option value="">-- Tanpa Kategori --</option>
                                         <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                                     </select>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label class="form-label">Tipe Soal</label>
                                     <select class="form-select" v-model="form.question_type">
                                         <option value="multiple_choice_single">Pilihan Ganda (Single)</option>
@@ -27,7 +27,15 @@
                                         <option value="matching">Menjodohkan</option>
                                     </select>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
+                                    <label class="form-label">Difficulty</label>
+                                    <select class="form-select" v-model="form.difficulty">
+                                        <option value="easy">Mudah</option>
+                                        <option value="medium">Sedang</option>
+                                        <option value="hard">Sulit</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
                                     <label class="form-label">Poin</label>
                                     <input type="number" class="form-control" v-model="form.points" min="0" step="0.5">
                                 </div>
@@ -82,6 +90,22 @@
                                 <button type="button" class="btn btn-sm btn-secondary" @click="addPair">+ Tambah Pasangan</button>
                             </div>
 
+                            <!-- Tags -->
+                            <div class="mb-3">
+                                <label class="form-label">Tags</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" v-model="tagsText" placeholder="tag1, tag2, tag3 (pisahkan dengan koma)">
+                                    <button type="button" class="btn btn-outline-primary" @click="generateAiTags" :disabled="generatingTags || !form.question">
+                                        <i class="fas fa-magic" :class="{ 'fa-spin': generatingTags }"></i> AI Generate
+                                    </button>
+                                </div>
+                                <div v-if="form.tags.length" class="mt-2">
+                                    <span v-for="(tag, idx) in form.tags" :key="idx" class="badge bg-primary me-1">
+                                        {{ tag }} <i class="fas fa-times ms-1" style="cursor:pointer" @click="removeTag(idx)"></i>
+                                    </span>
+                                </div>
+                            </div>
+
                             <button type="submit" class="btn btn-primary" :disabled="form.processing">
                                 <i class="fas fa-save"></i> Simpan
                             </button>
@@ -99,26 +123,36 @@ import LayoutAdmin from '../../../Layouts/Admin.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import TiptapEditor from '../../../Components/TiptapEditor.vue';
+import axios from 'axios';
 
 export default {
     layout: LayoutAdmin,
     components: { Head, Link, TiptapEditor },
     props: { categories: Array, errors: Object },
-    setup() {
+    setup(props) {
         const form = useForm({
             category_id: '',
             question: '',
             question_type: 'multiple_choice_single',
+            difficulty: 'medium',
             points: 1,
             option_1: '', option_2: '', option_3: '', option_4: '', option_5: '',
             answer: '',
             correct_answers: [],
-            matching_pairs: [{ left: '', right: '' }]
+            matching_pairs: [{ left: '', right: '' }],
+            tags: []
         });
 
         const shortAnswerText = ref('');
+        const tagsText = ref('');
+        const generatingTags = ref(false);
+
         watch(shortAnswerText, (val) => {
             form.correct_answers = val.split(',').map(s => s.trim()).filter(s => s);
+        });
+
+        watch(tagsText, (val) => {
+            form.tags = val.split(',').map(s => s.trim().toLowerCase()).filter(s => s);
         });
 
         const isMultipleChoice = computed(() => 
@@ -127,10 +161,36 @@ export default {
 
         const addPair = () => form.matching_pairs.push({ left: '', right: '' });
         const removePair = (idx) => form.matching_pairs.splice(idx, 1);
+        const removeTag = (idx) => {
+            form.tags.splice(idx, 1);
+            tagsText.value = form.tags.join(', ');
+        };
+
+        const generateAiTags = async () => {
+            if (!form.question || generatingTags.value) return;
+            
+            generatingTags.value = true;
+            try {
+                const category = props.categories.find(c => c.id === form.category_id);
+                const res = await axios.post('/admin/question-bank-generate-tags', {
+                    question: form.question,
+                    category: category?.name || null
+                });
+                
+                if (res.data.tags) {
+                    form.tags = res.data.tags;
+                    tagsText.value = res.data.tags.join(', ');
+                }
+            } catch (e) {
+                alert(e.response?.data?.error || 'Gagal generate tags');
+            } finally {
+                generatingTags.value = false;
+            }
+        };
 
         const submit = () => form.post('/admin/question-bank');
 
-        return { form, shortAnswerText, isMultipleChoice, addPair, removePair, submit };
+        return { form, shortAnswerText, tagsText, isMultipleChoice, addPair, removePair, removeTag, submit, generateAiTags, generatingTags };
     }
 }
 </script>

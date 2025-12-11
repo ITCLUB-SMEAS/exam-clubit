@@ -144,4 +144,57 @@ PROMPT;
 
         return null;
     }
+
+    /**
+     * Generate tags for a question using AI
+     */
+    public function generateTags(string $question, ?string $category = null): ?array
+    {
+        $categoryHint = $category ? "Kategori soal: {$category}" : "";
+
+        $prompt = <<<PROMPT
+Analisis soal berikut dan berikan tags yang relevan.
+
+Soal: {$question}
+{$categoryHint}
+
+Berikan 3-5 tags yang mendeskripsikan:
+- Topik/materi (contoh: aljabar, fotosintesis, perang dunia 2)
+- Tingkat pendidikan jika bisa ditebak (contoh: SD, SMP, SMA)
+- Skill yang diuji (contoh: perhitungan, analisis, hafalan)
+
+PENTING: Jawab HANYA dalam format JSON array tanpa markdown:
+["tag1", "tag2", "tag3"]
+
+Tags harus dalam bahasa Indonesia, huruf kecil, singkat (1-3 kata per tag).
+PROMPT;
+
+        try {
+            $response = Http::timeout(15)->post("{$this->baseUrl}?key={$this->apiKey}", [
+                'contents' => [['parts' => [['text' => $prompt]]]],
+                'generationConfig' => [
+                    'temperature' => 0.3,
+                    'maxOutputTokens' => 256,
+                ],
+            ]);
+
+            if ($response->successful()) {
+                $content = $response->json('candidates.0.content.parts.0.text');
+                $content = trim($content);
+                $content = preg_replace('/^```json\s*/', '', $content);
+                $content = preg_replace('/\s*```$/', '', $content);
+
+                $tags = json_decode($content, true);
+
+                if (json_last_error() === JSON_ERROR_NONE && is_array($tags)) {
+                    // Sanitize tags
+                    return array_slice(array_map(fn($t) => strtolower(trim($t)), $tags), 0, 5);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Gemini generateTags exception: ' . $e->getMessage());
+        }
+
+        return null;
+    }
 }

@@ -105,6 +105,9 @@
     
     <!-- PWA Install Prompt -->
     <PwaInstall />
+    
+    <!-- Session Timeout Warning -->
+    <SessionTimeoutWarning :session-lifetime="120" :warning-minutes="5" />
 </template>
 
 <script>
@@ -119,13 +122,17 @@
     
     //import Language Switcher
     import LanguageSwitcher from '../Components/LanguageSwitcher.vue';
+    
+    //import Session Timeout Warning
+    import SessionTimeoutWarning from '../Components/SessionTimeoutWarning.vue';
 
     export default {
         //register components
         components: {
             Link,
             PwaInstall,
-            LanguageSwitcher
+            LanguageSwitcher,
+            SessionTimeoutWarning
         },
 
         setup() {

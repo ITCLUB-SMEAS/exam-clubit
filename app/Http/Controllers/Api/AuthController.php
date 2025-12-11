@@ -34,8 +34,14 @@ class AuthController extends Controller
         // Revoke old tokens (keep only last 5)
         $user->tokens()->orderBy('created_at', 'desc')->skip(5)->take(100)->delete();
 
-        // Create token with expiration (24 hours)
-        $token = $user->createToken('api-token', ['*'], Carbon::now()->addHours(24))->plainTextToken;
+        // Create token with role-based abilities
+        $abilities = match($user->role) {
+            'admin' => ['admin', 'read', 'write'],
+            'guru' => ['read', 'write'],
+            default => ['read'],
+        };
+
+        $token = $user->createToken('api-token', $abilities, Carbon::now()->addHours(24))->plainTextToken;
 
         return response()->json([
             'message' => 'Login berhasil',
@@ -46,6 +52,7 @@ class AuthController extends Controller
                 'role' => $user->role,
             ],
             'token' => $token,
+            'abilities' => $abilities,
             'expires_at' => Carbon::now()->addHours(24)->toISOString(),
         ]);
     }
