@@ -37,7 +37,7 @@ export function useFaceDetection(options = {}) {
                 locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
             });
 
-            await faceDetection.setOptions({
+            faceDetection.setOptions({
                 model: 'short',
                 minDetectionConfidence: 0.5
             });

@@ -26,7 +26,7 @@ class Room extends Model
     public static function getRandomAvailable(): ?self
     {
         return static::withCount('students')
-            ->havingRaw('students_count < capacity')
+            ->whereRaw('(SELECT COUNT(*) FROM students WHERE students.room_id = rooms.id AND students.deleted_at IS NULL) < rooms.capacity')
             ->inRandomOrder()
             ->first();
     }

@@ -331,7 +331,8 @@ class ExamSessionController extends Controller
         
         // Verify classroom is allowed for this exam (must match exam's classroom)
         if ($exam->classroom_id && $exam->classroom_id != $request->classroom_id) {
-            return back()->withErrors(['classroom_id' => 'Kelas tidak sesuai dengan ujian ini.']);
+            $allowedClass = \App\Models\Classroom::find($exam->classroom_id)?->title ?? 'Unknown';
+            return back()->with('error', "Ujian ini hanya untuk kelas \"{$allowedClass}\". Silakan pilih kelas yang sesuai.");
         }
 
         return $this->executeInTransaction(function () use ($request, $exam_session, $exam) {

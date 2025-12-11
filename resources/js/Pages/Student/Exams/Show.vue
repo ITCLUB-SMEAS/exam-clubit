@@ -294,6 +294,35 @@
         </div>
     </div>
 
+    <!-- Modal Liveness Verification -->
+    <div v-if="livenessModalVisible" class="modal fade show" tabindex="-1" style="display:block; background: rgba(0,0,0,0.9);" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-warning">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-check me-2"></i>
+                        Verifikasi Kehadiran
+                    </h5>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-camera fa-4x text-warning"></i>
+                    </div>
+                    <h5>{{ livenessChallenge?.instruction || 'Ikuti instruksi berikut' }}</h5>
+                    <p class="text-muted">Pastikan wajah Anda terlihat jelas di kamera</p>
+                    <div class="mt-3">
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" 
+                                 :style="{ width: (livenessCountdown / 15 * 100) + '%' }">
+                                {{ livenessCountdown }} detik
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Fullscreen Required -->
     <div v-if="showFullscreenModal" class="modal fade show" tabindex="-1" style="display:block; background: rgba(0,0,0,0.9);" role="dialog">
         <div class="modal-dialog modal-dialog-centered">
@@ -393,6 +422,7 @@
     import { useBrowserFingerprint } from '../../../composables/useBrowserFingerprint.js';
     import { useNetworkMonitor } from '../../../composables/useNetworkMonitor.js';
     import { useIdleDetection } from '../../../composables/useIdleDetection.js';
+    import { useLivenessDetection } from '../../../composables/useLivenessDetection.js';
 
     //import LandscapeWarning component
     import LandscapeWarning from '../../../Components/LandscapeWarning.vue';
@@ -536,6 +566,47 @@
                     antiCheat.recordViolation('idle_detected', `Tidak ada aktivitas selama ${Math.round(elapsed/1000)} detik`);
                 },
             });
+
+            // Liveness Detection - verify real person with random challenges
+            const livenessEnabled = true; // Enabled for production
+            const livenessModalVisible = ref(false);
+            const livenessChallenge = ref(null);
+            const livenessCountdown = ref(0);
+            const liveness = (props.face_detection_enabled && livenessEnabled) ? useLivenessDetection({
+                challengeInterval: 300000, // Challenge every 5 minutes
+                challengeTimeout: 15000, // 15 seconds to complete
+                onChallengeFailed: () => {
+                    livenessModalVisible.value = false;
+                    antiCheat.recordViolation('liveness_failed', 'Gagal menyelesaikan verifikasi liveness');
+                    Swal.fire({
+                        title: 'Verifikasi Gagal!',
+                        text: 'Anda gagal menyelesaikan verifikasi. Pelanggaran telah dicatat.',
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                    });
+                },
+                onChallengeSuccess: () => {
+                    livenessModalVisible.value = false;
+                    Swal.fire({
+                        title: 'Verifikasi Berhasil!',
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false,
+                    });
+                },
+            }) : null;
+
+            // Watch liveness state
+            if (liveness) {
+                watch(() => liveness.showChallengeModal.value, (val) => {
+                    livenessModalVisible.value = val;
+                    livenessChallenge.value = liveness.currentChallenge.value;
+                    livenessCountdown.value = liveness.challengeCountdown.value;
+                });
+                watch(() => liveness.challengeCountdown.value, (val) => {
+                    livenessCountdown.value = val;
+                });
+            }
 
             // Initialize anti-cheat
             const antiCheat = useAntiCheat({
@@ -1056,6 +1127,18 @@
                         console.warn('Audio detection init failed:', e);
                     }
                 }
+
+                // Initialize liveness detection (uses same video as face detection)
+                if (props.face_detection_enabled && liveness && faceVideoRef.value) {
+                    try {
+                        const initialized = await liveness.initialize(faceVideoRef.value);
+                        if (initialized) {
+                            liveness.start();
+                        }
+                    } catch (e) {
+                        console.warn('Liveness detection init failed:', e);
+                    }
+                }
             });
 
             //return
@@ -1110,6 +1193,11 @@
                 // Face detection
                 faceVideoRef,
                 faceDetectionActive,
+
+                // Liveness detection
+                livenessModalVisible,
+                livenessChallenge,
+                livenessCountdown,
             }
 
         }

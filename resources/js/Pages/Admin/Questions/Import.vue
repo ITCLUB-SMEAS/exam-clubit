@@ -7,9 +7,9 @@
             <div class="col-md-12">
                 <Link :href="`/admin/exams/${exam.id}`" class="btn btn-md btn-primary border-0 shadow mb-3 me-3" type="button"><i
                     class="fas fa-long-arrow-alt-left me-2"></i> Kembali</Link>
-                <a href="/assets/excel/questions.xls" target="_blank"
+                <a href="/admin/exams/questions/template"
                     class="btn btn-md btn-success border-0 shadow mb-3 text-white" type="button"><i
-                        class="fas fa-file-excel me-2"></i> Contoh Format</a>
+                        class="fas fa-file-excel me-2"></i> Download Template</a>
                 <div class="card border-0 shadow">
                     <div class="card-body">
                         <h5><i class="fas fa-question-circle"></i> Import Soal</h5>

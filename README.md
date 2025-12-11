@@ -42,6 +42,7 @@ Dokumentasi lengkap tersedia di folder [`docs/`](docs/):
 | Laravel Fortify | 1.25.4 | Authentication |
 | Laravel Sanctum | 4.2 | API Token |
 | Laravel Octane | 2.13 | High Performance Server |
+| Swoole | 6.1+ | Async Runtime for Octane |
 | Maatwebsite Excel | 3.1 | Import/Export Excel |
 | Barryvdh DomPDF | 3.1 | Export PDF |
 | Redis | 7.4+ | Session & Cache |
@@ -235,6 +236,7 @@ Dokumentasi lengkap tersedia di folder [`docs/`](docs/):
 | Multiple Monitor Detection | Deteksi penggunaan multi-monitor |
 | Virtual Machine Detection | Deteksi VM (VirtualBox, VMware, dll) |
 | Face Detection | Deteksi wajah tidak ada / multiple faces (MediaPipe) |
+| **Liveness Detection** | Verifikasi kehadiran dengan challenge (kedip, gerak kepala) |
 | Audio Detection | Deteksi suara mencurigakan (voice activity) |
 | Browser Fingerprint | Deteksi pergantian device mid-exam |
 | Network Monitor | Deteksi akses ke ChatGPT, Google, Brainly, dll |
@@ -246,6 +248,7 @@ Dokumentasi lengkap tersedia di folder [`docs/`](docs/):
 | Feature | Description |
 |---------|-------------|
 | Request Timing Analysis | Deteksi jawaban terlalu cepat |
+| **Answer Timing Validation** | Validasi waktu minimum per soal berdasarkan tipe & panjang |
 | IP Address Tracking | Log IP setiap request |
 | User Agent Tracking | Log browser/device info |
 | Session Validation | Validasi session integrity |
@@ -259,6 +262,22 @@ Dokumentasi lengkap tersedia di folder [`docs/`](docs/):
 - Auto-submit saat max violations tercapai
 - Violation log dengan timestamp & screenshot
 - Notifikasi real-time ke admin via Telegram
+
+**Mobile-Aware:**
+Beberapa fitur anti-cheat otomatis disabled di perangkat mobile:
+- ❌ Fullscreen enforcement (tidak didukung di mobile browser)
+- ❌ Right-click block (tidak relevan)
+- ❌ Multiple monitor detection
+- ❌ Virtual machine detection
+- ❌ DevTools detection
+
+Fitur yang tetap aktif di mobile:
+- ✅ Tab switch detection
+- ✅ Copy/paste block
+- ✅ Face detection & Liveness
+- ✅ Network monitor
+- ✅ Idle detection
+- ✅ Answer timing validation
 
 #### 📊 Analytics & Reports
 - Statistik ujian per mata pelajaran

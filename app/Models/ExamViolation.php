@@ -58,6 +58,8 @@ class ExamViolation extends Model
     public const TYPE_PROLONGED_BLUR = 'prolonged_blur';
     public const TYPE_EXCESSIVE_BLUR = 'excessive_blur';
     public const TYPE_SUSPICIOUS_AUDIO = 'suspicious_audio';
+    public const TYPE_FAST_ANSWER = 'fast_answer';
+    public const TYPE_LIVENESS_FAILED = 'liveness_failed';
 
     /**
      * Get all violation types
@@ -88,6 +90,8 @@ class ExamViolation extends Model
             self::TYPE_PROLONGED_BLUR => 'Tidak Fokus Berkepanjangan',
             self::TYPE_EXCESSIVE_BLUR => 'Total Tidak Fokus Berlebihan',
             self::TYPE_SUSPICIOUS_AUDIO => 'Suara Mencurigakan',
+            self::TYPE_FAST_ANSWER => 'Jawaban Terlalu Cepat',
+            self::TYPE_LIVENESS_FAILED => 'Gagal Verifikasi Liveness',
         ];
     }
 

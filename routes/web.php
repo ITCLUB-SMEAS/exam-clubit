@@ -229,6 +229,12 @@ Route::prefix("admin")->group(function () {
             "import",
         ])->name("admin.exam.questionImport");
 
+        //route download template import soal
+        Route::get("/exams/questions/template", [
+            \App\Http\Controllers\Admin\ExamController::class,
+            "downloadTemplate",
+        ])->name("admin.exam.questionTemplate");
+
         //route question store import
         Route::post("/exams/{exam}/questions/import", [
             \App\Http\Controllers\Admin\ExamController::class,

@@ -15,6 +15,7 @@ use App\Services\AntiCheatService;
 use App\Services\ExamScoringService;
 use App\Services\ExamTimerService;
 use App\Services\ExamCompletionService;
+use App\Services\AnswerTimingService;
 
 class ExamController extends Controller
 {
@@ -413,6 +414,9 @@ class ExamController extends Controller
         //pass latest duration (already server-calculated)
         $duration = $grade;
 
+        // Record question view time for answer timing validation
+        AnswerTimingService::recordQuestionView($grade, (int) $page);
+
         // Get anti-cheat configuration
         $anticheat_config = AntiCheatService::getAntiCheatConfig(
             $exam_group->exam,
@@ -601,6 +605,13 @@ class ExamController extends Controller
 
         //get question
         $question = Question::findOrFail($request->question_id);
+
+        // Validate answer timing (anti-cheat)
+        $timingResult = AnswerTimingService::validateAndRecord(
+            $grade,
+            $question,
+            $request->input('question_number', 0)
+        );
 
         //get answer
         $answer = Answer::where("exam_id", $request->exam_id)

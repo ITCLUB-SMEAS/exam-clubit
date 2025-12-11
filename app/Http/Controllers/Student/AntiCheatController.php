@@ -109,7 +109,7 @@ class AntiCheatController extends Controller
                 'remaining_violations' => $remainingViolations,
                 'warning_reached' => $warningReached,
                 'should_auto_submit' => $shouldAutoSubmit,
-                'max_violations' => $exam->max_violations ?? 10,
+                'max_violations' => $exam->max_violations ?? 3,
                 'is_blocked' => $isBlocked,
             ],
         ]);
@@ -197,7 +197,7 @@ class AntiCheatController extends Controller
                 'remaining_violations' => AntiCheatService::getRemainingViolations($grade, $exam),
                 'warning_reached' => AntiCheatService::hasReachedWarningThreshold($grade, $exam),
                 'should_auto_submit' => $shouldAutoSubmit,
-                'max_violations' => $exam->max_violations ?? 10,
+                'max_violations' => $exam->max_violations ?? 3,
             ],
         ]);
     }
@@ -233,7 +233,7 @@ class AntiCheatController extends Controller
             'success' => true,
             'data' => [
                 'total_violations' => $grade->violation_count,
-                'max_violations' => $exam->max_violations ?? 10,
+                'max_violations' => $exam->max_violations ?? 3,
                 'remaining_violations' => AntiCheatService::getRemainingViolations($grade, $exam),
                 'warning_reached' => AntiCheatService::hasReachedWarningThreshold($grade, $exam),
                 'limit_exceeded' => AntiCheatService::hasExceededLimit($grade, $exam),

@@ -464,6 +464,48 @@ class ExamController extends Controller
     }
 
     /**
+     * Download template for question import
+     */
+    public function downloadTemplate()
+    {
+        $headers = [
+            'question',
+            'option_1',
+            'option_2',
+            'option_3',
+            'option_4',
+            'option_5',
+            'answer',
+        ];
+
+        $example = [
+            'Berapa hasil dari 2 + 2?',
+            '3',
+            '4',
+            '5',
+            '6',
+            '',
+            '2', // jawaban bener = option_2 (angka 4)
+        ];
+
+        $notes = [
+            'Catatan: Kolom "answer" diisi dengan nomor opsi yang benar (1-5). Contoh: 2 berarti option_2 adalah jawaban benar.',
+            '', '', '', '', '', '',
+        ];
+
+        $data = [$headers, $example, $notes];
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new class($data) implements \Maatwebsite\Excel\Concerns\FromArray {
+                protected $data;
+                public function __construct($data) { $this->data = $data; }
+                public function array(): array { return $this->data; }
+            },
+            'template-import-soal.xlsx'
+        );
+    }
+
+    /**
      * storeImport
      *
      * @param  mixed $request

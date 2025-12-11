@@ -324,8 +324,8 @@ class AntiCheatService
             'block_right_click' => $exam->block_right_click ?? true,
             'detect_devtools' => $exam->detect_devtools ?? true,
             'max_violations' => $exam->max_violations ?? 3,
-            'warning_threshold' => $exam->warning_threshold ?? 3,
-            'auto_submit_on_max_violations' => $exam->auto_submit_on_max_violations ?? false,
+            'warning_threshold' => $exam->warning_threshold ?? 2,
+            'auto_submit_on_max_violations' => $exam->auto_submit_on_max_violations ?? true,
         ];
     }
 
