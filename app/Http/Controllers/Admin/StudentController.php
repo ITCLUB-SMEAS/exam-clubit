@@ -203,10 +203,23 @@ class StudentController extends Controller
         ]);
 
         // import data
-        Excel::import(new StudentsImport(), $request->file('file'));
+        $import = new StudentsImport();
+        Excel::import($import, $request->file('file'));
 
-        //redirect
-        return redirect()->route('admin.students.index');
+        // Check for duplicates
+        $duplicates = $import->getSkippedDuplicates();
+        
+        if (count($duplicates) > 0) {
+            $duplicateList = collect($duplicates)
+                ->map(fn($d) => "Baris {$d['row']}: {$d['nisn']} - {$d['name']}")
+                ->implode(', ');
+            
+            return redirect()->route('admin.students.index')
+                ->with('warning', "Import selesai. " . count($duplicates) . " siswa dilewati karena NISN sudah ada: " . $duplicateList);
+        }
+
+        return redirect()->route('admin.students.index')
+            ->with('success', 'Import siswa berhasil!');
     }
 
     /**

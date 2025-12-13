@@ -8,18 +8,33 @@ use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use Maatwebsite\Excel\Concerns\SkipsOnError;
+use Maatwebsite\Excel\Concerns\SkipsErrors;
+use Maatwebsite\Excel\Concerns\WithValidation;
 
-class StudentsImport implements ToModel, WithHeadingRow, SkipsEmptyRows
+class StudentsImport implements ToModel, WithHeadingRow, SkipsEmptyRows, SkipsOnError, WithValidation
 {
+    use SkipsErrors;
+
+    protected $skippedDuplicates = [];
+    protected $rowNumber = 1;
+
     public function model(array $row)
     {
+        $this->rowNumber++;
+
         // Skip if nisn or name is blank
         if (empty($row['nisn']) || empty($row['name'])) {
             return null;
         }
 
-        // Skip if nisn already exists
+        // Track duplicate NISN
         if (Student::where('nisn', (string) $row['nisn'])->exists()) {
+            $this->skippedDuplicates[] = [
+                'row' => $this->rowNumber,
+                'nisn' => $row['nisn'],
+                'name' => $row['name'],
+            ];
             return null;
         }
 
@@ -38,5 +53,18 @@ class StudentsImport implements ToModel, WithHeadingRow, SkipsEmptyRows
             'classroom_id'  => (int) ($row['classroom_id'] ?? 1),
             'room_id'       => $roomId ? (int) $roomId : null,
         ]);
+    }
+
+    public function rules(): array
+    {
+        return [
+            'nisn' => 'required',
+            'name' => 'required',
+        ];
+    }
+
+    public function getSkippedDuplicates(): array
+    {
+        return $this->skippedDuplicates;
     }
 }
