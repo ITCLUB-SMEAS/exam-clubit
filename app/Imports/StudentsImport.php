@@ -7,12 +7,22 @@ use App\Models\Student;
 use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 
-class StudentsImport implements ToModel, WithHeadingRow, WithValidation
+class StudentsImport implements ToModel, WithHeadingRow, SkipsEmptyRows
 {
     public function model(array $row)
     {
+        // Skip if nisn or name is blank
+        if (empty($row['nisn']) || empty($row['name'])) {
+            return null;
+        }
+
+        // Skip if nisn already exists
+        if (Student::where('nisn', (string) $row['nisn'])->exists()) {
+            return null;
+        }
+
         // Auto-assign room if empty or 'auto'
         $roomId = $row['room_id'] ?? null;
         if (empty($roomId) || strtolower($roomId) === 'auto') {
@@ -22,23 +32,11 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation
 
         return new Student([
             'nisn'          => (string) $row['nisn'],
-            'name'          => $row['name'],
-            'password'      => Hash::make($row['password']),
-            'gender'        => $row['gender'],
-            'classroom_id'  => (int) $row['classroom_id'],
+            'name'          => trim($row['name']),
+            'password'      => Hash::make($row['password'] ?? '123456'),
+            'gender'        => $row['gender'] ?? 'L',
+            'classroom_id'  => (int) ($row['classroom_id'] ?? 1),
             'room_id'       => $roomId ? (int) $roomId : null,
         ]);
-    }
-        
-    public function rules(): array
-    {
-        return [
-            'nisn' => 'required|unique:students,nisn',
-            'name' => 'required|string|max:255',
-            'password' => 'required|string|min:6',
-            'gender' => 'required|in:L,P',
-            'classroom_id' => 'required|exists:classrooms,id',
-            'room_id' => 'nullable',
-        ];
     }
 }

@@ -15,22 +15,22 @@ class QuestionsImport implements ToModel, WithHeadingRow
         $this->examId = $examId;
     }
 
-    /**
-    * @param array $row
-    *
-    * @return \Illuminate\Database\Eloquent\Model|null
-    */
     public function model(array $row)
     {
+        // Skip blank rows
+        if (empty($row['question']) || trim($row['question']) === '') {
+            return null;
+        }
+
         return new Question([
             'exam_id'   => $this->examId,
             'question'  => $row['question'],
-            'option_1'  => $row['option_1'],
-            'option_2'  => $row['option_2'],
-            'option_3'  => $row['option_3'],
-            'option_4'  => $row['option_4'],
-            'option_5'  => $row['option_5'],
-            'answer'    => $row['answer'],
+            'option_1'  => $row['option_1'] ?? null,
+            'option_2'  => $row['option_2'] ?? null,
+            'option_3'  => $row['option_3'] ?? null,
+            'option_4'  => $row['option_4'] ?? null,
+            'option_5'  => $row['option_5'] ?? null,
+            'answer'    => $row['answer'] ?? null,
         ]);
     }
 }
