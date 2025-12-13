@@ -398,6 +398,25 @@ class ExamController extends Controller
             ->orderBy("question_order", "ASC")
             ->get();
 
+        // Validate navigation for time_per_question mode
+        if ($exam_group->exam->time_per_question > 0) {
+            $lastAnsweredOrder = $all_questions
+                ->filter(fn($q) => $q->answer != 0 || !empty($q->answer_text) || !empty($q->answer_options))
+                ->max('question_order') ?? 0;
+            
+            $allowedPage = $lastAnsweredOrder + 1;
+            
+            // Can't go back to previous questions
+            if ((int) $page < $allowedPage && (int) $page <= $lastAnsweredOrder) {
+                return redirect()->route('student.exams.show', [$id, $allowedPage]);
+            }
+            
+            // Can't skip ahead
+            if ((int) $page > $allowedPage) {
+                return redirect()->route('student.exams.show', [$id, $allowedPage]);
+            }
+        }
+
         //count all question answered (support text/multiple)
         $question_answered = $all_questions
             ->filter(function ($item) {

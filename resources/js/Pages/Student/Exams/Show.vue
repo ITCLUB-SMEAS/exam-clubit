@@ -159,7 +159,11 @@
                 <div class="card-footer">
                     <div class="d-flex justify-content-between">
                         <div class="text-start">
-                            <button v-if="page > 1" @click.prevent="prevPage" type="button" class="btn btn-gray-400 btn-sm btn-block mb-2">Sebelumnya</button>
+                            <!-- Disable prev button if time_per_question is active -->
+                            <button v-if="page > 1 && !questionTimeLimit" @click.prevent="prevPage" type="button" class="btn btn-gray-400 btn-sm btn-block mb-2">Sebelumnya</button>
+                            <span v-else-if="page > 1 && questionTimeLimit" class="text-muted small">
+                                <i class="fas fa-lock me-1"></i> Tidak bisa kembali
+                            </span>
                         </div>
                         <div class="text-end">
                             <button v-if="page < Object.keys(all_questions).length" @click.prevent="nextPage" type="button" class="btn btn-gray-400 btn-sm">Selanjutnya</button>
@@ -172,13 +176,28 @@
             <div class="card border-0 shadow">
                 <div class="card-header text-center">
                     <div class="badge bg-success p-2"> {{ question_answered }} dikerjakan</div>
+                    <div v-if="questionTimeLimit" class="text-muted small mt-1">
+                        <i class="fas fa-info-circle me-1"></i> Mode waktu per soal aktif
+                    </div>
                 </div>
                 <div class="card-body" style="max-height: 330px; overflow-y: auto">
                     <div class="d-flex flex-wrap">
                         <div v-for="(question, index) in all_questions" :key="index" class="p-1" style="width: 20%; min-width: 45px;">
-                            <button @click.prevent="clickQuestion(index)" v-if="index+1 == page" class="btn btn-gray-400 btn-sm w-100">{{ index + 1 }}</button>
-                            <button @click.prevent="clickQuestion(index)" v-else-if="!isAnswered(question)" class="btn btn-outline-info btn-sm w-100">{{ index + 1 }}</button>
-                            <button @click.prevent="clickQuestion(index)" v-else class="btn btn-info btn-sm w-100">{{ index + 1 }}</button>
+                            <!-- If time_per_question active, only allow current and next questions -->
+                            <template v-if="questionTimeLimit">
+                                <button v-if="index+1 == page" class="btn btn-gray-400 btn-sm w-100" disabled>{{ index + 1 }}</button>
+                                <button v-else-if="index+1 < page" class="btn btn-secondary btn-sm w-100" disabled :title="'Soal sudah dilewati'">
+                                    <i class="fas fa-lock" style="font-size: 10px;"></i>
+                                </button>
+                                <button v-else-if="!isAnswered(question)" class="btn btn-outline-info btn-sm w-100" disabled>{{ index + 1 }}</button>
+                                <button v-else class="btn btn-info btn-sm w-100" disabled>{{ index + 1 }}</button>
+                            </template>
+                            <!-- Normal navigation -->
+                            <template v-else>
+                                <button @click.prevent="clickQuestion(index)" v-if="index+1 == page" class="btn btn-gray-400 btn-sm w-100">{{ index + 1 }}</button>
+                                <button @click.prevent="clickQuestion(index)" v-else-if="!isAnswered(question)" class="btn btn-outline-info btn-sm w-100">{{ index + 1 }}</button>
+                                <button @click.prevent="clickQuestion(index)" v-else class="btn btn-info btn-sm w-100">{{ index + 1 }}</button>
+                            </template>
                         </div>
                     </div>
                 </div>
