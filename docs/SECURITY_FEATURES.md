@@ -420,29 +420,51 @@ Sistem anti-kecurangan komprehensif yang mendeteksi dan mencatat berbagai perila
 
 Pengaturan default yang diterapkan:
 
-| Setting | Default Value |
-|---------|---------------|
-| `anticheat_enabled` | `true` |
-| `fullscreen_required` | `true` |
-| `block_tab_switch` | `true` |
-| `block_copy_paste` | `true` |
-| `block_right_click` | `true` |
-| `detect_devtools` | `true` |
-| `max_violations` | `10` |
-| `warning_threshold` | `3` |
-| `auto_submit_on_max_violations` | `false` |
+| Setting | Default Value | Keterangan |
+|---------|---------------|------------|
+| `anticheat_enabled` | `true` | |
+| `fullscreen_required` | `false` | Dinonaktifkan untuk mengurangi false positive |
+| `block_tab_switch` | `true` | |
+| `block_copy_paste` | `true` | |
+| `block_right_click` | `true` | |
+| `detect_devtools` | `true` | |
+| `detect_face` | `true` | Toleransi tinggi (confidence 0.3) |
+| `detect_audio` | `true` | Realtime monitoring |
+| `max_violations` | `3` | Auto-submit setelah 3 pelanggaran |
+| `warning_threshold` | `2` | Warning setelah 2 pelanggaran |
+| `auto_submit_on_max_violations` | `true` | |
 
 > **Note:** Admin tidak perlu mengatur anti-cheat secara manual. Semua ujian (baru maupun yang sudah ada) akan otomatis menggunakan pengaturan default di atas.
 
+### Face Detection Settings
+| Setting | Value | Keterangan |
+|---------|-------|------------|
+| Confidence threshold | 0.3 | Lebih toleran |
+| Consecutive fails needed | 5 | Harus gagal 5x berturut-turut |
+| Cooldown | 2 menit | Jeda antar violation |
+
+### Audio Detection Settings
+| Setting | Value | Keterangan |
+|---------|-------|------------|
+| Monitoring | Realtime | Level audio selalu dipantau |
+| Violation cooldown | 30 detik | Jeda antar trigger violation |
+
+### Screenshot Quality
+| Setting | Value |
+|---------|-------|
+| Resolution | 1280 x 720 (HD) |
+| Quality | 85% JPEG |
+| File size | ~80-150 KB |
+
 ### Threshold dan Tindakan
-1. **Warning Threshold** (default: 3 pelanggaran)
+1. **Warning Threshold** (default: 2 pelanggaran)
    - Menampilkan peringatan keras kepada siswa
    - Grade ditandai sebagai "flagged" untuk ditinjau
 
-2. **Max Violations** (default: 10 pelanggaran)
-   - Peringatan final kepada siswa
-   - Jika `auto_submit_on_max_violations` aktif, ujian otomatis diakhiri
+2. **Max Violations** (default: 3 pelanggaran)
+   - Ujian otomatis diakhiri (auto-submit)
    - Grade ditandai dengan alasan pelanggaran
+   - Notifikasi dikirim ke admin via Telegram
 
 ### Data yang Dicatat
 Setiap pelanggaran mencatat:
