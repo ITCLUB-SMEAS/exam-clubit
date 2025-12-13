@@ -14,11 +14,6 @@ use Illuminate\Support\Facades\Cache;
 
 class ReportController extends Controller
 {    
-    /**
-     * index
-     *
-     * @return void
-     */
     public function index()
     {
         $exams = Cache::remember('report_exams_list', 300, fn() => 
@@ -28,21 +23,15 @@ class ReportController extends Controller
         );
 
         return inertia('Admin/Reports/Index', [
-            'exams'         => $exams,
-            'grades'        => []
+            'exams'  => $exams,
+            'grades' => []
         ]);
     }
     
-    /**
-     * filter
-     *
-     * @param  mixed $request
-     * @return void
-     */
     public function filter(Request $request)
     {
         $request->validate([
-            'exam_id'       => 'required',
+            'exam_id' => 'required',
         ]);
 
         $exams = Cache::remember('report_exams_list', 300, fn() => 
@@ -51,63 +40,47 @@ class ReportController extends Controller
                 ->get()
         );
 
-        $exam = Exam::with('lesson:id,title', 'classroom:id,title')
-                ->select('id', 'title', 'lesson_id', 'classroom_id')
-                ->find($request->exam_id);
-
-        $grades = [];
-        if($exam) {
-            $exam_session = ExamSession::where('exam_id', $exam->id)
-                ->select('id', 'exam_id')
-                ->first();
-
-            if ($exam_session) {
-                $grades = Grade::with([
-                        'student:id,name,nisn,classroom_id',
-                        'student.classroom:id,title',
-                        'exam:id,title,passing_grade',
-                        'exam_session:id,title'
-                    ])
-                    ->where('exam_id', $exam->id)
-                    ->where('exam_session_id', $exam_session->id)
-                    ->select('id', 'student_id', 'exam_id', 'exam_session_id', 'grade', 'status', 'start_time', 'end_time')
-                    ->get();
-            }
-        }        
+        $grades = Grade::with([
+                'student:id,name,nisn,classroom_id',
+                'student.classroom:id,title',
+                'exam:id,title,passing_grade,lesson_id',
+                'exam.lesson:id,title',
+                'exam_session:id,title'
+            ])
+            ->where('exam_id', $request->exam_id)
+            ->select('id', 'student_id', 'exam_id', 'exam_session_id', 'grade', 'status', 'start_time', 'end_time')
+            ->get();
         
         return inertia('Admin/Reports/Index', [
-            'exams'         => $exams,
-            'grades'        => $grades,
+            'exams'  => $exams,
+            'grades' => $grades,
         ]);
     }
 
-    /**
-     * export
-     *
-     * @param  mixed $request
-     * @return void
-     */
     public function export(Request $request)
     {
-        $exam = Exam::with('lesson:id,title', 'classroom:id,title')
-                ->find($request->exam_id);
+        $exam = Exam::with('lesson:id,title')->find($request->exam_id);
 
         if (!$exam) {
             return back()->with('error', 'Ujian tidak ditemukan');
         }
 
-        $exam_session = ExamSession::where('exam_id', $exam->id)->first();
-
         $grades = Grade::with([
                 'student:id,name,nisn,classroom_id',
                 'student.classroom:id,title',
-                'exam:id,title',
+                'exam:id,title,lesson_id',
+                'exam.lesson:id,title',
                 'exam_session:id,title'
             ])
             ->where('exam_id', $exam->id)
-            ->where('exam_session_id', $exam_session->id)
             ->get();
 
-        return Excel::download(new GradesExport($grades), 'grade : '.$exam->title.' — '.$exam->lesson->title.' — '.Carbon::now().'.xlsx');
+        if ($grades->isEmpty()) {
+            return back()->with('error', 'Tidak ada data nilai untuk diexport');
+        }
+
+        $filename = "Nilai_{$exam->title}_{$exam->lesson->title}_" . Carbon::now()->format('Y-m-d') . ".xlsx";
+        
+        return Excel::download(new GradesExport($grades), $filename);
     }
 }
