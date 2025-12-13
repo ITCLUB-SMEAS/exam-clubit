@@ -142,18 +142,26 @@ class EssayGradingController extends Controller
             $qPoints = $ans->question->points ?? 1;
             $totalPoints += $qPoints;
 
+            // Check if manually graded (points_awarded is not null)
             if ($ans->points_awarded !== null) {
                 $earnedPoints += $ans->points_awarded;
                 if ($ans->is_correct === 'Y') $correctCount++;
             } elseif ($ans->is_correct === 'Y') {
+                // Auto-graded correct answer
                 $earnedPoints += $qPoints;
                 $correctCount++;
             }
+            // If points_awarded is null AND is_correct is 'N', add 0 points (implicit)
         }
 
         $gradeValue = $totalPoints > 0 ? round(($earnedPoints / $totalPoints) * 100, 2) : 0;
         $exam = $grade->exam;
-        $status = ($exam->passing_grade ?? 0) > 0 && $gradeValue >= $exam->passing_grade ? 'passed' : 'failed';
+        $passingGrade = $exam->passing_grade ?? 0;
+        
+        // Consistent status logic: 'pending' if no passing grade set
+        $status = $passingGrade > 0 
+            ? ($gradeValue >= $passingGrade ? 'passed' : 'failed')
+            : 'pending';
 
         $grade->update([
             'total_correct' => $correctCount,

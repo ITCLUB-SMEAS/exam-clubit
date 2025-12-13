@@ -60,10 +60,8 @@ class SanitizeInput
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Skip sanitization for question-related routes (preserve code content)
-        if ($request->is('admin/exams/*/questions*') || 
-            $request->is('admin/question-bank*') ||
-            $request->is('admin/ai/*')) {
+        // Skip sanitization for routes that need raw HTML content
+        if ($this->shouldSkipSanitization($request)) {
             return $next($request);
         }
 
@@ -75,6 +73,28 @@ class SanitizeInput
         }
 
         return $next($request);
+    }
+
+    /**
+     * Check if sanitization should be skipped for this request.
+     */
+    protected function shouldSkipSanitization(Request $request): bool
+    {
+        $skipPatterns = [
+            'admin/exams/*/questions*',  // Question CRUD
+            'admin/question-bank*',       // Question bank
+            'admin/ai/*',                 // AI generation
+            'student/exam-answer',        // Student answers
+            'admin/essay-grading*',       // Essay grading
+        ];
+
+        foreach ($skipPatterns as $pattern) {
+            if ($request->is($pattern)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

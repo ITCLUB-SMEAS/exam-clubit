@@ -18,8 +18,8 @@ class QuestionBankController extends Controller
 {
     protected function getCategories()
     {
-        return Cache::remember('question_categories', 300, fn() => 
-            QuestionCategory::select('id', 'name')->get()
+        return Cache::remember('question_categories_with_count', 300, fn() => 
+            QuestionCategory::withCount('questions')->get()
         );
     }
 

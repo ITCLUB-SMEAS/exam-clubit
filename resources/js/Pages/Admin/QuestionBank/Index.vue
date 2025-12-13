@@ -3,32 +3,48 @@
         <title>Bank Soal - Aplikasi Ujian Online</title>
     </Head>
     <div class="container-fluid mb-5 mt-5">
-        <!-- Action Buttons -->
-        <div class="row mb-3">
-            <div class="col-md-2">
-                <Link href="/admin/question-bank/create" class="btn btn-primary w-100">
-                    <i class="fas fa-plus-circle"></i> Tambah Soal
-                </Link>
-            </div>
-            <div class="col-md-2">
-                <button @click="showImportFromExamModal = true" class="btn btn-success w-100">
-                    <i class="fas fa-file-import"></i> Import dari Ujian
-                </button>
-            </div>
-            <div class="col-md-2" v-if="selectedIds.length > 0">
-                <div class="dropdown">
-                    <button class="btn btn-secondary w-100 dropdown-toggle" data-bs-toggle="dropdown">
-                        <i class="fas fa-check-square"></i> {{ selectedIds.length }} dipilih
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item">
+                <a class="nav-link" :class="{ active: activeTab === 'questions' }" href="#" @click.prevent="activeTab = 'questions'">
+                    <i class="fas fa-list-alt me-1"></i> Daftar Soal
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" :class="{ active: activeTab === 'categories' }" href="#" @click.prevent="activeTab = 'categories'">
+                    <i class="fas fa-folder me-1"></i> Kategori
+                </a>
+            </li>
+        </ul>
+
+        <!-- Questions Tab -->
+        <div v-show="activeTab === 'questions'">
+            <!-- Action Buttons -->
+            <div class="row mb-3">
+                <div class="col-md-2">
+                    <Link href="/admin/question-bank/create" class="btn btn-primary w-100">
+                        <i class="fas fa-plus-circle"></i> Tambah Soal
+                    </Link>
+                </div>
+                <div class="col-md-2">
+                    <button @click="showImportFromExamModal = true" class="btn btn-success w-100">
+                        <i class="fas fa-file-import"></i> Import dari Ujian
                     </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" @click.prevent="showBulkTagsModal = true"><i class="fas fa-tags me-2"></i>Update Tags</a></li>
-                        <li><a class="dropdown-item text-danger" href="#" @click.prevent="bulkDelete"><i class="fas fa-trash me-2"></i>Hapus</a></li>
-                    </ul>
+                </div>
+                <div class="col-md-2" v-if="selectedIds.length > 0">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary w-100 dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-check-square"></i> {{ selectedIds.length }} dipilih
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" @click.prevent="showBulkTagsModal = true"><i class="fas fa-tags me-2"></i>Update Tags</a></li>
+                            <li><a class="dropdown-item text-danger" href="#" @click.prevent="bulkDelete"><i class="fas fa-trash me-2"></i>Hapus</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Filters -->
+            <!-- Filters -->
         <div class="row mb-3">
             <div class="col-md-3">
                 <select class="form-select" v-model="filters.category_id" @change="applyFilter">
@@ -122,7 +138,84 @@
                 </div>
             </div>
         </div>
+        </div>
+
+        <!-- Categories Tab -->
+        <div v-show="activeTab === 'categories'">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <button @click="showCategoryModal = true; categoryForm = { id: null, name: '', description: '' }" class="btn btn-primary">
+                        <i class="fas fa-plus-circle me-1"></i> Tambah Kategori
+                    </button>
+                </div>
+            </div>
+            <div class="card border-0 shadow">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th style="width:5%">No.</th>
+                                    <th>Nama Kategori</th>
+                                    <th>Deskripsi</th>
+                                    <th style="width:10%">Jumlah Soal</th>
+                                    <th style="width:15%">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(cat, index) in categories" :key="cat.id">
+                                    <td class="text-center">{{ index + 1 }}</td>
+                                    <td>{{ cat.name }}</td>
+                                    <td>{{ cat.description || '-' }}</td>
+                                    <td class="text-center">{{ cat.questions_count || 0 }}</td>
+                                    <td class="text-center">
+                                        <button @click="editCategory(cat)" class="btn btn-sm btn-info me-1">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </button>
+                                        <button @click="deleteCategory(cat.id)" class="btn btn-sm btn-danger" :disabled="cat.questions_count > 0">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr v-if="categories.length === 0">
+                                    <td colspan="5" class="text-center text-muted">Belum ada kategori</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Category Modal -->
+    <div class="modal fade" :class="{ show: showCategoryModal }" :style="{ display: showCategoryModal ? 'block' : 'none' }" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ categoryForm.id ? 'Edit' : 'Tambah' }} Kategori</h5>
+                    <button type="button" class="btn-close" @click="showCategoryModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nama Kategori <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" v-model="categoryForm.name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Deskripsi</label>
+                        <textarea class="form-control" v-model="categoryForm.description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="showCategoryModal = false">Batal</button>
+                    <button class="btn btn-primary" @click="saveCategory" :disabled="!categoryForm.name">
+                        <i class="fas fa-save me-1"></i> Simpan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show" v-if="showCategoryModal" @click="showCategoryModal = false"></div>
 
     <!-- Preview Modal -->
     <div class="modal fade" :class="{ show: showPreviewModal }" :style="{ display: showPreviewModal ? 'block' : 'none' }" tabindex="-1">
@@ -384,13 +477,43 @@ export default {
 
         onMounted(loadExams);
 
+        // Category management
+        const activeTab = ref('questions');
+        const showCategoryModal = ref(false);
+        const categoryForm = ref({ id: null, name: '', description: '' });
+
+        const editCategory = (cat) => {
+            categoryForm.value = { id: cat.id, name: cat.name, description: cat.description || '' };
+            showCategoryModal.value = true;
+        };
+
+        const saveCategory = () => {
+            const url = categoryForm.value.id 
+                ? `/admin/question-categories/${categoryForm.value.id}` 
+                : '/admin/question-categories';
+            const method = categoryForm.value.id ? 'put' : 'post';
+            
+            router[method](url, categoryForm.value, {
+                onSuccess: () => {
+                    showCategoryModal.value = false;
+                    Swal.fire({ icon: 'success', title: 'Berhasil!', timer: 1500, showConfirmButton: false });
+                }
+            });
+        };
+
+        const deleteCategory = (id) => {
+            Swal.fire({ title: 'Hapus kategori?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, hapus!' })
+                .then((r) => { if (r.isConfirmed) router.delete(`/admin/question-categories/${id}`); });
+        };
+
         return {
             filters, applyFilter, typeLabel, difficultyLabel, difficultyBadge, truncate, destroy,
             selectedIds, isAllSelected, toggleSelectAll,
             showPreviewModal, previewQuestion, showPreview,
             showStatsModal, statsData, showStats,
             showImportFromExamModal, exams, examQuestions, importForm, loadExamQuestions, importFromExam,
-            showBulkTagsModal, bulkTagsInput, bulkTagsMode, bulkDelete, bulkUpdateTags
+            showBulkTagsModal, bulkTagsInput, bulkTagsMode, bulkDelete, bulkUpdateTags,
+            activeTab, showCategoryModal, categoryForm, editCategory, saveCategory, deleteCategory
         };
     }
 }

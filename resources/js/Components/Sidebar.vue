@@ -171,20 +171,6 @@
                     </Link>
                 </li>
 
-                <li class="nav-item" :class="{ 'active': $page.url.startsWith('/admin/question-categories') }">
-                    <Link href="/admin/question-categories" class="nav-link d-flex justify-content-between">
-                    <span>
-                        <span class="sidebar-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                class="bi bi-folder icon icon-xs me-2" viewBox="0 0 16 16">
-                                <path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3H14a2 2 0 0 1 2 2v3H0V3.87ZM0 8v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8H0Z"/>
-                            </svg>
-                        </span>
-                        <span class="sidebar-text">{{ __("Question Categories") }}</span>
-                    </span>
-                    </Link>
-                </li>
-
                 <li class="nav-item" :class="{ 'active': $page.url.startsWith('/admin/exam_sessions') }">
                     <Link href="/admin/exam_sessions" class="nav-link d-flex justify-content-between">
                     <span>
@@ -307,47 +293,48 @@
 
                 <li role="separator" class="dropdown-divider mt-2 mb-2 border-gray-700"></li>
 
-                <!-- Backup (Admin Only) -->
-                <li v-if="$page.props.auth?.user?.role === 'admin'" class="nav-item" :class="{ 'active': $page.url.startsWith('/admin/backup') }">
-                    <Link href="/admin/backup" class="nav-link d-flex justify-content-between">
-                    <span>
-                        <span class="sidebar-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-database-down icon icon-xs me-2" viewBox="0 0 16 16">
-                                <path d="M12.5 9a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Zm.354 5.854 1.5-1.5a.5.5 0 0 0-.708-.708l-.646.647V10.5a.5.5 0 0 0-1 0v2.793l-.646-.647a.5.5 0 0 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0Z"/>
-                                <path d="M12.096 6.223A4.92 4.92 0 0 0 13 5.698V7c0 .289-.213.654-.753 1.007a4.493 4.493 0 0 1 1.753.25V4c0-1.007-.875-1.755-1.904-2.223C11.022 1.289 9.573 1 8 1s-3.022.289-4.096.777C2.875 2.245 2 2.993 2 4v9c0 1.007.875 1.755 1.904 2.223C4.978 15.71 6.427 16 8 16c.536 0 1.058-.034 1.555-.097a4.525 4.525 0 0 1-.813-.927C8.5 14.992 8.252 15 8 15c-1.464 0-2.766-.27-3.682-.687C3.356 13.875 3 13.373 3 13v-1.302c.271.202.58.378.904.525C4.978 12.71 6.427 13 8 13h.027a4.552 4.552 0 0 1 0-1H8c-1.464 0-2.766-.27-3.682-.687C3.356 10.875 3 10.373 3 10V8.698c.271.202.58.378.904.525C4.978 9.71 6.427 10 8 10c.262 0 .52-.008.774-.024a4.525 4.525 0 0 1 1.102-1.132C9.298 8.944 8.666 9 8 9c-1.464 0-2.766-.27-3.682-.687C3.356 7.875 3 7.373 3 7V5.698c.271.202.58.378.904.525C4.978 6.711 6.427 7 8 7s3.022-.289 4.096-.777ZM3 4c0-.374.356-.875 1.318-1.313C5.234 2.271 6.536 2 8 2s2.766.27 3.682.687C12.644 3.125 13 3.627 13 4c0 .374-.356.875-1.318 1.313C10.766 5.729 9.464 6 8 6s-2.766-.27-3.682-.687C3.356 4.875 3 4.373 3 4Z"/>
+                <!-- Systems (Admin Only) -->
+                <li v-if="$page.props.auth?.user?.role === 'admin'" class="nav-item">
+                    <span class="nav-link d-flex justify-content-between align-items-center collapsed" 
+                          data-bs-toggle="collapse" data-bs-target="#submenu-systems"
+                          :class="{ 'active': $page.url.startsWith('/admin/backup') || $page.url.startsWith('/admin/maintenance') || $page.url.startsWith('/admin/cleanup') }">
+                        <span>
+                            <span class="sidebar-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-gear icon icon-xs me-2" viewBox="0 0 16 16">
+                                    <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
+                                    <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
+                                </svg>
+                            </span>
+                            <span class="sidebar-text">{{ __("Systems") }}</span>
+                        </span>
+                        <span class="link-arrow">
+                            <svg class="icon icon-sm" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
                             </svg>
                         </span>
-                        <span class="sidebar-text">{{ __("Database Backup") }}</span>
                     </span>
-                    </Link>
-                </li>
-
-                <!-- Maintenance Mode (Admin Only) -->
-                <li v-if="$page.props.auth?.user?.role === 'admin'" class="nav-item" :class="{ 'active': $page.url.startsWith('/admin/maintenance') }">
-                    <Link href="/admin/maintenance" class="nav-link d-flex justify-content-between">
-                    <span>
-                        <span class="sidebar-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-tools icon icon-xs me-2" viewBox="0 0 16 16">
-                                <path d="M1 0 0 1l2.2 3.081a1 1 0 0 0 .815.419h.07a1 1 0 0 1 .708.293l2.675 2.675-2.617 2.654A3.003 3.003 0 0 0 0 13a3 3 0 1 0 5.878-.851l2.654-2.617.968.968-.305.914a1 1 0 0 0 .242 1.023l3.27 3.27a.997.997 0 0 0 1.414 0l1.586-1.586a.997.997 0 0 0 0-1.414l-3.27-3.27a1 1 0 0 0-1.023-.242l-.914.305-.968-.968 2.617-2.654A3.003 3.003 0 0 0 13 0a3 3 0 1 0-.851 5.878L9.495 8.53l-2.675-2.675a1 1 0 0 1-.293-.708v-.07a1 1 0 0 0-.419-.815L3.081 2.2 1 0z"/>
-                            </svg>
-                        </span>
-                        <span class="sidebar-text">{{ __("Maintenance") }}</span>
-                    </span>
-                    </Link>
-                </li>
-
-                <!-- Cleanup (Admin Only) -->
-                <li v-if="$page.props.auth?.user?.role === 'admin'" class="nav-item" :class="{ 'active': $page.url.startsWith('/admin/cleanup') }">
-                    <Link href="/admin/cleanup" class="nav-link d-flex justify-content-between">
-                    <span>
-                        <span class="sidebar-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-trash3 icon icon-xs me-2" viewBox="0 0 16 16">
-                                <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z"/>
-                            </svg>
-                        </span>
-                        <span class="sidebar-text">{{ __("Data Cleanup") }}</span>
-                    </span>
-                    </Link>
+                    <div class="multi-level collapse" :class="{ 'show': $page.url.startsWith('/admin/backup') || $page.url.startsWith('/admin/maintenance') || $page.url.startsWith('/admin/cleanup') }" id="submenu-systems">
+                        <ul class="flex-column nav">
+                            <li class="nav-item" :class="{ 'active': $page.url.startsWith('/admin/backup') }">
+                                <Link href="/admin/backup" class="nav-link">
+                                    <span class="sidebar-text-contracted">BK</span>
+                                    <span class="sidebar-text">Backup Database</span>
+                                </Link>
+                            </li>
+                            <li class="nav-item" :class="{ 'active': $page.url.startsWith('/admin/maintenance') }">
+                                <Link href="/admin/maintenance" class="nav-link">
+                                    <span class="sidebar-text-contracted">MT</span>
+                                    <span class="sidebar-text">Maintenance Mode</span>
+                                </Link>
+                            </li>
+                            <li class="nav-item" :class="{ 'active': $page.url.startsWith('/admin/cleanup') }">
+                                <Link href="/admin/cleanup" class="nav-link">
+                                    <span class="sidebar-text-contracted">CL</span>
+                                    <span class="sidebar-text">Data Cleanup</span>
+                                </Link>
+                            </li>
+                        </ul>
+                    </div>
                 </li>
 
             </ul>

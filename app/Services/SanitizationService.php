@@ -6,31 +6,78 @@ class SanitizationService
 {
     /**
      * Allowed HTML tags for rich text content (questions, options).
-     * These tags are safe and commonly needed for exam questions.
+     * Includes HTML5 tags for multimedia and math content.
      */
     protected static array $allowedTags = [
+        // Basic formatting
         'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike',
         'ul', 'ol', 'li',
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
         'blockquote', 'pre', 'code',
-        'table', 'thead', 'tbody', 'tr', 'th', 'td',
-        'img', 'a',
         'sub', 'sup',
         'hr', 'span', 'div',
+        // Tables
+        'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption', 'colgroup', 'col',
+        // Media & Links
+        'img', 'a', 'figure', 'figcaption',
+        // HTML5 Media
+        'audio', 'video', 'source', 'track',
+        // HTML5 Canvas (for diagrams)
+        'canvas',
+        // Math (MathML & KaTeX)
+        'math', 'mi', 'mn', 'mo', 'ms', 'mtext', 'mspace', 'mglyph',
+        'mrow', 'mfrac', 'msqrt', 'mroot', 'mstyle', 'merror', 'mpadded', 'mphantom',
+        'msub', 'msup', 'msubsup', 'munder', 'mover', 'munderover', 'mmultiscripts',
+        'mtable', 'mtr', 'mtd', 'maligngroup', 'malignmark',
+        'maction', 'menclose', 'semantics', 'annotation', 'annotation-xml',
+        // KaTeX specific
+        'katex', 'katex-mathml', 'katex-html',
+        // SVG (for diagrams - basic safe elements)
+        'svg', 'g', 'path', 'circle', 'rect', 'line', 'polyline', 'polygon',
+        'text', 'tspan', 'defs', 'use', 'symbol', 'marker', 'clipPath',
+        'linearGradient', 'radialGradient', 'stop', 'pattern',
+        // Details/Summary
+        'details', 'summary',
+        // Ruby (for annotations)
+        'ruby', 'rt', 'rp',
+        // Other semantic
+        'abbr', 'cite', 'dfn', 'kbd', 'mark', 'q', 'samp', 'var', 'wbr', 'time',
     ];
 
     /**
      * Allowed attributes for specific tags.
      */
     protected static array $allowedAttributes = [
-        'a' => ['href', 'title', 'target'],
-        'img' => ['src', 'alt', 'title', 'width', 'height'],
-        'table' => ['border', 'cellpadding', 'cellspacing'],
-        'td' => ['colspan', 'rowspan'],
-        'th' => ['colspan', 'rowspan'],
-        'span' => ['style'],
-        'div' => ['style'],
-        'p' => ['style'],
+        'a' => ['href', 'title', 'target', 'rel'],
+        'img' => ['src', 'alt', 'title', 'width', 'height', 'loading', 'class'],
+        'table' => ['border', 'cellpadding', 'cellspacing', 'class', 'style'],
+        'td' => ['colspan', 'rowspan', 'class', 'style'],
+        'th' => ['colspan', 'rowspan', 'class', 'style', 'scope'],
+        'tr' => ['class', 'style'],
+        'span' => ['style', 'class', 'data-*'],
+        'div' => ['style', 'class', 'data-*'],
+        'p' => ['style', 'class'],
+        'pre' => ['class', 'style'],
+        'code' => ['class', 'style'],
+        // HTML5 Media
+        'audio' => ['src', 'controls', 'autoplay', 'loop', 'muted', 'preload', 'class'],
+        'video' => ['src', 'controls', 'autoplay', 'loop', 'muted', 'preload', 'width', 'height', 'poster', 'class'],
+        'source' => ['src', 'type'],
+        'track' => ['src', 'kind', 'srclang', 'label', 'default'],
+        'canvas' => ['width', 'height', 'class', 'id'],
+        // SVG
+        'svg' => ['width', 'height', 'viewBox', 'xmlns', 'class', 'style', 'fill', 'stroke'],
+        'path' => ['d', 'fill', 'stroke', 'stroke-width', 'class', 'style', 'transform'],
+        'circle' => ['cx', 'cy', 'r', 'fill', 'stroke', 'stroke-width', 'class'],
+        'rect' => ['x', 'y', 'width', 'height', 'rx', 'ry', 'fill', 'stroke', 'class'],
+        'line' => ['x1', 'y1', 'x2', 'y2', 'stroke', 'stroke-width', 'class'],
+        'text' => ['x', 'y', 'fill', 'font-size', 'text-anchor', 'class'],
+        'g' => ['transform', 'class', 'style', 'fill', 'stroke'],
+        // Math
+        'math' => ['xmlns', 'display', 'class'],
+        // Figure
+        'figure' => ['class', 'style'],
+        'figcaption' => ['class', 'style'],
     ];
 
     /**
@@ -41,8 +88,8 @@ class SanitizationService
         '/\bon\w+\s*=/i',
         // JavaScript protocol
         '/javascript\s*:/i',
-        // Data protocol (can contain scripts)
-        '/data\s*:[^,]*base64/i',
+        // Data protocol with base64 (can contain scripts)
+        '/data\s*:[^,]*base64[^"\'>\s]*/i',
         // VBScript
         '/vbscript\s*:/i',
         // Expression (IE)
@@ -50,15 +97,14 @@ class SanitizationService
         // Script tags
         '/<script[^>]*>.*?<\/script>/is',
         // Style tags with expressions
-        '/<style[^>]*>.*?<\/style>/is',
-        // iframe, object, embed, applet (with closing tags)
-        '/<(iframe|object|applet)[^>]*>.*?<\/\1>/is',
-        // Self-closing dangerous tags
+        '/<style[^>]*>.*?expression.*?<\/style>/is',
+        // iframe, object, embed, applet
+        '/<(iframe|object|embed|applet)[^>]*>.*?<\/\1>/is',
         '/<(iframe|object|embed|applet)[^>]*\/?>/i',
         // Meta refresh
         '/<meta[^>]*http-equiv[^>]*refresh/i',
-        // SVG with scripts
-        '/<svg[^>]*>.*?<\/svg>/is',
+        // SVG with script inside (but allow SVG itself)
+        '/<svg[^>]*>.*?<script.*?<\/svg>/is',
     ];
 
     /**

@@ -17,4 +17,10 @@ class QuestionCategory extends Model
     {
         return $this->hasMany(QuestionBank::class, 'category_id');
     }
+
+    // Alias for withCount
+    public function questions()
+    {
+        return $this->hasMany(QuestionBank::class, 'category_id');
+    }
 }

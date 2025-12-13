@@ -2,13 +2,12 @@ import { ref, onUnmounted } from 'vue';
 
 /**
  * Audio Detection Composable
- * Detects suspicious audio (talking, whispering) during exams
- * Focuses on human voice frequencies (85Hz - 3000Hz)
+ * Realtime detection, cooldown only for violation trigger
  */
 export function useAudioDetection(options = {}) {
     const config = {
-        threshold: options.threshold ?? 40,              // Audio level threshold (0-100)
-        sustainedDuration: options.sustainedDuration ?? 2000, // ms of sustained audio to trigger
+        threshold: options.threshold ?? 45,
+        sustainedDuration: options.sustainedDuration ?? 2000, // 2 detik sustained = violation
         onSuspiciousAudio: options.onSuspiciousAudio ?? null,
     };
 
@@ -21,98 +20,123 @@ export function useAudioDetection(options = {}) {
     let microphone = null;
     let stream = null;
     let animationFrame = null;
-    let lastTriggerTime = 0;
+    let lastViolationTime = 0;
     let sustainedStartTime = null;
-    const TRIGGER_COOLDOWN = 15000; // 15 seconds between triggers
+    let isRunning = false;
+    
+    // Cooldown hanya untuk TRIGGER VIOLATION, bukan deteksi
+    const VIOLATION_COOLDOWN = 30000; // 30 detik antar violation
 
     const initialize = async () => {
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            if (!navigator.mediaDevices?.getUserMedia) {
+                console.warn('Audio detection not supported');
+                return false;
+            }
+
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }
+            });
+            
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             analyser = audioContext.createAnalyser();
             microphone = audioContext.createMediaStreamSource(stream);
             
-            analyser.fftSize = 512; // More frequency resolution
+            analyser.fftSize = 512;
             analyser.smoothingTimeConstant = 0.8;
             microphone.connect(analyser);
             
             isActive.value = true;
             return true;
         } catch (e) {
-            console.warn('Audio detection not available:', e.message);
+            console.warn('Audio detection init failed:', e.message);
+            isActive.value = false;
             return false;
         }
     };
 
     const start = () => {
-        if (!analyser || !isActive.value) return;
+        if (!analyser || !isActive.value || isRunning) return;
+        isRunning = true;
         
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        const sampleRate = audioContext.sampleRate;
+        const sampleRate = audioContext?.sampleRate || 44100;
         const nyquist = sampleRate / 2;
         const binSize = nyquist / analyser.frequencyBinCount;
         
-        // Calculate bin indices for human voice range (85Hz - 3000Hz)
-        // Ensure we don't go out of bounds
-        const minBin = Math.max(0, Math.floor(85 / binSize));
-        const maxBin = Math.min(
-            Math.ceil(3000 / binSize), 
-            analyser.frequencyBinCount - 1
-        );
+        const minBin = Math.max(0, Math.floor(100 / binSize));
+        const maxBin = Math.min(Math.ceil(3000 / binSize), analyser.frequencyBinCount - 1);
         
-        // Validate range
         if (minBin >= maxBin) {
-            console.warn('Invalid frequency range for voice detection');
+            console.warn('Invalid frequency range');
+            isRunning = false;
             return;
         }
         
         const checkAudio = () => {
-            if (!analyser || !isActive.value) return; // Safety check
+            if (!isRunning || !analyser) return;
             
-            analyser.getByteFrequencyData(dataArray);
-            
-            // Calculate average only for voice frequency range
-            let sum = 0;
-            let count = 0;
-            for (let i = minBin; i <= maxBin; i++) {
-                sum += dataArray[i];
-                count++;
-            }
-            const average = count > 0 ? sum / count : 0;
-            const level = Math.min(100, Math.round((average / 128) * 100));
-            audioLevel.value = level;
-            
-            const now = Date.now();
-            
-            // Check for sustained audio above threshold
-            if (level > config.threshold) {
-                if (!sustainedStartTime) {
-                    sustainedStartTime = now;
-                } else if ((now - sustainedStartTime) >= config.sustainedDuration) {
-                    // Sustained audio detected
-                    if ((now - lastTriggerTime) > TRIGGER_COOLDOWN) {
-                        isSuspicious.value = true;
-                        lastTriggerTime = now;
-                        
-                        if (config.onSuspiciousAudio) {
-                            config.onSuspiciousAudio(level);
-                        }
-                    }
-                    sustainedStartTime = null; // Reset for next detection
+            try {
+                analyser.getByteFrequencyData(dataArray);
+                
+                let sum = 0;
+                let count = 0;
+                for (let i = minBin; i <= maxBin; i++) {
+                    sum += dataArray[i];
+                    count++;
                 }
-            } else {
-                // Audio dropped below threshold, reset sustained timer
-                sustainedStartTime = null;
-                isSuspicious.value = false;
+                
+                const average = count > 0 ? sum / count : 0;
+                const level = Math.min(100, Math.round((average / 128) * 100));
+                audioLevel.value = level; // Realtime update
+                
+                const now = Date.now();
+                
+                if (level > config.threshold) {
+                    // Audio above threshold - start/continue counting
+                    if (!sustainedStartTime) {
+                        sustainedStartTime = now;
+                    }
+                    
+                    // Check if sustained long enough
+                    if ((now - sustainedStartTime) >= config.sustainedDuration) {
+                        isSuspicious.value = true;
+                        
+                        // Trigger violation (with cooldown to prevent spam)
+                        if ((now - lastViolationTime) > VIOLATION_COOLDOWN && config.onSuspiciousAudio) {
+                            config.onSuspiciousAudio(level);
+                            lastViolationTime = now;
+                        }
+                        
+                        // Reset sustained timer for next detection
+                        sustainedStartTime = now;
+                    }
+                } else {
+                    // Audio dropped - reset
+                    sustainedStartTime = null;
+                    isSuspicious.value = false;
+                }
+                
+                if (isRunning) {
+                    animationFrame = requestAnimationFrame(checkAudio);
+                }
+            } catch (e) {
+                console.warn('Audio check error:', e);
+                if (isRunning) {
+                    animationFrame = requestAnimationFrame(checkAudio);
+                }
             }
-            
-            animationFrame = requestAnimationFrame(checkAudio);
         };
         
         checkAudio();
     };
 
     const stop = () => {
+        isRunning = false;
         if (animationFrame) {
             cancelAnimationFrame(animationFrame);
             animationFrame = null;
@@ -123,21 +147,26 @@ export function useAudioDetection(options = {}) {
     const cleanup = () => {
         stop();
         
-        if (microphone) {
-            microphone.disconnect();
-            microphone = null;
-        }
-        
-        if (audioContext) {
-            audioContext.close();
+        try {
+            if (microphone) {
+                microphone.disconnect();
+                microphone = null;
+            }
+            
+            if (audioContext && audioContext.state !== 'closed') {
+                audioContext.close();
+            }
             audioContext = null;
+            
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        } catch (e) {
+            console.warn('Audio cleanup error:', e);
         }
         
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            stream = null;
-        }
-        
+        analyser = null;
         isActive.value = false;
     };
 
@@ -149,7 +178,7 @@ export function useAudioDetection(options = {}) {
         stop,
         cleanup,
         isActive,
-        audioLevel,
-        isSuspicious,
+        audioLevel,      // Realtime level (0-100)
+        isSuspicious,    // true jika sedang ada suara mencurigakan
     };
 }

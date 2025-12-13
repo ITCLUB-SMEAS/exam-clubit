@@ -39,6 +39,7 @@ class Grade extends Model
         "is_paused",
         "paused_at",
         "pause_reason",
+        "total_paused_ms",
         // Anti-cheat fields
         "violation_count",
         "tab_switch_count",
@@ -122,6 +123,10 @@ class Grade extends Model
             "copy_paste" => "copy_paste_count",
             "right_click" => "right_click_count",
             "blur" => "blur_count",
+            // Extended blur types map to blur_count
+            "extended_blur" => "blur_count",
+            "prolonged_blur" => "blur_count",
+            "excessive_blur" => "blur_count",
         ];
 
         if (isset($columnMap[$type])) {

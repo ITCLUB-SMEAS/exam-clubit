@@ -215,7 +215,7 @@ const pauseAll = () => {
         cancelButtonText: 'Batal'
     }).then((result) => {
         if (result.isConfirmed) {
-            pauseForm.post(`/admin/exam-pause/session/${props.exam_session.id}/pause-all`, {
+            pauseForm.post(`/admin/exam-pause-all/${props.exam_session.id}`, {
                 onSuccess: () => {
                     Swal.fire({
                         icon: 'success',
@@ -242,7 +242,7 @@ const resumeAll = () => {
         cancelButtonText: 'Batal'
     }).then((result) => {
         if (result.isConfirmed) {
-            pauseForm.post(`/admin/exam-pause/session/${props.exam_session.id}/resume-all`, {
+            pauseForm.post(`/admin/exam-resume-all/${props.exam_session.id}`, {
                 onSuccess: () => {
                     Swal.fire({
                         icon: 'success',

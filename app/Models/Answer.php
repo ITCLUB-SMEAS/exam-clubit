@@ -2,13 +2,12 @@
 
 namespace App\Models;
 
-use App\Models\Traits\HasEncryptedAttributes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Answer extends Model
 {
-    use HasEncryptedAttributes, SoftDeletes;
+    use SoftDeletes;
 
     /**
      * fillable
@@ -29,15 +28,6 @@ class Answer extends Model
         "matching_answers",
         "points_awarded",
         "needs_manual_review",
-    ];
-
-    /**
-     * Encrypted attributes
-     *
-     * @var array
-     */
-    protected $encrypted = [
-        "answer_text",
     ];
 
     /**

@@ -336,35 +336,32 @@ class ExamSessionController extends Controller
         }
 
         return $this->executeInTransaction(function () use ($request, $exam_session, $exam) {
-            // Get students already enrolled
-            $enrolledIds = ExamGroup::where('exam_id', $exam->id)
-                ->where('exam_session_id', $exam_session->id)
-                ->pluck('student_id')
-                ->toArray();
-
-            // Get students from selected class not yet enrolled
-            $students = Student::where('classroom_id', $request->classroom_id)
-                ->whereNotIn('id', $enrolledIds)
+            // Get students from selected class
+            $studentIds = Student::where('classroom_id', $request->classroom_id)
                 ->pluck('id')
                 ->toArray();
 
-            if (empty($students)) {
-                return back()->with('info', 'Semua siswa di kelas ini sudah terdaftar.');
+            if (empty($studentIds)) {
+                return back()->with('info', 'Tidak ada siswa di kelas ini.');
             }
 
-            // Batch insert
+            // Use insertOrIgnore to handle race condition - duplicates will be ignored
             $enrollments = array_map(fn($sid) => [
                 'exam_id' => $exam->id,
                 'exam_session_id' => $exam_session->id,
                 'student_id' => $sid,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ], $students);
+            ], $studentIds);
 
-            ExamGroup::insert($enrollments);
+            $inserted = ExamGroup::insertOrIgnore($enrollments);
+
+            if ($inserted === 0) {
+                return back()->with('info', 'Semua siswa di kelas ini sudah terdaftar.');
+            }
 
             return redirect()->route('admin.exam_sessions.show', $exam_session->id)
-                ->with('success', count($students) . " siswa berhasil didaftarkan.");
+                ->with('success', "{$inserted} siswa berhasil didaftarkan.");
         }, 'Gagal mendaftarkan siswa. Silakan coba lagi.');
     }
 

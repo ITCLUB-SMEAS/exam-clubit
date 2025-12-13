@@ -15,7 +15,7 @@ Route::get('/offline', fn() => Inertia::render('Offline'))->name('offline');
 //prefix "admin"
 Route::prefix("admin")->group(function () {
     //middleware "auth" with rate limiting
-    Route::group(["middleware" => ["auth", "throttle:120,1"]], function () {
+    Route::group(["middleware" => ["auth", "throttle:150,1"]], function () {
         //route dashboard
         Route::get(
             "/dashboard",
@@ -702,7 +702,7 @@ Route::prefix("student")->group(function () {
         Route::post("/session/extend", function () {
             request()->session()->regenerate();
             return response()->json(['success' => true]);
-        })->name("student.session.extend");
+        })->middleware('throttle:heartbeat')->name("student.session.extend");
 
         //route exam confirmation
         Route::get("/exam-confirmation/{id}", [
@@ -737,19 +737,19 @@ Route::prefix("student")->group(function () {
         Route::get("/exam/{id}/{page}", [
             App\Http\Controllers\Student\ExamController::class,
             "show",
-        ])->name("student.exams.show");
+        ])->middleware('throttle:exam')->name("student.exams.show");
 
         //route exam update duration
         Route::put("/exam-duration/update/{grade_id}", [
             App\Http\Controllers\Student\ExamController::class,
             "updateDuration",
-        ])->name("student.exams.update_duration");
+        ])->middleware('throttle:heartbeat')->name("student.exams.update_duration");
 
         //route answer question (with server-side anti-cheat)
         Route::post("/exam-answer", [
             App\Http\Controllers\Student\ExamController::class,
             "answerQuestion",
-        ])->middleware('anticheat.server')->name("student.exams.answerQuestion");
+        ])->middleware(['anticheat.server', 'throttle:exam'])->name("student.exams.answerQuestion");
 
         //route exam end (with server-side anti-cheat)
         Route::post("/exam-end", [
@@ -763,41 +763,41 @@ Route::prefix("student")->group(function () {
             "resultExam",
         ])->name("student.exams.resultExam");
 
-        //route anti-cheat violation (rate limited: 30 per minute)
+        //route anti-cheat violation
         Route::post("/anticheat/violation", [
             App\Http\Controllers\Student\AntiCheatController::class,
             "recordViolation",
-        ])->middleware('throttle:30,1')->name("student.anticheat.violation");
+        ])->middleware('throttle:anticheat')->name("student.anticheat.violation");
 
-        //route anti-cheat batch violations (rate limited: 10 per minute)
+        //route anti-cheat batch violations
         Route::post("/anticheat/violations", [
             App\Http\Controllers\Student\AntiCheatController::class,
             "recordBatchViolations",
-        ])->middleware('throttle:10,1')->name("student.anticheat.violations");
+        ])->middleware('throttle:anticheat')->name("student.anticheat.violations");
 
-        //route anti-cheat status (rate limited: 60 per minute)
+        //route anti-cheat status
         Route::get("/anticheat/status", [
             App\Http\Controllers\Student\AntiCheatController::class,
             "getViolationStatus",
-        ])->middleware('throttle:60,1')->name("student.anticheat.status");
+        ])->middleware('throttle:anticheat')->name("student.anticheat.status");
 
-        //route anti-cheat config (rate limited: 20 per minute)
+        //route anti-cheat config
         Route::get("/anticheat/config/{examId}", [
             App\Http\Controllers\Student\AntiCheatController::class,
             "getConfig",
-        ])->middleware('throttle:20,1')->name("student.anticheat.config");
+        ])->middleware('throttle:anticheat')->name("student.anticheat.config");
 
-        //route anti-cheat heartbeat (rate limited: 60 per minute)
+        //route anti-cheat heartbeat
         Route::post("/anticheat/heartbeat", [
             App\Http\Controllers\Student\AntiCheatController::class,
             "heartbeat",
-        ])->middleware('throttle:60,1')->name("student.anticheat.heartbeat");
+        ])->middleware('throttle:heartbeat')->name("student.anticheat.heartbeat");
 
-        //route anti-cheat server time (rate limited: 30 per minute)
+        //route anti-cheat server time
         Route::get("/anticheat/server-time", [
             App\Http\Controllers\Student\AntiCheatController::class,
             "serverTime",
-        ])->middleware('throttle:30,1')->name("student.anticheat.serverTime");
+        ])->middleware('throttle:heartbeat')->name("student.anticheat.serverTime");
     });
 });
 

@@ -246,7 +246,7 @@ class AntiCheatService
      */
     protected static function checkAndFlagIfNeeded(Grade $grade, Exam $exam): void
     {
-        $warningThreshold = $exam->warning_threshold ?? 3;
+        $warningThreshold = $exam->warning_threshold ?? 2;
         $maxViolations = $exam->max_violations ?? 3;
 
         // Flag if exceeded warning threshold but not yet flagged
@@ -263,7 +263,7 @@ class AntiCheatService
             ]);
         }
 
-        // Auto-block student after 3 violations
+        // Auto-block student at 3rd violation
         self::checkAndBlockStudent($grade);
     }
 
@@ -318,7 +318,7 @@ class AntiCheatService
     {
         return [
             'enabled' => $exam->anticheat_enabled ?? true,
-            'fullscreen_required' => $exam->fullscreen_required ?? true,
+            'fullscreen_required' => false, // Disabled - causes issues on some devices
             'block_tab_switch' => $exam->block_tab_switch ?? true,
             'block_copy_paste' => $exam->block_copy_paste ?? true,
             'block_right_click' => $exam->block_right_click ?? true,

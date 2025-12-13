@@ -104,7 +104,7 @@ export function useAntiCheat(options = {}) {
     };
 
     /**
-     * Capture snapshot from webcam
+     * Capture snapshot from webcam (HD quality)
      */
     const captureSnapshot = () => {
         // Use external video element (from face detection) if available
@@ -113,11 +113,12 @@ export function useAntiCheat(options = {}) {
         
         try {
             const canvas = document.createElement('canvas');
-            canvas.width = 320; // Small size to reduce bandwidth
-            canvas.height = 240;
+            // HD resolution (720p)
+            canvas.width = 1280;
+            canvas.height = 720;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            return canvas.toDataURL('image/jpeg', 0.5); // 50% quality
+            return canvas.toDataURL('image/jpeg', 0.85); // 85% quality for clear image
         } catch (e) {
             return null;
         }

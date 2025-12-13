@@ -870,30 +870,43 @@
                 //cek jika durasi di atas 0
                 if (duration.value > 0) {
 
-                    //sync with server every 10 seconds
+                    //sync with server every 10 seconds - SERVER TIME IS AUTHORITATIVE
                     if (counter.value % 10 == 1) {
-
-                        //update duration and sync with server time
-                        axios.put(`/student/exam-duration/update/${props.duration.id}`, {
-                            duration: duration.value
-                        }).then(response => {
-                            // Sync duration with server time
-                            if (response.data.duration !== undefined) {
-                                duration.value = response.data.duration;
-                            }
-                            // Auto end if server says ended
-                            if (response.data.ended) {
-                                showModalEndTimeExam.value = true;
-                            }
-                        }).catch(() => {
-                            // Keep local duration on error
-                        });
-
+                        syncDurationWithServer();
                     }
 
                 }
 
             });
+
+            // Sync duration with server - SERVER IS AUTHORITATIVE
+            const syncDurationWithServer = async () => {
+                try {
+                    const response = await axios.put(`/student/exam-duration/update/${props.duration.id}`, {
+                        duration: duration.value
+                    });
+                    
+                    // ALWAYS use server duration as authoritative
+                    if (response.data.duration !== undefined && response.data.duration >= 0) {
+                        duration.value = response.data.duration;
+                    }
+                    
+                    // Auto end if server says ended
+                    if (response.data.ended) {
+                        showModalEndTimeExam.value = true;
+                    }
+                } catch (error) {
+                    console.warn('Duration sync failed:', error);
+                }
+            };
+
+            // Sync on page visibility change (wake from sleep/tab switch back)
+            const handleVisibilityChange = () => {
+                if (document.visibilityState === 'visible') {
+                    // Force sync with server when page becomes visible
+                    syncDurationWithServer();
+                }
+            };
 
             // Handle question time end - auto move to next question
             const handleQuestionTimeEnd = () => {
@@ -1085,10 +1098,18 @@
                 // Cleanup new composables
                 networkMonitor.stop();
                 idleDetection.stop();
+                // Remove visibility listener
+                document.removeEventListener('visibilitychange', handleVisibilityChange);
             });
 
             // Initialize face detection after mount
             onMounted(async () => {
+                // Add visibility change listener for timer sync (wake from sleep)
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+                
+                // Initial sync with server to get accurate time
+                syncDurationWithServer();
+
                 // Initialize browser fingerprint
                 await browserFingerprint.initialize();
 

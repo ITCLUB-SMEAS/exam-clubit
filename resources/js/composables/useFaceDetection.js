@@ -2,12 +2,12 @@ import { ref, onUnmounted } from 'vue';
 
 /**
  * Face Detection Composable for Anti-Cheat using MediaPipe
- * Detects: no face, multiple faces
+ * More tolerant settings to reduce false positives
  */
 export function useFaceDetection(options = {}) {
     const config = {
-        checkInterval: options.checkInterval ?? 20000,
-        consecutiveThreshold: options.consecutiveThreshold ?? 2,
+        checkInterval: options.checkInterval ?? 30000,
+        consecutiveThreshold: options.consecutiveThreshold ?? 5,
         onNoFace: options.onNoFace ?? null,
         onMultipleFaces: options.onMultipleFaces ?? null,
         onFaceDetected: options.onFaceDetected ?? null,
@@ -27,7 +27,8 @@ export function useFaceDetection(options = {}) {
     let faceDetection = null;
     let lastNoFaceTrigger = 0;
     let lastMultipleFacesTrigger = 0;
-    const TRIGGER_COOLDOWN = 60000;
+    let isDetecting = false;
+    const TRIGGER_COOLDOWN = 120000;
 
     const loadModels = async () => {
         try {
@@ -39,22 +40,31 @@ export function useFaceDetection(options = {}) {
 
             faceDetection.setOptions({
                 model: 'short',
-                minDetectionConfidence: 0.5
+                minDetectionConfidence: 0.3
             });
 
             return true;
         } catch (error) {
-            console.error('Failed to load MediaPipe face detection:', error);
-            if (config.onError) config.onError('Failed to load face detection models');
+            console.error('Failed to load face detection:', error);
+            if (config.onError) config.onError('Failed to load face detection');
             return false;
         }
     };
 
     const startCamera = async (videoEl) => {
         try {
+            if (!navigator.mediaDevices?.getUserMedia) {
+                console.warn('Camera not supported');
+                return false;
+            }
+
             videoElement.value = videoEl;
             stream.value = await navigator.mediaDevices.getUserMedia({
-                video: { width: 320, height: 240, facingMode: 'user' }
+                video: { 
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }, 
+                    facingMode: 'user' 
+                }
             });
             videoEl.srcObject = stream.value;
             await videoEl.play();
@@ -67,25 +77,41 @@ export function useFaceDetection(options = {}) {
     };
 
     const detectFaces = async () => {
-        if (!videoElement.value || !isRunning.value || !faceDetection) return;
+        // Prevent concurrent detection
+        if (isDetecting || !videoElement.value || !isRunning.value || !faceDetection) return;
         if (videoElement.value.readyState < 2) return;
 
+        isDetecting = true;
+
         try {
-            const detections = await new Promise((resolve, reject) => {
+            const detections = await new Promise((resolve) => {
+                let resolved = false;
+                
                 const timeout = setTimeout(() => {
-                    resolve([]); // Timeout - assume no detection
+                    if (!resolved) {
+                        resolved = true;
+                        resolve([{ dummy: true }]); // Timeout - benefit of doubt
+                    }
                 }, 5000);
                 
-                faceDetection.onResults((results) => {
-                    clearTimeout(timeout);
-                    resolve(results.detections || []);
-                });
+                const handleResults = (results) => {
+                    if (!resolved) {
+                        resolved = true;
+                        clearTimeout(timeout);
+                        resolve(results.detections || []);
+                    }
+                };
+                
+                faceDetection.onResults(handleResults);
                 
                 try {
                     faceDetection.send({ image: videoElement.value });
                 } catch (e) {
-                    clearTimeout(timeout);
-                    reject(e);
+                    if (!resolved) {
+                        resolved = true;
+                        clearTimeout(timeout);
+                        resolve([{ dummy: true }]); // Error - benefit of doubt
+                    }
                 }
             });
 
@@ -101,9 +127,10 @@ export function useFaceDetection(options = {}) {
                     if ((now - lastNoFaceTrigger) > TRIGGER_COOLDOWN && config.onNoFace) {
                         config.onNoFace();
                         lastNoFaceTrigger = now;
+                        consecutiveNoFace.value = 0;
                     }
                 }
-            } else if (detections.length > 1) {
+            } else if (detections.length > 1 && !detections[0].dummy) {
                 consecutiveMultipleFaces.value++;
                 consecutiveNoFace.value = 0;
                 
@@ -111,6 +138,7 @@ export function useFaceDetection(options = {}) {
                     if ((now - lastMultipleFacesTrigger) > TRIGGER_COOLDOWN && config.onMultipleFaces) {
                         config.onMultipleFaces(detections.length);
                         lastMultipleFacesTrigger = now;
+                        consecutiveMultipleFaces.value = 0;
                     }
                 }
             } else {
@@ -120,6 +148,10 @@ export function useFaceDetection(options = {}) {
             }
         } catch (error) {
             console.error('Face detection error:', error);
+            // On error, don't penalize
+            consecutiveNoFace.value = 0;
+        } finally {
+            isDetecting = false;
         }
     };
 
@@ -137,8 +169,15 @@ export function useFaceDetection(options = {}) {
     const start = () => {
         if (!isInitialized.value) return;
         isRunning.value = true;
-        setTimeout(detectFaces, 5000);
-        checkIntervalId = setInterval(detectFaces, config.checkInterval);
+        
+        // First check after 10 seconds
+        setTimeout(() => {
+            if (isRunning.value) detectFaces();
+        }, 10000);
+        
+        checkIntervalId = setInterval(() => {
+            if (isRunning.value) detectFaces();
+        }, config.checkInterval);
     };
 
     const stop = () => {
@@ -151,22 +190,29 @@ export function useFaceDetection(options = {}) {
 
     const cleanup = () => {
         stop();
+        
         if (stream.value) {
             stream.value.getTracks().forEach(track => track.stop());
             stream.value = null;
         }
-        if (videoElement.value) videoElement.value.srcObject = null;
+        
+        if (videoElement.value) {
+            videoElement.value.srcObject = null;
+        }
+        
         if (faceDetection) {
             try {
                 if (typeof faceDetection.close === 'function') {
                     faceDetection.close();
                 }
             } catch (e) {
-                console.warn('FaceDetection cleanup error:', e);
+                // Ignore cleanup errors
             }
             faceDetection = null;
         }
+        
         isInitialized.value = false;
+        isDetecting = false;
     };
 
     onUnmounted(cleanup);

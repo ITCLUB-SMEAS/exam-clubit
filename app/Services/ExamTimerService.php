@@ -10,6 +10,7 @@ class ExamTimerService
 {
     /**
      * Calculate remaining duration in milliseconds
+     * Now accounts for paused time
      */
     public function calculateRemainingDurationMs(ExamGroup $examGroup, Grade $grade): int
     {
@@ -19,7 +20,18 @@ class ExamTimerService
 
         $startTime = $grade->start_time ?? Carbon::now();
         $elapsedMs = $startTime->diffInMilliseconds(Carbon::now());
-        $remainingByDuration = max(0, $totalDurationMs - $elapsedMs);
+        
+        // Subtract total paused time from elapsed time
+        $totalPausedMs = $grade->total_paused_ms ?? 0;
+        
+        // If currently paused, add current pause duration to total
+        if ($grade->is_paused && $grade->paused_at) {
+            $currentPauseMs = Carbon::parse($grade->paused_at)->diffInMilliseconds(Carbon::now());
+            $totalPausedMs += $currentPauseMs;
+        }
+        
+        $effectiveElapsedMs = max(0, $elapsedMs - $totalPausedMs);
+        $remainingByDuration = max(0, $totalDurationMs - $effectiveElapsedMs);
 
         $sessionEnd = $examGroup->exam_session->end_time;
         $sessionRemainingMs = Carbon::now()->lt($sessionEnd)

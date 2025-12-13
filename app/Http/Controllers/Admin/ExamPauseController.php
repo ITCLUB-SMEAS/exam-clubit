@@ -66,16 +66,23 @@ class ExamPauseController extends Controller
             return back()->with('error', 'Ujian tidak dalam status pause.');
         }
 
+        // Calculate pause duration and add to total
+        $pauseDurationMs = 0;
+        if ($grade->paused_at) {
+            $pauseDurationMs = $grade->paused_at->diffInMilliseconds(now());
+        }
+
         $grade->update([
             'is_paused' => false,
             'paused_at' => null,
             'pause_reason' => null,
+            'total_paused_ms' => ($grade->total_paused_ms ?? 0) + $pauseDurationMs,
         ]);
 
         ActivityLogService::log(
             action: 'resume_exam',
             module: 'exam',
-            description: "Ujian di-resume",
+            description: "Ujian di-resume (paused: " . round($pauseDurationMs / 1000) . "s)",
             subject: $grade,
         );
 
@@ -110,13 +117,25 @@ class ExamPauseController extends Controller
 
     public function resumeAll(ExamSession $examSession)
     {
-        $count = Grade::where('exam_session_id', $examSession->id)
+        $pausedGrades = Grade::where('exam_session_id', $examSession->id)
             ->where('is_paused', true)
-            ->update([
+            ->get();
+
+        $count = 0;
+        foreach ($pausedGrades as $grade) {
+            $pauseDurationMs = 0;
+            if ($grade->paused_at) {
+                $pauseDurationMs = $grade->paused_at->diffInMilliseconds(now());
+            }
+
+            $grade->update([
                 'is_paused' => false,
                 'paused_at' => null,
                 'pause_reason' => null,
+                'total_paused_ms' => ($grade->total_paused_ms ?? 0) + $pauseDurationMs,
             ]);
+            $count++;
+        }
 
         ActivityLogService::log(
             action: 'resume_all_exams',

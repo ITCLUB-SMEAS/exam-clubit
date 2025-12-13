@@ -183,29 +183,38 @@ class ExamController extends Controller
             );
         }
 
-        // Set start time once
+        // Use database lock to prevent race condition on concurrent requests
         $justStarted = false;
-        if ($grade->start_time === null) {
-            $grade->start_time = Carbon::now();
-            $justStarted = true;
-        }
+        DB::transaction(function () use ($grade, $exam_group, &$justStarted) {
+            // Lock the grade row for update
+            $grade = Grade::where('id', $grade->id)->lockForUpdate()->first();
+            
+            // Set start time once
+            if ($grade->start_time === null) {
+                $grade->start_time = Carbon::now();
+                $justStarted = true;
+            }
 
-        // Mark attempt in progress and increment attempt count on first start
-        if (
-            $grade->attempt_status === null ||
-            $grade->attempt_status === "not_started"
-        ) {
-            $grade->attempt_status = "in_progress";
-            $grade->attempt_count = ($grade->attempt_count ?? 0) + 1;
-            $justStarted = true;
-        }
+            // Mark attempt in progress and increment attempt count on first start
+            if (
+                $grade->attempt_status === null ||
+                $grade->attempt_status === "not_started"
+            ) {
+                $grade->attempt_status = "in_progress";
+                $grade->attempt_count = ($grade->attempt_count ?? 0) + 1;
+                $justStarted = true;
+            }
 
-        // Calculate remaining duration on server side
-        $grade->duration = $this->calculateRemainingDurationMs(
-            $exam_group,
-            $grade,
-        );
-        $grade->save();
+            // Calculate remaining duration on server side
+            $grade->duration = $this->calculateRemainingDurationMs(
+                $exam_group,
+                $grade,
+            );
+            $grade->save();
+        });
+        
+        // Refresh grade after transaction
+        $grade->refresh();
 
         // Auto-end if duration already exhausted
         if ($grade->duration <= 0) {
