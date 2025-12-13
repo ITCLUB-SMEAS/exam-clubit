@@ -48,6 +48,7 @@ class Exam extends Model
         "max_violations",
         "auto_submit_on_max_violations",
         "warning_threshold",
+        "adaptive_mode",
     ];
 
     /**

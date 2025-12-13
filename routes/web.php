@@ -798,6 +798,17 @@ Route::prefix("student")->group(function () {
             App\Http\Controllers\Student\AntiCheatController::class,
             "serverTime",
         ])->middleware('throttle:heartbeat')->name("student.anticheat.serverTime");
+
+        // Offline exam sync routes
+        Route::post("/exam-sync", [
+            App\Http\Controllers\Student\ExamSyncController::class,
+            "sync",
+        ])->name("student.exam.sync");
+
+        Route::get("/exam-offline/{examGroupId}", [
+            App\Http\Controllers\Student\ExamSyncController::class,
+            "getExamForOffline",
+        ])->name("student.exam.offline");
     });
 });
 
