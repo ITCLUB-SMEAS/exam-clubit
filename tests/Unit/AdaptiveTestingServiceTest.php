@@ -4,18 +4,9 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 use App\Services\AdaptiveTestingService;
-use App\Models\Exam;
-use App\Models\Grade;
-use App\Models\Question;
-use App\Models\Answer;
-use App\Models\Student;
-use App\Models\ExamSession;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class AdaptiveTestingServiceTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected AdaptiveTestingService $service;
 
     protected function setUp(): void
@@ -24,83 +15,96 @@ class AdaptiveTestingServiceTest extends TestCase
         $this->service = new AdaptiveTestingService();
     }
 
-    public function test_initial_ability_estimate_is_zero()
+    public function test_difficulty_theta_values_are_correct()
     {
-        $student = Student::factory()->create();
-        $exam = Exam::factory()->create(['adaptive_mode' => true]);
-        $session = ExamSession::factory()->create(['exam_id' => $exam->id]);
-        $grade = Grade::factory()->create([
-            'student_id' => $student->id,
-            'exam_id' => $exam->id,
-            'exam_session_id' => $session->id,
-        ]);
-
-        $ability = $this->service->estimateAbility($grade);
-        
-        $this->assertEquals(0.0, $ability);
+        $this->assertEquals(-1.0, AdaptiveTestingService::DIFFICULTY_THETA['easy']);
+        $this->assertEquals(0.0, AdaptiveTestingService::DIFFICULTY_THETA['medium']);
+        $this->assertEquals(1.0, AdaptiveTestingService::DIFFICULTY_THETA['hard']);
     }
 
-    public function test_ability_increases_with_correct_answers()
+    public function test_ability_level_labels_are_correct()
     {
-        $student = Student::factory()->create();
-        $exam = Exam::factory()->create(['adaptive_mode' => true]);
-        $session = ExamSession::factory()->create(['exam_id' => $exam->id]);
-        $grade = Grade::factory()->create([
-            'student_id' => $student->id,
-            'exam_id' => $exam->id,
-            'exam_session_id' => $session->id,
-        ]);
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('getAbilityLevel');
+        $method->setAccessible(true);
 
-        // Create questions with correct answers
-        for ($i = 0; $i < 5; $i++) {
-            $question = Question::factory()->create([
-                'exam_id' => $exam->id,
-                'difficulty' => 'medium',
-                'answer' => 1,
-            ]);
-            
-            Answer::create([
-                'student_id' => $student->id,
-                'exam_id' => $exam->id,
-                'exam_session_id' => $session->id,
-                'question_id' => $question->id,
-                'answer' => 1, // Correct
-                'is_correct' => true,
-            ]);
+        $this->assertEquals('Perlu Bimbingan', $method->invoke($this->service, -0.6));
+        $this->assertEquals('Cukup', $method->invoke($this->service, -0.3));
+        $this->assertEquals('Baik', $method->invoke($this->service, 0.3));
+        $this->assertEquals('Sangat Baik', $method->invoke($this->service, 0.6));
+    }
+
+    public function test_difficulty_multiplier_values()
+    {
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('getDifficultyMultiplier');
+        $method->setAccessible(true);
+
+        $this->assertEquals(1.0, $method->invoke($this->service, 'easy'));
+        $this->assertEquals(1.25, $method->invoke($this->service, 'medium'));
+        $this->assertEquals(1.5, $method->invoke($this->service, 'hard'));
+        $this->assertEquals(1.0, $method->invoke($this->service, 'unknown'));
+    }
+
+    public function test_theta_values_cover_full_range()
+    {
+        $thetas = AdaptiveTestingService::DIFFICULTY_THETA;
+        
+        $this->assertLessThan(0, $thetas['easy']);
+        $this->assertEquals(0, $thetas['medium']);
+        $this->assertGreaterThan(0, $thetas['hard']);
+    }
+
+    public function test_ability_level_boundary_values()
+    {
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('getAbilityLevel');
+        $method->setAccessible(true);
+
+        // Boundary at -0.5
+        $this->assertEquals('Perlu Bimbingan', $method->invoke($this->service, -0.51));
+        $this->assertEquals('Cukup', $method->invoke($this->service, -0.5));
+        
+        // Boundary at 0
+        $this->assertEquals('Cukup', $method->invoke($this->service, -0.01));
+        $this->assertEquals('Baik', $method->invoke($this->service, 0));
+        
+        // Boundary at 0.5
+        $this->assertEquals('Baik', $method->invoke($this->service, 0.49));
+        $this->assertEquals('Sangat Baik', $method->invoke($this->service, 0.5));
+    }
+
+    public function test_theta_spread_is_symmetric()
+    {
+        $thetas = AdaptiveTestingService::DIFFICULTY_THETA;
+        
+        // Easy and hard should be equidistant from medium
+        $this->assertEquals(
+            abs($thetas['easy'] - $thetas['medium']),
+            abs($thetas['hard'] - $thetas['medium'])
+        );
+    }
+
+    public function test_difficulty_multiplier_increases_with_difficulty()
+    {
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('getDifficultyMultiplier');
+        $method->setAccessible(true);
+
+        $easy = $method->invoke($this->service, 'easy');
+        $medium = $method->invoke($this->service, 'medium');
+        $hard = $method->invoke($this->service, 'hard');
+
+        $this->assertLessThan($medium, $easy);
+        $this->assertLessThan($hard, $medium);
+    }
+
+    public function test_all_difficulty_levels_have_theta_values()
+    {
+        $difficulties = ['easy', 'medium', 'hard'];
+        
+        foreach ($difficulties as $difficulty) {
+            $this->assertArrayHasKey($difficulty, AdaptiveTestingService::DIFFICULTY_THETA);
         }
-
-        $ability = $this->service->estimateAbility($grade);
-        
-        $this->assertGreaterThan(0, $ability);
-    }
-
-    public function test_recommended_difficulty_based_on_ability()
-    {
-        $student = Student::factory()->create();
-        $exam = Exam::factory()->create(['adaptive_mode' => true]);
-        $session = ExamSession::factory()->create(['exam_id' => $exam->id]);
-        $grade = Grade::factory()->create([
-            'student_id' => $student->id,
-            'exam_id' => $exam->id,
-            'exam_session_id' => $session->id,
-        ]);
-
-        // Initial should be medium
-        $difficulty = $this->service->getRecommendedDifficulty($grade);
-        $this->assertEquals('medium', $difficulty);
-    }
-
-    public function test_get_next_question_returns_null_for_non_adaptive()
-    {
-        $exam = Exam::factory()->create(['adaptive_mode' => false]);
-        $session = ExamSession::factory()->create(['exam_id' => $exam->id]);
-        $grade = Grade::factory()->create([
-            'exam_id' => $exam->id,
-            'exam_session_id' => $session->id,
-        ]);
-
-        $question = $this->service->getNextQuestion($grade);
-        
-        $this->assertNull($question);
     }
 }

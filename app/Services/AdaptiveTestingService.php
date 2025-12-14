@@ -111,7 +111,7 @@ class AdaptiveTestingService
         if ($answer->answer && $answer->question) {
             return $answer->answer == $answer->question->answer;
         }
-        return $answer->is_correct ?? false;
+        return $answer->is_correct === 'Y' || $answer->is_correct === true;
     }
 
     /**
