@@ -197,7 +197,21 @@
             }[type] || type);
 
             const truncate = (str, len) => {
-                const text = str.replace(/<[^>]*>/g, '');
+                // Sanitize HTML tags using loop to prevent nested tag attacks
+                let text = str || '';
+                let previousText = '';
+                
+                // Keep removing tags until no more changes
+                while (text !== previousText) {
+                    previousText = text;
+                    text = text.replace(/<[^>]*>/g, '');
+                }
+                
+                // Decode HTML entities
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = text;
+                text = tempDiv.textContent || tempDiv.innerText || '';
+                
                 return text.length > len ? text.substring(0, len) + '...' : text;
             };
 

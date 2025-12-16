@@ -422,7 +422,22 @@ export default {
         const difficultyBadge = (d) => ({ easy: 'badge bg-success', medium: 'badge bg-warning', hard: 'badge bg-danger' }[d] || 'badge bg-secondary');
 
         const truncate = (str, len) => {
-            const text = str?.replace(/<[^>]*>/g, '') || '';
+            // Sanitize HTML tags using loop to prevent nested tag attacks
+            // e.g., "<scr<script>ipt>" after one pass becomes "<script>"
+            let text = str || '';
+            let previousText = '';
+            
+            // Keep removing tags until no more changes (prevents nested bypasses)
+            while (text !== previousText) {
+                previousText = text;
+                text = text.replace(/<[^>]*>/g, '');
+            }
+            
+            // Also decode HTML entities for display
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = text;
+            text = tempDiv.textContent || tempDiv.innerText || '';
+            
             return text.length > len ? text.substring(0, len) + '...' : text;
         };
 
