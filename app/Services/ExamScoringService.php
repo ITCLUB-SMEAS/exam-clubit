@@ -113,23 +113,35 @@ class ExamScoringService
         }
 
         $correctCount = 0;
-        $totalPairs = count($correctPairs);
+        $validPairCount = 0;
 
         foreach ($correctPairs as $pair) {
             $leftKey = $pair['left'] ?? '';
             $correctRight = $pair['right'] ?? '';
+
+            // Skip invalid/empty pairs to prevent false matches
+            if (empty($leftKey) || empty($correctRight)) {
+                continue;
+            }
+            
+            $validPairCount++;
 
             if (isset($submittedPairs[$leftKey]) && $submittedPairs[$leftKey] === $correctRight) {
                 $correctCount++;
             }
         }
 
-        if ($correctCount === $totalPairs) {
+        // Guard against division by zero if all pairs are invalid
+        if ($validPairCount === 0) {
+            return ['N', 0, false];
+        }
+
+        if ($correctCount === $validPairCount) {
             return ['Y', $points, false];
         }
         
         // Partial scoring (always enabled for matching)
-        $partialPoints = $correctCount > 0 ? round(($correctCount / $totalPairs) * $points, 2) : 0;
+        $partialPoints = $correctCount > 0 ? round(($correctCount / $validPairCount) * $points, 2) : 0;
         return ['N', $partialPoints, false];
     }
 

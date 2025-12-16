@@ -1090,13 +1090,14 @@
             // Calculate total duration in ms
             const totalDuration = props.exam_group.exam.duration * 60 * 1000;
 
-            // Timer progress computed
+            // Timer progress computed (clamped to 0-100 to prevent UI overflow)
             const timerProgress = computed(() => {
                 if (totalDuration <= 0) return 0;
-                // duration.value is remaining time (ms)
-                // We want progress bar to fill up or empty down?
-                // Usually time remaining bar empties. 100% -> 0%
-                return (duration.value / totalDuration) * 100;
+                // Clamp duration to prevent negative values from network delays
+                const safeDuration = Math.max(0, duration.value);
+                const progress = (safeDuration / totalDuration) * 100;
+                // Clamp progress to 0-100 range
+                return Math.min(100, Math.max(0, progress));
             });
             
             const timerProgressColor = computed(() => {
@@ -1314,6 +1315,8 @@
 /* Prevent drag */
 img {
     -webkit-user-drag: none;
-    user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
 }
 </style>

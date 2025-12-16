@@ -106,6 +106,9 @@ class ExamController extends Controller
             ->where("student_id", auth()->guard("student")->user()->id)
             ->delete();
 
+        // Delete old violation records for this grade (keep data consistent)
+        \App\Models\ExamViolation::where('grade_id', $grade->id)->delete();
+
         // Reset grade for new attempt
         $grade->update([
             'start_time' => null,
@@ -119,6 +122,13 @@ class ExamController extends Controller
             'attempt_number' => $currentAttempt + 1,
             'status' => 'pending',
             'violation_count' => 0,
+            'tab_switch_count' => 0,
+            'fullscreen_exit_count' => 0,
+            'copy_paste_count' => 0,
+            'right_click_count' => 0,
+            'blur_count' => 0,
+            'is_flagged' => false,
+            'flag_reason' => null,
         ]);
 
         return redirect()->route("student.exams.startExam", $id);
@@ -160,6 +170,17 @@ class ExamController extends Controller
                 ->with("error", "Data ujian tidak ditemukan.");
         }
 
+        // Prevent restart after completion (check FIRST to avoid race condition)
+        if (
+            $grade->end_time !== null ||
+            $grade->attempt_status === "completed"
+        ) {
+            return redirect()->route(
+                "student.exams.resultExam",
+                $exam_group->id,
+            );
+        }
+
         // Guard: session window must be active
         if ($redirect = $this->guardExamSchedule($exam_group, $grade)) {
             return $redirect;
@@ -170,17 +191,6 @@ class ExamController extends Controller
             return redirect()
                 ->route("student.exams.confirmation", $exam_group->id)
                 ->with("error", "Anda harus melakukan absensi terlebih dahulu sebelum memulai ujian.");
-        }
-
-        // Prevent restart after completion
-        if (
-            $grade->end_time !== null ||
-            $grade->attempt_status === "completed"
-        ) {
-            return redirect()->route(
-                "student.exams.resultExam",
-                $exam_group->id,
-            );
         }
 
         // Use database lock to prevent race condition on concurrent requests

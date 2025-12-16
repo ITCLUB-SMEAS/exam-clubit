@@ -105,21 +105,33 @@ export function useAntiCheat(options = {}) {
 
     /**
      * Capture snapshot from webcam (HD quality)
+     * Returns base64 image or null if capture fails
      */
     const captureSnapshot = () => {
         // Use external video element (from face detection) if available
         const video = config.value.externalVideoElement?.value || videoElement.value;
-        if (!video || (!videoStream.value && !config.value.externalVideoElement)) return null;
-        
+        if (!video || (!videoStream.value && !config.value.externalVideoElement)) {
+            console.warn('Snapshot capture skipped: no video source available');
+            return null;
+        }
+
         try {
             const canvas = document.createElement('canvas');
             // HD resolution (720p)
             canvas.width = 1280;
             canvas.height = 720;
             const ctx = canvas.getContext('2d');
+
+            // Check if video is ready
+            if (video.readyState < 2) {
+                console.warn('Snapshot capture skipped: video not ready');
+                return null;
+            }
+
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             return canvas.toDataURL('image/jpeg', 0.85); // 85% quality for clear image
         } catch (e) {
+            console.error('Snapshot capture failed:', e.message);
             return null;
         }
     };
@@ -132,13 +144,13 @@ export function useAntiCheat(options = {}) {
         if (config.value.externalVideoElement) {
             return;
         }
-        
+
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { width: 320, height: 240, facingMode: 'user' } 
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: 320, height: 240, facingMode: 'user' }
             });
             videoStream.value = stream;
-            
+
             // Create hidden video element
             const video = document.createElement('video');
             video.srcObject = stream;
@@ -162,7 +174,12 @@ export function useAntiCheat(options = {}) {
         // Capture snapshot
         const snapshot = captureSnapshot();
 
-        // Increment local counter immediately
+        // Store previous values for rollback on failure
+        const prevViolationCount = violationCount.value;
+        const prevRemainingViolations = remainingViolations.value;
+        const prevWarningReached = warningReached.value;
+
+        // Optimistically increment local counter
         violationCount.value++;
         remainingViolations.value = Math.max(0, config.value.maxViolations - violationCount.value);
 
@@ -217,6 +234,13 @@ export function useAntiCheat(options = {}) {
                     }
                 });
 
+                // Sync counter from server response (source of truth)
+                if (response.data?.success && response.data?.data) {
+                    violationCount.value = response.data.data.total_violations ?? violationCount.value;
+                    remainingViolations.value = response.data.data.remaining_violations ?? remainingViolations.value;
+                    warningReached.value = response.data.data.warning_reached ?? warningReached.value;
+                }
+
                 // Check if student got blocked
                 if (response.data?.data?.is_blocked && config.value.onBlocked) {
                     config.value.onBlocked();
@@ -226,6 +250,12 @@ export function useAntiCheat(options = {}) {
                 retryPendingViolations();
             } catch (error) {
                 console.error('Failed to record violation:', error);
+
+                // Rollback optimistic update on failure
+                violationCount.value = prevViolationCount;
+                remainingViolations.value = prevRemainingViolations;
+                warningReached.value = prevWarningReached;
+
                 // Queue for retry (max 10 pending)
                 if (pendingViolations.value.length < 10) {
                     pendingViolations.value.push({ type, description, metadata, timestamp: Date.now() });
@@ -239,10 +269,10 @@ export function useAntiCheat(options = {}) {
      */
     const retryPendingViolations = async () => {
         if (pendingViolations.value.length === 0) return;
-        
+
         const toRetry = [...pendingViolations.value];
         pendingViolations.value = [];
-        
+
         for (const v of toRetry) {
             try {
                 await axios.post('/student/anticheat/violation', {
@@ -299,7 +329,7 @@ export function useAntiCheat(options = {}) {
 
             // Record extended blur as separate violation if too long
             if (blurDuration >= BLUR_WARNING_THRESHOLD) {
-                recordViolation('extended_blur', 
+                recordViolation('extended_blur',
                     `Window tidak fokus selama ${Math.round(blurDuration / 1000)} detik`,
                     { duration: blurDuration, totalBlurTime: totalBlurDuration.value }
                 );
@@ -324,13 +354,13 @@ export function useAntiCheat(options = {}) {
 
     const startBlurDurationCheck = () => {
         if (blurCheckInterval) return;
-        
+
         blurCheckInterval = setInterval(() => {
             if (!windowFocused.value && blurStartTime.value) {
                 const currentBlurDuration = Date.now() - blurStartTime.value;
-                
+
                 // Warn every 10 seconds while unfocused
-                if (currentBlurDuration >= BLUR_WARNING_THRESHOLD && 
+                if (currentBlurDuration >= BLUR_WARNING_THRESHOLD &&
                     currentBlurDuration % BLUR_WARNING_THRESHOLD < 1000) {
                     recordViolation('prolonged_blur',
                         `Window tidak fokus selama ${Math.round(currentBlurDuration / 1000)} detik`,
@@ -356,7 +386,7 @@ export function useAntiCheat(options = {}) {
 
         if (!isFullscreen.value && config.value.fullscreenRequired && isInitialized.value) {
             fullscreenExitCount.value++;
-            
+
             // First exit = warning only, subsequent exits = violation
             if (fullscreenExitCount.value === 1) {
                 // Just show warning via onViolation callback without recording
@@ -501,10 +531,10 @@ export function useAntiCheat(options = {}) {
             e.preventDefault();
             // recordViolation already has debounce, safe to call
             recordViolation('screenshot', 'Siswa menekan tombol Print Screen');
-            
+
             // Try to clear clipboard
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText('').catch(() => {});
+                navigator.clipboard.writeText('').catch(() => { });
             }
             return false;
         }
@@ -521,27 +551,32 @@ export function useAntiCheat(options = {}) {
                 screenCount.value = screenDetails.screens.length;
                 if (screenDetails.screens.length > 1) {
                     hasMultipleMonitors.value = true;
-                    recordViolation('multiple_monitors', 
-                        `Terdeteksi ${screenDetails.screens.length} monitor`, 
+                    recordViolation('multiple_monitors',
+                        `Terdeteksi ${screenDetails.screens.length} monitor`,
                         { screenCount: screenDetails.screens.length }
                     );
                     return true;
                 }
             }
-            
+
             // Method 2: Check screen dimensions vs window dimensions
             const screenWidth = window.screen.width;
             const screenHeight = window.screen.height;
             const availWidth = window.screen.availWidth;
             const availHeight = window.screen.availHeight;
-            
+
+            // Check for ultra-wide monitors (21:9 = 2.33, 32:9 = 3.56) to avoid false positives
+            const aspectRatio = screenWidth / screenHeight;
+            const isUltraWide = aspectRatio > 2.0; // Ultra-wide starts at ~2.33 (21:9)
+
             // If available width is much larger than screen width, likely multiple monitors
-            if (availWidth > screenWidth * 1.5) {
+            // But skip if it's an ultra-wide monitor configuration
+            if (availWidth > screenWidth * 1.5 && !isUltraWide) {
                 hasMultipleMonitors.value = true;
                 screenCount.value = Math.ceil(availWidth / screenWidth);
-                recordViolation('multiple_monitors', 
-                    'Terdeteksi kemungkinan multiple monitor (screen size)', 
-                    { availWidth, screenWidth, ratio: availWidth / screenWidth }
+                recordViolation('multiple_monitors',
+                    'Terdeteksi kemungkinan multiple monitor (screen size)',
+                    { availWidth, screenWidth, ratio: availWidth / screenWidth, aspectRatio }
                 );
                 return true;
             }
@@ -549,11 +584,11 @@ export function useAntiCheat(options = {}) {
             // Method 3: Check if window can be moved outside screen bounds
             const originalX = window.screenX;
             const originalY = window.screenY;
-            
+
             // Check if window position suggests multiple monitors
             if (originalX < 0 || originalX > screenWidth || originalY < 0 || originalY > screenHeight) {
                 hasMultipleMonitors.value = true;
-                recordViolation('multiple_monitors', 
+                recordViolation('multiple_monitors',
                     'Window berada di luar batas monitor utama',
                     { screenX: originalX, screenY: originalY, screenWidth, screenHeight }
                 );
@@ -595,10 +630,10 @@ export function useAntiCheat(options = {}) {
             const isCommonResolution = commonResolutions.some(
                 ([w, h]) => Math.abs(width - w) < 10 && Math.abs(height - h) < 10
             );
-            
+
             // Method 3: Check pixel ratio (remote desktop often has ratio of 1)
             const pixelRatio = window.devicePixelRatio || 1;
-            
+
             // Method 4: Check for WebGL renderer anomalies
             let webglRenderer = '';
             try {
@@ -610,7 +645,7 @@ export function useAntiCheat(options = {}) {
                         webglRenderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '';
                         // Remote desktop software often shows virtual/generic renderers
                         const suspiciousRenderers = [
-                            'swiftshader', 'llvmpipe', 'virtualbox', 'vmware', 
+                            'swiftshader', 'llvmpipe', 'virtualbox', 'vmware',
                             'microsoft basic render', 'rdp', 'remote', 'virtual'
                         ];
                         const rendererLower = webglRenderer.toLowerCase();
@@ -658,7 +693,7 @@ export function useAntiCheat(options = {}) {
             // If multiple indicators found, likely remote desktop
             if (indicators.length >= 2) {
                 isRemoteDesktop.value = true;
-                recordViolation('remote_desktop', 
+                recordViolation('remote_desktop',
                     'Terdeteksi kemungkinan penggunaan Remote Desktop',
                     { indicators, colorDepth, resolution: `${width}x${height}`, pixelRatio, webglRenderer }
                 );
@@ -688,7 +723,7 @@ export function useAntiCheat(options = {}) {
     const startRemoteDesktopDetection = () => {
         // Initial check
         detectRemoteDesktop();
-        
+
         // Periodic check every 30 seconds
         remoteDesktopCheckInterval = setInterval(detectRemoteDesktop, 30000);
     };
@@ -719,14 +754,14 @@ export function useAntiCheat(options = {}) {
                     if (debugInfo) {
                         const renderer = (gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '').toLowerCase();
                         const vendor = (gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '').toLowerCase();
-                        
+
                         const vmRenderers = ['vmware', 'virtualbox', 'hyper-v', 'parallels', 'qemu', 'xen', 'kvm', 'bochs'];
                         if (vmRenderers.some(vm => renderer.includes(vm) || vendor.includes(vm))) {
                             indicators.push({ method: 'webgl', value: renderer });
                         }
                     }
                 }
-            } catch (e) {}
+            } catch (e) { }
 
             // Method 2: Screen dimensions typical of VMs
             const width = window.screen.width;
@@ -805,22 +840,22 @@ export function useAntiCheat(options = {}) {
         const currentX = window.screenX;
         const currentY = window.screenY;
         const screenWidth = window.screen.width;
-        
+
         // Skip first check (initialization)
         if (lastScreenX === null) {
             lastScreenX = currentX;
             lastScreenY = currentY;
             return;
         }
-        
+
         // Check if window moved to a different monitor (significant X change)
         if (Math.abs(currentX - lastScreenX) > screenWidth / 2) {
-            recordViolation('multiple_monitors', 
+            recordViolation('multiple_monitors',
                 'Window dipindahkan ke monitor lain',
                 { fromX: lastScreenX, toX: currentX }
             );
         }
-        
+
         lastScreenX = currentX;
         lastScreenY = currentY;
     };
@@ -831,7 +866,7 @@ export function useAntiCheat(options = {}) {
     let devtoolsCheckInterval = null;
     let monitorCheckInterval = null;
     let screenDetailsRef = null;
-    
+
     const startDevtoolsDetection = () => {
         if (!config.value.detectDevtools) return;
 
@@ -863,6 +898,7 @@ export function useAntiCheat(options = {}) {
     /**
      * Single Tab Enforcement using BroadcastChannel
      * Prevents opening exam in multiple tabs
+     * Note: BroadcastChannel not supported in Safari < 15.4
      */
     let broadcastChannel = null;
     const isSingleTabViolation = ref(false);
@@ -870,27 +906,37 @@ export function useAntiCheat(options = {}) {
     const initSingleTabEnforcement = () => {
         if (!config.value.examId) return;
 
-        const channelName = `exam_session_${config.value.examId}_${config.value.gradeId}`;
-        broadcastChannel = new BroadcastChannel(channelName);
+        // Feature detection for Safari < 15.4 compatibility
+        if (!('BroadcastChannel' in window)) {
+            console.warn('BroadcastChannel not supported in this browser. Single-tab enforcement disabled.');
+            return;
+        }
 
-        // Announce this tab is active
-        broadcastChannel.postMessage({ type: 'tab_active', timestamp: Date.now() });
+        try {
+            const channelName = `exam_session_${config.value.examId}_${config.value.gradeId}`;
+            broadcastChannel = new BroadcastChannel(channelName);
 
-        // Listen for other tabs
-        broadcastChannel.onmessage = (event) => {
-            if (event.data.type === 'tab_active') {
-                // Another tab opened! Send warning back
-                broadcastChannel.postMessage({ type: 'tab_exists', timestamp: Date.now() });
-                recordViolation('multiple_tabs', 'Ujian dibuka di tab lain');
-            } else if (event.data.type === 'tab_exists') {
-                // This is a duplicate tab
-                isSingleTabViolation.value = true;
-                recordViolation('multiple_tabs', 'Mencoba membuka ujian di tab baru');
-                if (config.value.onDuplicateTab) {
-                    config.value.onDuplicateTab();
+            // Announce this tab is active
+            broadcastChannel.postMessage({ type: 'tab_active', timestamp: Date.now() });
+
+            // Listen for other tabs
+            broadcastChannel.onmessage = (event) => {
+                if (event.data.type === 'tab_active') {
+                    // Another tab opened! Send warning back
+                    broadcastChannel.postMessage({ type: 'tab_exists', timestamp: Date.now() });
+                    recordViolation('multiple_tabs', 'Ujian dibuka di tab lain');
+                } else if (event.data.type === 'tab_exists') {
+                    // This is a duplicate tab
+                    isSingleTabViolation.value = true;
+                    recordViolation('multiple_tabs', 'Mencoba membuka ujian di tab baru');
+                    if (config.value.onDuplicateTab) {
+                        config.value.onDuplicateTab();
+                    }
                 }
-            }
-        };
+            };
+        } catch (error) {
+            console.warn('Failed to initialize BroadcastChannel:', error);
+        }
     };
 
     const cleanupSingleTabEnforcement = () => {
@@ -1009,7 +1055,7 @@ export function useAntiCheat(options = {}) {
             const clientBefore = Date.now();
             const response = await axios.get('/student/anticheat/server-time');
             const clientAfter = Date.now();
-            
+
             if (response.data.success) {
                 const serverTime = response.data.server_time;
                 const roundTrip = clientAfter - clientBefore;
@@ -1024,14 +1070,23 @@ export function useAntiCheat(options = {}) {
 
     /**
      * Check for time anomaly (system time manipulation)
+     * Skips detection when window is unfocused to prevent false positives
+     * due to browser timer throttling
      */
     const checkTimeAnomaly = async () => {
         const currentClientTime = Date.now();
         const expectedElapsed = currentClientTime - lastClientTime.value;
-        
+
+        // Skip check if window is not focused (browsers throttle JS timers when inactive)
+        // This prevents false positives from natural timer delays
+        if (!windowFocused.value) {
+            lastClientTime.value = currentClientTime;
+            return;
+        }
+
         // Check if time jumped backwards (user set clock back)
         if (expectedElapsed < -5000) { // More than 5 seconds backwards
-            recordViolation('time_manipulation', 
+            recordViolation('time_manipulation',
                 'Waktu sistem diubah mundur',
                 { expected: expectedElapsed, jumped: true, direction: 'backward' }
             );
@@ -1040,8 +1095,8 @@ export function useAntiCheat(options = {}) {
         }
 
         // Check if time jumped forward too much (user set clock forward)
-        // Normal interval is ~10 seconds, allow up to 60 seconds for tab being inactive
-        if (expectedElapsed > 120000) { // More than 2 minutes jump
+        // Use higher threshold (5 minutes) to account for browser throttling edge cases
+        if (expectedElapsed > 300000) { // More than 5 minutes jump (was 2 min, increased for safety)
             recordViolation('time_manipulation',
                 'Waktu sistem diubah maju secara tidak wajar',
                 { expected: 10000, actual: expectedElapsed, direction: 'forward' }
@@ -1053,22 +1108,22 @@ export function useAntiCheat(options = {}) {
             const clientBefore = Date.now();
             const response = await axios.get('/student/anticheat/server-time');
             const clientAfter = Date.now();
-            
+
             if (response.data.success) {
                 const serverTime = response.data.server_time;
                 const roundTrip = clientAfter - clientBefore;
                 const estimatedServerTime = serverTime + (roundTrip / 2);
                 const currentOffset = estimatedServerTime - clientAfter;
                 const offsetDrift = Math.abs(currentOffset - serverTimeOffset);
-                
+
                 // If offset changed significantly, time was manipulated
                 if (offsetDrift > TIME_ANOMALY_THRESHOLD) {
                     recordViolation('time_manipulation',
                         'Terdeteksi manipulasi waktu sistem',
-                        { 
-                            originalOffset: serverTimeOffset, 
+                        {
+                            originalOffset: serverTimeOffset,
                             currentOffset: currentOffset,
-                            drift: offsetDrift 
+                            drift: offsetDrift
                         }
                     );
                     // Update offset to new value
