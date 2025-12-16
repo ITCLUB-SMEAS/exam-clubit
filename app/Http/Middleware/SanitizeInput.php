@@ -60,15 +60,14 @@ class SanitizeInput
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Skip sanitization for routes that need raw HTML content
-        if ($this->shouldSkipSanitization($request)) {
-            return $next($request);
-        }
-
         // Only sanitize for POST, PUT, PATCH requests
         if (in_array($request->method(), ['POST', 'PUT', 'PATCH'])) {
             $input = $request->all();
-            $sanitized = $this->sanitizeInput($input);
+            
+            // Determine sanitization mode based on route
+            $sanitizationMode = $this->getSanitizationMode($request);
+            
+            $sanitized = $this->sanitizeInput($input, '', $sanitizationMode);
             $request->merge($sanitized);
         }
 
@@ -76,25 +75,28 @@ class SanitizeInput
     }
 
     /**
-     * Check if sanitization should be skipped for this request.
+     * Determine the sanitization mode for this request.
+     * 
+     * @return string 'normal', 'code', or 'rich'
      */
-    protected function shouldSkipSanitization(Request $request): bool
+    protected function getSanitizationMode(Request $request): string
     {
-        $skipPatterns = [
-            'admin/exams/*/questions*',  // Question CRUD
-            'admin/question-bank*',       // Question bank
-            'admin/ai/*',                 // AI generation
-            'student/exam-answer',        // Student answers
-            'admin/essay-grading*',       // Essay grading
+        // Routes that need code-friendly sanitization (Informatics questions)
+        $codePatterns = [
+            'admin/exams/*/questions*',
+            'admin/question-bank*',
+            'admin/ai/*',
+            'student/exam-answer',
+            'admin/essay-grading*',
         ];
 
-        foreach ($skipPatterns as $pattern) {
+        foreach ($codePatterns as $pattern) {
             if ($request->is($pattern)) {
-                return true;
+                return 'code';
             }
         }
 
-        return false;
+        return 'normal';
     }
 
     /**
@@ -102,18 +104,26 @@ class SanitizeInput
      *
      * @param array $input
      * @param string $prefix
+     * @param string $mode 'normal' or 'code'
      * @return array
      */
-    protected function sanitizeInput(array $input, string $prefix = ''): array
+    protected function sanitizeInput(array $input, string $prefix = '', string $mode = 'normal'): array
     {
         $sanitized = [];
 
         foreach ($input as $key => $value) {
             $fullKey = $prefix ? "{$prefix}.{$key}" : $key;
 
-            // Skip excluded fields
+            // Skip excluded fields (passwords, tokens)
             if (in_array($key, $this->excludedFields)) {
-                $sanitized[$key] = $value;
+                // For code mode, still sanitize question/answer fields but with code-safe method
+                if ($mode === 'code' && in_array($key, $this->richTextFields)) {
+                    $sanitized[$key] = is_string($value) 
+                        ? SanitizationService::cleanCodeQuestion($value) 
+                        : $value;
+                } else {
+                    $sanitized[$key] = $value;
+                }
                 continue;
             }
 
@@ -125,11 +135,14 @@ class SanitizeInput
 
             if (is_array($value)) {
                 // Recursively sanitize arrays
-                $sanitized[$key] = $this->sanitizeInput($value, $fullKey);
+                $sanitized[$key] = $this->sanitizeInput($value, $fullKey, $mode);
             } elseif (is_string($value)) {
                 // Check if field should allow rich text
                 if ($this->isRichTextField($key)) {
-                    $sanitized[$key] = SanitizationService::cleanRichText($value);
+                    // Use code-safe sanitization for code mode
+                    $sanitized[$key] = $mode === 'code'
+                        ? SanitizationService::cleanCodeQuestion($value)
+                        : SanitizationService::cleanRichText($value);
                 } else {
                     $sanitized[$key] = SanitizationService::clean($value);
                 }

@@ -18,6 +18,8 @@
                 <ul class="navbar-nav me-auto mb-2 mb-md-0">
                 </ul>
                 <div class="d-flex align-items-center gap-2" v-if="$page.props.auth.student">
+                    <!-- Dark Mode Toggle -->
+                    <DarkModeToggle />
                     <!-- Language Switcher -->
                     <LanguageSwitcher />
                     <!-- Profile Link -->
@@ -126,13 +128,17 @@
     //import Session Timeout Warning
     import SessionTimeoutWarning from '../Components/SessionTimeoutWarning.vue';
 
+    //import Dark Mode Toggle
+    import DarkModeToggle from '../Components/DarkModeToggle.vue';
+
     export default {
         //register components
         components: {
             Link,
             PwaInstall,
             LanguageSwitcher,
-            SessionTimeoutWarning
+            SessionTimeoutWarning,
+            DarkModeToggle
         },
 
         setup() {

@@ -2,6 +2,7 @@ import { createApp, h } from 'vue'
 import { createInertiaApp, router, usePage } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import 'sweetalert2/dist/sweetalert2.min.css';
+import '../css/dark-mode.css'; // Dark mode overrides
 import axios from 'axios';
 import { a11yDirective } from './composables/useAccessibility';
 
@@ -9,26 +10,26 @@ import { a11yDirective } from './composables/useAccessibility';
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 const token = document.head.querySelector('meta[name="csrf-token"]');
 if (token) {
-    axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
+  axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
 }
 
 // Handle 419 CSRF token mismatch globally
 axios.interceptors.response.use(
-    response => response,
-    error => {
-        if (error.response?.status === 419) {
-            window.location.href = '/';
-        }
-        return Promise.reject(error);
+  response => response,
+  error => {
+    if (error.response?.status === 419) {
+      window.location.href = '/';
     }
+    return Promise.reject(error);
+  }
 );
 
 // Handle Inertia 419 errors
 router.on('invalid', (event) => {
-    if (event.detail.response.status === 419) {
-        event.preventDefault();
-        window.location.href = '/';
-    }
+  if (event.detail.response.status === 419) {
+    event.preventDefault();
+    window.location.href = '/';
+  }
 });
 
 window.axios = axios;
@@ -41,22 +42,22 @@ createInertiaApp({
   setup({ el, App, props, plugin }) {
     const app = createApp({ render: () => h(App, props) })
     app.config.globalProperties.route = route
-    
+
     // Translation helper - use this.$page.props.translations
-    app.config.globalProperties.__ = function(key, replacements = {}) {
-        const translations = this.$page?.props?.translations || {};
-        let translation = translations[key] || key;
-        
-        Object.keys(replacements).forEach(r => {
-            translation = translation.replace(`:${r}`, replacements[r]);
-        });
-        
-        return translation;
+    app.config.globalProperties.__ = function (key, replacements = {}) {
+      const translations = this.$page?.props?.translations || {};
+      let translation = translations[key] || key;
+
+      Object.keys(replacements).forEach(r => {
+        translation = translation.replace(`:${r}`, replacements[r]);
+      });
+
+      return translation;
     };
-    
+
     app
-    //set mixins
-    .mixin({
+      //set mixins
+      .mixin({
         methods: {
 
           examTimeRangeChecker: function (start_time, end_time) {
@@ -72,10 +73,10 @@ createInertiaApp({
           }
 
         },
-    })
-    .use(plugin)
-    .directive('a11y', a11yDirective)
-    .mount(el)
+      })
+      .use(plugin)
+      .directive('a11y', a11yDirective)
+      .mount(el)
   },
   progress: {
     // The delay after which the progress bar will appear, in milliseconds...
@@ -91,3 +92,15 @@ createInertiaApp({
     showSpinner: false,
   },
 })
+
+// Offline indicator
+window.addEventListener('offline', () => {
+  if (!document.title.startsWith('[OFFLINE] ')) {
+    document.title = '[OFFLINE] ' + document.title;
+  }
+  document.body.classList.add('offline-mode');
+});
+window.addEventListener('online', () => {
+  document.title = document.title.replace('[OFFLINE] ', '');
+  document.body.classList.remove('offline-mode');
+});

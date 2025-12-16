@@ -48,6 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
             "2fa" => \App\Http\Middleware\TwoFactorChallenge::class,
             "file.validate" => \App\Http\Middleware\ValidateFileUpload::class,
             "anticheat.server" => \App\Http\Middleware\ServerSideAntiCheat::class,
+            "ip.whitelist" => \App\Http\Middleware\IpWhitelist::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

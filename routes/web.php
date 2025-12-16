@@ -14,8 +14,8 @@ Route::get('/offline', fn() => Inertia::render('Offline'))->name('offline');
 
 //prefix "admin"
 Route::prefix("admin")->group(function () {
-    //middleware "auth" with rate limiting
-    Route::group(["middleware" => ["auth", "throttle:150,1"]], function () {
+    //middleware "auth" with rate limiting and optional IP whitelist
+    Route::group(["middleware" => ["auth", "ip.whitelist", "throttle:100,1"]], function () {
         //route dashboard
         Route::get(
             "/dashboard",

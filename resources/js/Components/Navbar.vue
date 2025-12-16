@@ -6,6 +6,10 @@
                 </div>
                 <!-- Navbar links -->
                 <ul class="navbar-nav align-items-center">
+                    <!-- Dark Mode Toggle -->
+                    <li class="nav-item me-2">
+                        <DarkModeToggle />
+                    </li>
                     <!-- Language Switcher -->
                     <li class="nav-item me-2">
                         <LanguageSwitcher />
@@ -57,4 +61,5 @@
 import { Link } from '@inertiajs/vue3';
 import NotificationDropdown from './NotificationDropdown.vue';
 import LanguageSwitcher from './LanguageSwitcher.vue';
+import DarkModeToggle from './DarkModeToggle.vue';
 </script>

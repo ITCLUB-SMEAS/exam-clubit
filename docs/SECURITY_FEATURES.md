@@ -12,8 +12,13 @@ Dokumen ini menjelaskan fitur-fitur keamanan yang telah diimplementasikan dalam 
 | 2 | Rate Limiting Login | ✅ Implemented | v1.1.0 |
 | 3 | Single Session Management | ✅ Implemented | v1.1.0 |
 | 4 | Activity Log / Audit Trail | ✅ Implemented | v1.2.0 |
-| 5 | Input Sanitization (XSS Prevention) | ✅ Implemented | v1.2.0 |
+| 5 | Input Sanitization (XSS Prevention) | ✅ Enhanced | v1.4.0 |
 | 6 | Anti-Cheat System | ✅ Implemented | v1.3.0 |
+| 7 | Content Security Policy (CSP) | ✅ Implemented | v1.4.0 |
+| 8 | HSTS with Preload | ✅ Implemented | v1.4.0 |
+| 9 | Cross-Origin Policies | ✅ Implemented | v1.4.0 |
+| 10 | IP Whitelist for Admin | ✅ Implemented | v1.4.0 |
+| 11 | Code Question Sanitization | ✅ Implemented | v1.4.0 |
 
 ---
 

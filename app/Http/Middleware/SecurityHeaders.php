@@ -35,12 +35,18 @@ class SecurityHeaders
         // Permissions Policy - allow camera & microphone for anti-cheat
         $response->headers->set('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
 
+        // Cross-Origin policies for enhanced security
+        $response->headers->set('X-Permitted-Cross-Domain-Policies', 'none');
+        $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
+        $response->headers->set('Cross-Origin-Resource-Policy', 'same-origin');
+        $response->headers->set('Cross-Origin-Embedder-Policy', 'credentialless');
+
         // Content Security Policy
         $response->headers->set('Content-Security-Policy', $this->getCSP());
 
-        // Strict Transport Security (HTTPS only)
+        // Strict Transport Security (HTTPS only) with preload
         if ($request->secure() || config('app.env') === 'production') {
-            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
         }
 
         return $response;
@@ -48,12 +54,26 @@ class SecurityHeaders
 
     protected function getCSP(): string
     {
+        // Generate nonce for inline scripts (stored in app for Blade/Vue access)
         $nonce = base64_encode(random_bytes(16));
+        app()->instance('csp-nonce', $nonce);
+        
+        // In production, use strict nonce-based CSP
+        // In development, allow unsafe-inline for hot reload compatibility
+        $isProduction = config('app.env') === 'production';
+        
+        $scriptSrc = $isProduction
+            ? "script-src 'self' 'nonce-{$nonce}' https://challenges.cloudflare.com https://*.cloudflare.com https://cdn.jsdelivr.net blob:"
+            : "script-src 'self' 'unsafe-inline' 'nonce-{$nonce}' https://challenges.cloudflare.com https://*.cloudflare.com https://cdn.jsdelivr.net blob:";
+        
+        $styleSrc = $isProduction
+            ? "style-src 'self' 'nonce-{$nonce}' https://fonts.googleapis.com https://cdn.jsdelivr.net"
+            : "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net";
         
         $directives = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://*.cloudflare.com https://cdn.jsdelivr.net blob:",
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
+            $scriptSrc,
+            $styleSrc,
             "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:",
             "img-src 'self' data: blob: https:",
             "connect-src 'self' https://challenges.cloudflare.com https://*.cloudflare.com https://cdn.jsdelivr.net https://generativelanguage.googleapis.com wss: ws:",
@@ -68,7 +88,7 @@ class SecurityHeaders
         ];
 
         // Only add upgrade-insecure-requests in production
-        if (config('app.env') === 'production') {
+        if ($isProduction) {
             $directives[] = "upgrade-insecure-requests";
         }
 

@@ -5,6 +5,9 @@
 
     <!-- Landscape Warning for Mobile -->
     <LandscapeWarning />
+    
+    <!-- Onboarding Tutorial -->
+    <ExamOnboarding :exam-id="exam_group.id" />
 
     <!-- Skip to main content link for screen readers -->
     <a href="#main-question" class="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-50 focus:p-4 focus:bg-white">
@@ -39,26 +42,31 @@
                         <div>
                             <h5 class="mb-0" aria-live="polite">Soal No. <strong class="fw-bold">{{ page }}</strong> dari {{ Object.keys(all_questions).length }}</h5>
                         </div>
-                        <div class="d-flex flex-wrap gap-2" role="timer" aria-label="Waktu ujian">
-                            <!-- Violation counter for mobile -->
-                            <span v-if="antiCheatConfig.enabled" :class="violationBadgeClass" class="badge p-2 d-md-none" role="status">
-                                <i class="fas fa-shield-alt me-1" aria-hidden="true"></i>
-                                {{ antiCheat.violationCount.value }}/{{ antiCheatConfig.max_violations }}
-                            </span>
-                            <!-- Timer per soal (jika aktif) -->
-                            <VueCountdown v-if="questionTimeLimit > 0" :time="questionTimeRemaining" @end="handleQuestionTimeEnd" v-slot="{ minutes, seconds }">
-                                <span class="badge bg-warning text-dark p-2" role="timer" aria-label="Waktu soal">
-                                    <i class="fas fa-stopwatch" aria-hidden="true"></i> <span class="d-none d-sm-inline">Soal:</span> {{ minutes }}:{{ String(seconds).padStart(2, '0') }}
+                        <div class="d-flex flex-column align-items-end" role="timer" aria-label="Waktu ujian">
+                            <div class="d-flex flex-wrap gap-2 mb-1">
+                                <!-- Violation counter for mobile -->
+                                <span v-if="antiCheatConfig.enabled" :class="violationBadgeClass" class="badge p-2 d-md-none" role="status">
+                                    <i class="fas fa-shield-alt me-1" aria-hidden="true"></i>
+                                    {{ antiCheat.violationCount.value }}/{{ antiCheatConfig.max_violations }}
                                 </span>
-                            </VueCountdown>
-                            <!-- Timer total ujian -->
-                            <VueCountdown :time="duration" @progress="handleChangeDuration" @end="showModalEndTimeExam = true" v-slot="{ hours, minutes, seconds }">
-                                <span class="badge bg-info p-2" role="timer" aria-label="Sisa waktu ujian">
-                                    <i class="fas fa-clock" aria-hidden="true"></i>
-                                    <span class="d-none d-sm-inline">{{ hours }}j {{ minutes }}m {{ seconds }}d</span>
-                                    <span class="d-sm-none">{{ hours }}:{{ String(minutes).padStart(2, '0') }}:{{ String(seconds).padStart(2, '0') }}</span>
-                                </span>
-                            </VueCountdown>
+                                <!-- Timer per soal (jika aktif) -->
+                                <VueCountdown v-if="questionTimeLimit > 0" :time="questionTimeRemaining" @end="handleQuestionTimeEnd" v-slot="{ minutes, seconds }">
+                                    <span class="badge bg-warning text-dark p-2" role="timer" aria-label="Waktu soal">
+                                        <i class="fas fa-stopwatch" aria-hidden="true"></i> <span class="d-none d-sm-inline">Soal:</span> {{ minutes }}:{{ String(seconds).padStart(2, '0') }}
+                                    </span>
+                                </VueCountdown>
+                                <!-- Timer total ujian -->
+                                <VueCountdown :time="duration" @progress="handleChangeDuration" @end="showModalEndTimeExam = true" v-slot="{ hours, minutes, seconds }">
+                                    <span class="badge bg-info p-2" role="timer" aria-label="Sisa waktu ujian">
+                                        <i class="fas fa-clock" aria-hidden="true"></i>
+                                        <span class="d-none d-sm-inline">{{ hours }}j {{ minutes }}m {{ seconds }}d</span>
+                                        <span class="d-sm-none">{{ hours }}:{{ String(minutes).padStart(2, '0') }}:{{ String(seconds).padStart(2, '0') }}</span>
+                                    </span>
+                                </VueCountdown>
+                            </div>
+                            <div class="progress w-100" style="height: 5px;">
+                                <div class="progress-bar" :class="timerProgressColor" role="progressbar" :style="{ width: timerProgress + '%' }" :aria-valuenow="timerProgress" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -102,19 +110,33 @@
 
                         <div v-else-if="isShortAnswer">
                             <div class="mb-3">
-                                <label class="form-label fw-bold" for="short-answer-input">Jawaban Singkat</label>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label fw-bold" for="short-answer-input">Jawaban Singkat</label>
+                                    <span v-if="isAnswered(question_active)" class="badge bg-success"><i class="fas fa-check"></i> Tersimpan</span>
+                                    <span v-else class="badge bg-secondary">Belum dijawab</span>
+                                </div>
                                 <input type="text" id="short-answer-input" class="form-control" v-model="textAnswer" placeholder="Ketik jawaban Anda" aria-describedby="short-answer-help" />
                             </div>
-                            <button @click.prevent="submitAnswerText" class="btn btn-info btn-sm">Simpan Jawaban</button>
+                            <button @click.prevent="submitAnswerText" class="btn btn-info btn-sm" :disabled="isSubmitting">
+                                <span v-if="isSubmitting"><i class="fas fa-spinner fa-spin me-1"></i> Menyimpan...</span>
+                                <span v-else>Simpan Jawaban</span>
+                            </button>
                         </div>
 
                         <div v-else-if="isEssay">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Jawaban Essay</label>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label fw-bold">Jawaban Essay</label>
+                                    <span v-if="isAnswered(question_active)" class="badge bg-success"><i class="fas fa-check"></i> Tersimpan</span>
+                                    <span v-else class="badge bg-secondary">Belum dijawab</span>
+                                </div>
                                 <textarea class="form-control" rows="6" v-model="textAnswer" placeholder="Tulis jawaban Anda"></textarea>
                                 <small class="text-muted">Jawaban akan dinilai manual.</small>
                             </div>
-                            <button @click.prevent="submitAnswerText" class="btn btn-info btn-sm">Simpan Jawaban</button>
+                            <button @click.prevent="submitAnswerText" class="btn btn-info btn-sm" :disabled="isSubmitting">
+                                <span v-if="isSubmitting"><i class="fas fa-spinner fa-spin me-1"></i> Menyimpan...</span>
+                                <span v-else>Simpan Jawaban</span>
+                            </button>
                         </div>
 
                         <div v-else-if="isTrueFalse">
@@ -185,42 +207,24 @@
                         <div v-for="(question, index) in all_questions" :key="index" class="p-1" style="width: 20%; min-width: 45px;">
                             <!-- If time_per_question active, only allow current and next questions -->
                             <template v-if="questionTimeLimit">
-                                <button v-if="index+1 == page" class="btn btn-gray-400 btn-sm w-100" disabled>{{ index + 1 }}</button>
-                                <button v-else-if="index+1 < page" class="btn btn-secondary btn-sm w-100" disabled :title="'Soal sudah dilewati'">
+                                <button v-if="index+1 == page" class="btn btn-gray-400 btn-sm w-100" disabled :aria-label="'Soal nomor ' + (index + 1) + ', sedang dibuka'">{{ index + 1 }}</button>
+                                <button v-else-if="index+1 < page" class="btn btn-secondary btn-sm w-100" disabled :title="'Soal sudah dilewati'" :aria-label="'Soal nomor ' + (index + 1) + ', terkunci'">
                                     <i class="fas fa-lock" style="font-size: 10px;"></i>
                                 </button>
-                                <button v-else-if="!isAnswered(question)" class="btn btn-outline-info btn-sm w-100" disabled>{{ index + 1 }}</button>
-                                <button v-else class="btn btn-info btn-sm w-100" disabled>{{ index + 1 }}</button>
+                                <button v-else-if="!isAnswered(question)" class="btn btn-outline-info btn-sm w-100" disabled :aria-label="'Soal nomor ' + (index + 1) + ', belum dikerjakan'">{{ index + 1 }}</button>
+                                <button v-else class="btn btn-info btn-sm w-100" disabled :aria-label="'Soal nomor ' + (index + 1) + ', sudah dikerjakan'">{{ index + 1 }}</button>
                             </template>
                             <!-- Normal navigation -->
                             <template v-else>
-                                <button @click.prevent="clickQuestion(index)" v-if="index+1 == page" class="btn btn-gray-400 btn-sm w-100">{{ index + 1 }}</button>
-                                <button @click.prevent="clickQuestion(index)" v-else-if="!isAnswered(question)" class="btn btn-outline-info btn-sm w-100">{{ index + 1 }}</button>
-                                <button @click.prevent="clickQuestion(index)" v-else class="btn btn-info btn-sm w-100">{{ index + 1 }}</button>
+                                <button @click.prevent="clickQuestion(index)" v-if="index+1 == page" class="btn btn-gray-400 btn-sm w-100" :aria-label="'Soal nomor ' + (index + 1) + ', sedang dibuka'">{{ index + 1 }}</button>
+                                <button @click.prevent="clickQuestion(index)" v-else-if="!isAnswered(question)" class="btn btn-outline-info btn-sm w-100" :aria-label="'Soal nomor ' + (index + 1) + ', belum dikerjakan'">{{ index + 1 }}</button>
+                                <button @click.prevent="clickQuestion(index)" v-else class="btn btn-info btn-sm w-100" :aria-label="'Soal nomor ' + (index + 1) + ', sudah dikerjakan'">{{ index + 1 }}</button>
                             </template>
                         </div>
                     </div>
                 </div>
                 <div class="card-footer">
-                    <button @click="showModalEndExam = true" class="btn btn-danger btn-md border-0 shadow w-100">Akhiri Ujian</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- modal akhiri ujian -->
-    <div v-if="showModalEndExam" class="modal fade" :class="{ 'show': showModalEndExam }" tabindex="-1" style="display:block;" role="dialog" aria-modal="true" aria-labelledby="endExamModalTitle">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="endExamModalTitle">Akhiri Ujian ?</h5>
-                </div>
-                <div class="modal-body">
-                    Setelah mengakhiri ujian, Anda tidak dapat kembali ke ujian ini lagi. Yakin akan mengakhiri ujian?
-                </div>
-                <div class="modal-footer">
-                    <button @click.prevent="endExam" type="button" class="btn btn-primary" autofocus>Ya, Akhiri</button>
-                    <button @click.prevent="showModalEndExam = false" type="button" class="btn btn-secondary">Tutup</button>
+                    <button @click="confirmEndExam" class="btn btn-danger btn-md border-0 shadow w-100">Akhiri Ujian</button>
                 </div>
             </div>
         </div>
@@ -445,6 +449,9 @@
 
     //import LandscapeWarning component
     import LandscapeWarning from '../../../Components/LandscapeWarning.vue';
+    
+    //import ExamOnboarding component
+    import ExamOnboarding from '../../../Components/ExamOnboarding.vue';
 
     export default {
         //layout
@@ -455,7 +462,8 @@
             Head,
             Link,
             VueCountdown,
-            LandscapeWarning
+            LandscapeWarning,
+            ExamOnboarding
         },
 
         //props
@@ -1022,8 +1030,12 @@
                 });
             });
 
-            //method submit answer (text/essay)
+            // Loading state
+            const isSubmitting = ref(false);
+
+            //method submitAnswerText
             const submitAnswerText = (() => {
+                isSubmitting.value = true;
                 router.post('/student/exam-answer', {
                     exam_id: props.exam_group.exam.id,
                     exam_session_id: props.exam_group.exam_session.id,
@@ -1041,6 +1053,9 @@
                             showConfirmButton: false,
                             timer: 1500
                         });
+                    },
+                    onFinish: () => {
+                        isSubmitting.value = false;
                     }
                 });
             });
@@ -1069,8 +1084,44 @@
             });
 
             //define state modal
-            const showModalEndExam      = ref(false);
+            const showModalEndExam      = ref(false); // Deprecated, replaced by SweetAlert
             const showModalEndTimeExam  = ref(false);
+
+            // Calculate total duration in ms
+            const totalDuration = props.exam_group.exam.duration * 60 * 1000;
+
+            // Timer progress computed
+            const timerProgress = computed(() => {
+                if (totalDuration <= 0) return 0;
+                // duration.value is remaining time (ms)
+                // We want progress bar to fill up or empty down?
+                // Usually time remaining bar empties. 100% -> 0%
+                return (duration.value / totalDuration) * 100;
+            });
+            
+            const timerProgressColor = computed(() => {
+                if (timerProgress.value < 10) return 'bg-danger';
+                if (timerProgress.value < 30) return 'bg-warning';
+                return 'bg-info';
+            });
+
+            // Confirm end exam with SweetAlert2
+            const confirmEndExam = () => {
+                Swal.fire({
+                    title: 'Akhiri Ujian?',
+                    text: "Setelah mengakhiri ujian, Anda tidak dapat kembali mengerjakan. Yakin ingin menyelesaikan?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Selesai!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        endExam();
+                    }
+                });
+            };
 
             //method endExam
             const endExam = (() => {
@@ -1091,15 +1142,8 @@
                     exam_session_id: props.exam_group.exam_session.id,
                 });
 
-                //show success alert
-                Swal.fire({
-                    title: 'Success!',
-                    text: 'Ujian Selesai!.',
-                    icon: 'success',
-                    showConfirmButton: false,
-                    timer: 4000
-                });
-
+                // SweetAlert will be handled by the redirect or on-finish of the Inertia visit if needed, 
+                // but usually the backend redirects to result page.
             });
 
             // Cleanup on unmount
@@ -1195,10 +1239,14 @@
                 submitAnswerSingle,
                 submitAnswerMultiple,
                 submitAnswerText,
+                isSubmitting,
                 submitAnswerMatching,
                 showModalEndExam,
                 showModalEndTimeExam,
                 endExam,
+                confirmEndExam,
+                timerProgress,
+                timerProgressColor,
                 isAnswered,
                 selectedOptions,
                 textAnswer,
