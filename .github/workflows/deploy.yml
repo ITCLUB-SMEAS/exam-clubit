@@ -52,27 +52,37 @@ jobs:
             # Run migrations
             php artisan migrate --force
             
-            # Clear and cache
+            # Clear all caches first
+            php artisan cache:clear
+            php artisan config:clear
+            php artisan route:clear
+            php artisan view:clear
+            
+            # Rebuild caches
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
             php artisan event:cache
+            
+            # Clear Redis cache (optional, uncomment if needed)
+            # redis-cli FLUSHDB
             
             # Fix permissions (Fedora/SELinux)
             sudo chown -R nginx:nginx storage bootstrap/cache
             sudo chmod -R 775 storage bootstrap/cache
             sudo restorecon -Rv storage bootstrap/cache 2>/dev/null || true
             
-            # Restart PHP-FPM (Fedora)
-            sudo systemctl reload php-fpm || true
+            # Gracefully reload Laravel Octane (Swoole)
+            # This will finish current requests before reloading workers
+            php artisan octane:reload || php artisan octane:stop && php artisan octane:start --server=swoole --host=127.0.0.1 --port=8000 &
             
-            # Restart Octane (if using)
-            php artisan octane:reload 2>/dev/null || true
+            # Restart Horizon (Redis queue manager) if using
+            php artisan horizon:terminate 2>/dev/null || true
             
             # Restart queue workers
-            php artisan queue:restart 2>/dev/null || true
+            php artisan queue:restart
             
-            echo "✅ Deployment completed!"
+            echo "✅ Deployment completed with Octane + Redis!"
 
       - name: Notify Telegram
         if: always()
