@@ -58,11 +58,21 @@ jobs:
             php artisan view:cache
             php artisan event:cache
             
+            # Fix permissions (Fedora/SELinux)
+            sudo chown -R nginx:nginx storage bootstrap/cache
+            sudo chmod -R 775 storage bootstrap/cache
+            sudo restorecon -Rv storage bootstrap/cache 2>/dev/null || true
+            
+            # Restart PHP-FPM (Fedora)
+            sudo systemctl reload php-fpm || true
+            
             # Restart Octane (if using)
             php artisan octane:reload 2>/dev/null || true
             
             # Restart queue workers
             php artisan queue:restart 2>/dev/null || true
+            
+            echo "✅ Deployment completed!"
 
       - name: Notify Telegram
         if: always()
