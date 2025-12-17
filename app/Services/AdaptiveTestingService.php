@@ -22,7 +22,8 @@ class AdaptiveTestingService
     {
         $exam = $grade->exam;
         
-        if (!$exam->adaptive_mode) {
+        // Guard: exam must exist and have adaptive mode enabled
+        if (!$exam || !$exam->adaptive_mode) {
             return null;
         }
 
@@ -63,8 +64,10 @@ class AdaptiveTestingService
         foreach ($answers as $answer) {
             if (!$answer->question) continue;
             
-            $difficulty = self::DIFFICULTY_THETA[$answer->question->difficulty] ?? 0;
-            $weight = 1 + abs($difficulty); // Harder questions worth more
+            // Safe difficulty lookup with validation
+            $difficultyKey = $answer->question->difficulty ?? 'medium';
+            $difficulty = self::DIFFICULTY_THETA[$difficultyKey] ?? 0.0;
+            $weight = 1.0 + abs($difficulty); // Harder questions worth more
             
             if ($this->isCorrect($answer)) {
                 $correct += $weight;
@@ -108,10 +111,17 @@ class AdaptiveTestingService
      */
     protected function isCorrect(Answer $answer): bool
     {
-        if ($answer->answer && $answer->question) {
-            return $answer->answer == $answer->question->answer;
+        // First check is_correct field (most reliable)
+        if ($answer->is_correct === 'Y' || $answer->is_correct === true || $answer->is_correct === 1) {
+            return true;
         }
-        return $answer->is_correct === 'Y' || $answer->is_correct === true;
+        
+        // Fallback: compare answer values for multiple choice
+        if ($answer->answer && $answer->question && $answer->question->answer) {
+            return (string) $answer->answer === (string) $answer->question->answer;
+        }
+        
+        return false;
     }
 
     /**
@@ -145,7 +155,9 @@ class AdaptiveTestingService
             if (!$answer->question) continue;
             
             $points = $answer->question->points ?? 1;
-            $difficultyMultiplier = $this->getDifficultyMultiplier($answer->question->difficulty);
+            // Safe difficulty multiplier with null check
+            $difficulty = $answer->question->difficulty ?? 'medium';
+            $difficultyMultiplier = $this->getDifficultyMultiplier($difficulty);
             
             $maxScore += $points * $difficultyMultiplier;
             
