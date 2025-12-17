@@ -16,13 +16,15 @@ use App\Services\ExamScoringService;
 use App\Services\ExamTimerService;
 use App\Services\ExamCompletionService;
 use App\Services\AnswerTimingService;
+use App\Services\AdaptiveTestingService;
 
 class ExamController extends Controller
 {
     public function __construct(
         protected ExamScoringService $scoringService,
         protected ExamTimerService $timerService,
-        protected ExamCompletionService $completionService
+        protected ExamCompletionService $completionService,
+        protected AdaptiveTestingService $adaptiveService
     ) {}
     /**
      * confirmation
@@ -252,7 +254,27 @@ class ExamController extends Controller
 
         // Only generate new questions if no answers exist yet
         if (!$existingAnswers) {
-            DB::transaction(function () use ($exam_group) {
+            DB::transaction(function () use ($exam_group, $grade) {
+                // For adaptive mode, only create first question (medium difficulty)
+                if ($exam_group->exam->adaptive_mode) {
+                    $question = Question::where("exam_id", $exam_group->exam->id)
+                        ->where("difficulty", "medium")
+                        ->inRandomOrder()
+                        ->first();
+                    
+                    // Fallback to any question if no medium found
+                    if (!$question) {
+                        $question = Question::where("exam_id", $exam_group->exam->id)
+                            ->inRandomOrder()
+                            ->first();
+                    }
+                    
+                    if ($question) {
+                        $this->createAnswerRecord($exam_group, $question, 1);
+                    }
+                    return;
+                }
+
                 //cek apakah questions / soal ujian di random
                 if ($exam_group->exam->random_question == "Y") {
                     $query = Question::where("exam_id", $exam_group->exam->id)
@@ -270,35 +292,7 @@ class ExamController extends Controller
                 $question_order = 1;
 
                 foreach ($questions as $question) {
-                    $options = [1, 2];
-                    if (!empty($question->option_3)) $options[] = 3;
-                    if (!empty($question->option_4)) $options[] = 4;
-                    if (!empty($question->option_5)) $options[] = 5;
-
-                    if ($exam_group->exam->random_answer == "Y") {
-                        shuffle($options);
-                    }
-
-                    $isEssay = $question->question_type === Question::TYPE_ESSAY;
-                    $isMultiple = in_array($question->question_type, [
-                        Question::TYPE_MULTIPLE_CHOICE_SINGLE,
-                        Question::TYPE_MULTIPLE_CHOICE_MULTIPLE
-                    ]);
-
-                    Answer::create([
-                        "exam_id" => $exam_group->exam->id,
-                        "exam_session_id" => $exam_group->exam_session->id,
-                        "question_id" => $question->id,
-                        "student_id" => auth()->guard("student")->user()->id,
-                        "question_order" => $question_order,
-                        "answer_order" => $isMultiple ? implode(",", $options) : "1",
-                        "answer" => 0,
-                        "is_correct" => "N",
-                        "answer_text" => null,
-                        "answer_options" => null,
-                        "points_awarded" => 0,
-                        "needs_manual_review" => $isEssay,
-                    ]);
+                    $this->createAnswerRecord($exam_group, $question, $question_order);
                     $question_order++;
                 }
             });
@@ -688,6 +682,19 @@ class ExamController extends Controller
             $answer->update();
         }
 
+        // For adaptive mode, generate next question after answering
+        if ($exam_group->exam->adaptive_mode) {
+            $nextQuestion = $this->generateNextAdaptiveQuestion($exam_group, $grade);
+            if ($nextQuestion) {
+                $currentMaxOrder = Answer::where("student_id", auth()->guard("student")->user()->id)
+                    ->where("exam_id", $exam_group->exam->id)
+                    ->where("exam_session_id", $exam_group->exam_session->id)
+                    ->max("question_order") ?? 0;
+                
+                $this->createAnswerRecord($exam_group, $nextQuestion, $currentMaxOrder + 1);
+            }
+        }
+
         return redirect()->back();
     }
 
@@ -846,5 +853,61 @@ class ExamController extends Controller
             $matchingAnswers,
             $question->exam
         );
+    }
+
+    /**
+     * Create answer record for a question
+     */
+    private function createAnswerRecord(ExamGroup $exam_group, Question $question, int $question_order): void
+    {
+        $options = [1, 2];
+        if (!empty($question->option_3)) $options[] = 3;
+        if (!empty($question->option_4)) $options[] = 4;
+        if (!empty($question->option_5)) $options[] = 5;
+
+        if ($exam_group->exam->random_answer == "Y") {
+            shuffle($options);
+        }
+
+        $isEssay = $question->question_type === Question::TYPE_ESSAY;
+        $isMultiple = in_array($question->question_type, [
+            Question::TYPE_MULTIPLE_CHOICE_SINGLE,
+            Question::TYPE_MULTIPLE_CHOICE_MULTIPLE
+        ]);
+
+        Answer::create([
+            "exam_id" => $exam_group->exam->id,
+            "exam_session_id" => $exam_group->exam_session->id,
+            "question_id" => $question->id,
+            "student_id" => auth()->guard("student")->user()->id,
+            "question_order" => $question_order,
+            "answer_order" => $isMultiple ? implode(",", $options) : "1",
+            "answer" => 0,
+            "is_correct" => "N",
+            "answer_text" => null,
+            "answer_options" => null,
+            "points_awarded" => 0,
+            "needs_manual_review" => $isEssay,
+        ]);
+    }
+
+    /**
+     * Generate next adaptive question based on student performance
+     */
+    private function generateNextAdaptiveQuestion(ExamGroup $exam_group, Grade $grade): ?Question
+    {
+        $answeredQuestionIds = Answer::where("student_id", auth()->guard("student")->user()->id)
+            ->where("exam_id", $exam_group->exam->id)
+            ->where("exam_session_id", $exam_group->exam_session->id)
+            ->pluck("question_id")
+            ->toArray();
+
+        // Check question limit
+        $limit = $exam_group->exam->question_limit;
+        if ($limit && count($answeredQuestionIds) >= $limit) {
+            return null;
+        }
+
+        return $this->adaptiveService->getNextQuestion($grade, $answeredQuestionIds);
     }
 }

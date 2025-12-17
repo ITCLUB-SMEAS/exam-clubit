@@ -198,6 +198,23 @@
                                 <small class="text-muted">Deteksi suara mencurigakan via mikrofon (memerlukan izin mikrofon)</small>
                             </div>
 
+                            <!-- Adaptive Testing -->
+                            <hr>
+                            <h6 class="mb-3"><i class="fas fa-brain"></i> Adaptive Testing (CAT)</h6>
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="adaptiveMode" v-model="form.adaptive_mode">
+                                    <label class="form-check-label" for="adaptiveMode">
+                                        <i class="fas fa-chart-line me-1"></i> Aktifkan Mode Adaptive
+                                    </label>
+                                </div>
+                                <small class="text-muted">Soal akan dipilih otomatis berdasarkan kemampuan siswa. Soal sulit jika jawab benar, soal mudah jika jawab salah.</small>
+                            </div>
+                            <div class="alert alert-warning mb-4" v-if="form.adaptive_mode">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Catatan:</strong> Pastikan soal sudah memiliki tingkat kesulitan (mudah/sedang/sulit). Acak soal akan dinonaktifkan karena urutan ditentukan oleh sistem adaptive.
+                            </div>
+
                             <button type="submit" class="btn btn-md btn-primary border-0 shadow me-2">Simpan</button>
                             <button type="reset" class="btn btn-md btn-warning border-0 shadow">Reset</button>
                         </form>
@@ -269,6 +286,7 @@
                 negative_marking_percentage: 25,
                 face_detection_enabled: false,
                 audio_detection_enabled: false,
+                adaptive_mode: false,
             });
 
             //method "submit"
@@ -294,6 +312,7 @@
                     negative_marking_percentage: form.negative_marking_percentage || 25,
                     face_detection_enabled: form.face_detection_enabled,
                     audio_detection_enabled: form.audio_detection_enabled,
+                    adaptive_mode: form.adaptive_mode,
                 }, {
                     onSuccess: () => {
                         //show success alert

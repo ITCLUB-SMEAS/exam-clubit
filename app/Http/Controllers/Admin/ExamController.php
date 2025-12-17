@@ -100,7 +100,7 @@ class ExamController extends Controller
             "classroom_id" => $request->classroom_id,
             "duration" => $request->duration,
             "description" => $request->description,
-            "random_question" => $request->random_question,
+            "random_question" => $request->adaptive_mode ? 'N' : $request->random_question,
             "random_answer" => $request->random_answer,
             "show_answer" => $request->show_answer,
             "passing_grade" => $request->passing_grade ?? 0,
@@ -109,6 +109,7 @@ class ExamController extends Controller
             "time_per_question" => $request->time_per_question,
             "block_multiple_monitors" => true,
             "block_virtual_machine" => true,
+            "adaptive_mode" => $request->adaptive_mode ?? false,
         ]);
 
         //redirect
@@ -190,7 +191,7 @@ class ExamController extends Controller
             "classroom_id" => $request->classroom_id,
             "duration" => $request->duration,
             "description" => $request->description,
-            "random_question" => $request->random_question,
+            "random_question" => $request->adaptive_mode ? 'N' : $request->random_question,
             "random_answer" => $request->random_answer,
             "show_answer" => $request->show_answer,
             "passing_grade" => $request->passing_grade ?? 0,
@@ -199,6 +200,7 @@ class ExamController extends Controller
             "time_per_question" => $request->time_per_question,
             "block_multiple_monitors" => true,
             "block_virtual_machine" => true,
+            "adaptive_mode" => $request->adaptive_mode ?? false,
         ]);
 
         //redirect
