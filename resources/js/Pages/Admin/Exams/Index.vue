@@ -45,7 +45,12 @@
                                 <tbody>
                                     <tr v-for="(exam, index) in exams.data" :key="index">
                                         <td class="fw-bold text-center">{{ ++index + (exams.current_page - 1) * exams.per_page }}</td>
-                                        <td>{{ exam.title }}</td>
+                                        <td>
+                                            {{ exam.title }}
+                                            <span v-if="exam.adaptive_mode" class="badge bg-purple ms-1" title="Adaptive Testing">
+                                                <i class="fas fa-brain"></i> CAT
+                                            </span>
+                                        </td>
                                         <td>{{ exam.lesson?.title || '-' }}</td>
                                         <td class="text-center">{{ exam.classroom?.title || '-' }}</td>
                                         <td class="text-center">{{ exam.questions?.length || 0 }}</td>

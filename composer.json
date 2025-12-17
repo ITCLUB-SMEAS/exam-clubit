@@ -16,6 +16,7 @@
         "laravel/tinker": "^2.10.1",
         "maatwebsite/excel": "^3.1",
         "pragmarx/google2fa": "^8.0",
+        "predis/predis": "^3.3",
         "symfony/string": "^7.3",
         "tightenco/ziggy": "^2.6"
     },

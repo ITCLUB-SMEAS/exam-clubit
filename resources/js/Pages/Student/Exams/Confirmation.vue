@@ -145,6 +145,10 @@
                                     <td class="fw-bold">Maks. Percobaan</td>
                                     <td>{{ exam_group.exam?.max_attempts }}x</td>
                                 </tr>
+                                <tr v-if="exam_group.exam?.adaptive_mode">
+                                    <td class="fw-bold">Mode Ujian</td>
+                                    <td><span class="badge bg-purple"><i class="fas fa-brain me-1"></i> Adaptive (CAT)</span></td>
+                                </tr>
                             </thead>
                         </table>
                     </div>
