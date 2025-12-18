@@ -15,10 +15,6 @@
                             type="button"><i class="fas fa-file-excel me-1"></i>Import</Link>
                     </div>
                     <div class="col-6 col-md-2 mb-2">
-                        <Link href="/admin/students/bulk-photo" class="btn btn-md btn-info border-0 shadow w-100 text-white"
-                            type="button"><i class="fas fa-images me-1"></i>Foto</Link>
-                    </div>
-                    <div class="col-6 col-md-2 mb-2">
                         <Link href="/admin/students-bulk-password-reset" class="btn btn-md btn-warning border-0 shadow w-100"
                             type="button"><i class="fas fa-key me-1"></i>Reset PW</Link>
                     </div>

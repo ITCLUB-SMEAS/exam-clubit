@@ -5,6 +5,9 @@ namespace App\Imports;
 use App\Models\Room;
 use App\Models\Student;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
@@ -18,6 +21,7 @@ class StudentsImport implements ToModel, WithHeadingRow, SkipsEmptyRows, SkipsOn
 
     protected $skippedDuplicates = [];
     protected $rowNumber = 1;
+    protected $photoErrors = [];
 
     public function model(array $row)
     {
@@ -45,6 +49,13 @@ class StudentsImport implements ToModel, WithHeadingRow, SkipsEmptyRows, SkipsOn
             $roomId = $room?->id;
         }
 
+        // Handle photo URL
+        $photoPath = null;
+        if (!empty($row['photo_url']) || !empty($row['photo'])) {
+            $photoUrl = $row['photo_url'] ?? $row['photo'] ?? null;
+            $photoPath = $this->downloadAndSavePhoto($photoUrl, (string) $row['nisn']);
+        }
+
         return new Student([
             'nisn'          => (string) $row['nisn'],
             'name'          => trim($row['name']),
@@ -52,7 +63,86 @@ class StudentsImport implements ToModel, WithHeadingRow, SkipsEmptyRows, SkipsOn
             'gender'        => $row['gender'] ?? 'L',
             'classroom_id'  => (int) ($row['classroom_id'] ?? 1),
             'room_id'       => $roomId ? (int) $roomId : null,
+            'photo'         => $photoPath,
         ]);
+    }
+
+    /**
+     * Download photo from URL and save to storage
+     */
+    protected function downloadAndSavePhoto(?string $url, string $nisn): ?string
+    {
+        if (empty($url)) {
+            return null;
+        }
+
+        try {
+            // If it's a local path reference (e.g., just filename), skip download
+            if (!filter_var($url, FILTER_VALIDATE_URL)) {
+                // Assume it's a relative path or filename, try to use as-is
+                return null;
+            }
+
+            // Download the image
+            $response = Http::timeout(10)->get($url);
+            
+            if (!$response->successful()) {
+                $this->photoErrors[] = [
+                    'nisn' => $nisn,
+                    'url' => $url,
+                    'error' => 'Failed to download (HTTP ' . $response->status() . ')',
+                ];
+                return null;
+            }
+
+            // Get content type and determine extension
+            $contentType = $response->header('Content-Type');
+            $extension = $this->getExtensionFromContentType($contentType);
+            
+            if (!$extension) {
+                // Try to get extension from URL
+                $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
+                if (!in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+                    $extension = 'jpg'; // Default
+                }
+            }
+
+            // Generate unique filename
+            $filename = 'students/' . $nisn . '_' . Str::random(8) . '.' . $extension;
+
+            // Save to storage
+            Storage::disk('public')->put($filename, $response->body());
+
+            return $filename;
+
+        } catch (\Exception $e) {
+            $this->photoErrors[] = [
+                'nisn' => $nisn,
+                'url' => $url,
+                'error' => $e->getMessage(),
+            ];
+            return null;
+        }
+    }
+
+    /**
+     * Get file extension from content type
+     */
+    protected function getExtensionFromContentType(?string $contentType): ?string
+    {
+        if (!$contentType) {
+            return null;
+        }
+
+        $map = [
+            'image/jpeg' => 'jpg',
+            'image/jpg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp',
+        ];
+
+        return $map[$contentType] ?? null;
     }
 
     public function rules(): array
@@ -66,5 +156,10 @@ class StudentsImport implements ToModel, WithHeadingRow, SkipsEmptyRows, SkipsOn
     public function getSkippedDuplicates(): array
     {
         return $this->skippedDuplicates;
+    }
+
+    public function getPhotoErrors(): array
+    {
+        return $this->photoErrors;
     }
 }

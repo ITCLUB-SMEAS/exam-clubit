@@ -66,16 +66,11 @@ Route::prefix("admin")->group(function () {
                 "storeImport",
             ])->name("admin.students.storeImport");
 
-            // Bulk Photo Upload
-            Route::get("/students/bulk-photo", [
+            // Download student import template
+            Route::get("/students/template", [
                 \App\Http\Controllers\Admin\StudentController::class,
-                "bulkPhotoUpload",
-            ])->name("admin.students.bulkPhotoUpload");
-
-            Route::post("/students/bulk-photo", [
-                \App\Http\Controllers\Admin\StudentController::class,
-                "processBulkPhotoUpload",
-            ])->name("admin.students.bulkPhotoUpload.process");
+                "downloadTemplate",
+            ])->name("admin.students.template");
 
             Route::post("/students/{student}/toggle-block", [
                 \App\Http\Controllers\Admin\StudentController::class,

@@ -189,6 +189,52 @@ class StudentController extends Controller
     {
         return inertia('Admin/Students/Import');
     }
+
+    /**
+     * Download Excel template for student import
+     */
+    public function downloadTemplate()
+    {
+        $headers = [
+            'nisn',
+            'name', 
+            'password',
+            'gender',
+            'classroom_id',
+            'room_id',
+            'photo_url'
+        ];
+
+        $example = [
+            '1234567890',
+            'John Doe',
+            '123456',
+            'L',
+            '1',
+            'auto',
+            'https://example.com/photo.jpg'
+        ];
+
+        $callback = function() use ($headers, $example) {
+            $file = fopen('php://output', 'w');
+            
+            // Add UTF-8 BOM for proper Excel encoding
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Write header
+            fputcsv($file, $headers);
+            
+            // Write example row
+            fputcsv($file, $example);
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="template_siswa.csv"',
+        ]);
+    }
     
     /**
      * storeImport
@@ -206,16 +252,30 @@ class StudentController extends Controller
         $import = new StudentsImport();
         Excel::import($import, $request->file('file'));
 
-        // Check for duplicates
+        // Check for duplicates and photo errors
         $duplicates = $import->getSkippedDuplicates();
+        $photoErrors = $import->getPhotoErrors();
+        
+        $messages = [];
         
         if (count($duplicates) > 0) {
             $duplicateList = collect($duplicates)
                 ->map(fn($d) => "Baris {$d['row']}: {$d['nisn']} - {$d['name']}")
                 ->implode(', ');
-            
+            $messages[] = count($duplicates) . " siswa dilewati karena NISN sudah ada: " . $duplicateList;
+        }
+        
+        if (count($photoErrors) > 0) {
+            $photoErrorList = collect($photoErrors)
+                ->map(fn($p) => "{$p['nisn']}: {$p['error']}")
+                ->take(5)
+                ->implode(', ');
+            $messages[] = count($photoErrors) . " foto gagal didownload: " . $photoErrorList;
+        }
+
+        if (count($messages) > 0) {
             return redirect()->route('admin.students.index')
-                ->with('warning', "Import selesai. " . count($duplicates) . " siswa dilewati karena NISN sudah ada: " . $duplicateList);
+                ->with('warning', "Import selesai. " . implode('. ', $messages));
         }
 
         return redirect()->route('admin.students.index')

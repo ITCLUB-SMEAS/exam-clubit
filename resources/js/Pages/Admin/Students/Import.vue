@@ -7,18 +7,33 @@
             <div class="col-md-12">
                 <Link href="/admin/students" class="btn btn-md btn-primary border-0 shadow mb-3 me-3" type="button"><i
                     class="fas fa-long-arrow-alt-left me-2"></i> Kembali</Link>
-                <a href="/assets/excel/students.xls" target="_blank"
+                <a href="/admin/students/template"
                     class="btn btn-md btn-success border-0 shadow mb-3 text-white" type="button"><i
-                        class="fas fa-file-excel me-2"></i> Contoh Format</a>
+                        class="fas fa-file-excel me-2"></i> Download Template</a>
                 <div class="card border-0 shadow">
                     <div class="card-body">
                         <h5><i class="fas fa-user"></i> Import Siswa</h5>
                         <hr>
+
+                        <!-- Info Box -->
+                        <div class="alert alert-info mb-4">
+                            <h6><i class="fas fa-info-circle me-2"></i>Format Kolom Excel</h6>
+                            <ul class="mb-0 small">
+                                <li><strong>nisn</strong> - NISN siswa (wajib)</li>
+                                <li><strong>name</strong> - Nama lengkap siswa (wajib)</li>
+                                <li><strong>password</strong> - Password (default: 123456)</li>
+                                <li><strong>gender</strong> - Jenis kelamin: L/P (default: L)</li>
+                                <li><strong>classroom_id</strong> - ID Kelas (default: 1)</li>
+                                <li><strong>room_id</strong> - ID Ruangan (kosong/auto = otomatis)</li>
+                                <li><strong>photo_url</strong> - <span class="badge bg-success">BARU!</span> URL foto siswa (opsional, akan didownload otomatis)</li>
+                            </ul>
+                        </div>
+
                         <form @submit.prevent="submit">
 
                             <div class="mb-4">
-                                <label>File Excel</label>
-                                <input type="file" class="form-control" @input="form.file = $event.target.files[0]">
+                                <label>File Excel (.xlsx, .xls)</label>
+                                <input type="file" class="form-control" accept=".xlsx,.xls" @input="form.file = $event.target.files[0]">
                                 <div v-if="errors.file" class="alert alert-danger mt-2">
                                     {{ errors.file }}
                                 </div>
