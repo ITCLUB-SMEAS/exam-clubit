@@ -34,8 +34,8 @@
                     </div>
                 </div>
 
-                <!-- Turnstile Widget -->
-                <div class="mb-4">
+                <!-- Turnstile Widget (only shows if site key is configured) -->
+                <div v-if="turnstileSiteKey" class="mb-4">
                     <div ref="turnstileRef"></div>
                     <div v-if="errors.cf_turnstile_response" class="alert alert-danger mt-2">
                         {{ errors.cf_turnstile_response }}
@@ -52,7 +52,7 @@
                 </div>
             </div>
             <div class="d-grid">
-                <button type="submit" class="btn btn-gray-800" :disabled="!turnstileToken">LOGIN</button>
+                <button type="submit" class="btn btn-gray-800" :disabled="turnstileSiteKey && !turnstileToken">LOGIN</button>
             </div>
         </form>
     </div>

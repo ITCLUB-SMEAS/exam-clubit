@@ -72,8 +72,8 @@
                             <div v-if="errors.password" class="alert alert-danger mt-2">{{ errors.password }}</div>
                         </div>
 
-                        <!-- Turnstile Widget -->
-                        <div class="mb-4">
+                        <!-- Turnstile Widget (only shows if site key is configured) -->
+                        <div v-if="turnstileSiteKey" class="mb-4">
                             <div ref="turnstileRef" class="cf-turnstile"></div>
                             <div v-if="errors.cf_turnstile_response" class="alert alert-danger mt-2">{{ errors.cf_turnstile_response }}</div>
                         </div>
@@ -87,7 +87,7 @@
                     </div>
 
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-gray-800" :disabled="isLocked || isLoading || !turnstileToken">
+                        <button type="submit" class="btn btn-gray-800" :disabled="isLocked || isLoading || (turnstileSiteKey && !turnstileToken)">
                             <span v-if="isLoading"><i class="fas fa-spinner fa-spin me-2"></i>Memproses...</span>
                             <span v-else-if="isLocked"><i class="fas fa-lock me-2"></i>Terkunci ({{ formatTime(countdown) }})</span>
                             <span v-else><i class="fas fa-sign-in-alt me-2"></i>LOGIN</span>
@@ -125,6 +125,7 @@ export default {
         const initialCountdown = ref(0);
         const turnstileToken = ref('');
         const turnstileRef = ref(null);
+        const turnstileSiteKey = computed(() => props.turnstileSiteKey);
         let countdownInterval = null;
 
         const page = usePage();
@@ -193,7 +194,7 @@ export default {
 
         onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval); });
 
-        return { form, submit, isLoading, showPassword, countdown, isLocked, progressWidth, formatTime, turnstileToken, turnstileRef };
+        return { form, submit, isLoading, showPassword, countdown, isLocked, progressWidth, formatTime, turnstileToken, turnstileRef, turnstileSiteKey };
     }
 }
 </script>

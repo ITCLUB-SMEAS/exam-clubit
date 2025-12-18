@@ -10,6 +10,16 @@ class ValidateTurnstile
 {
     public function handle(Request $request, Closure $next)
     {
+        // Bypass in local/testing environment
+        if (app()->environment('local', 'testing')) {
+            return $next($request);
+        }
+
+        // Also bypass if no Turnstile keys are configured
+        if (empty(config('services.turnstile.secret')) || empty(config('services.turnstile.site_key'))) {
+            return $next($request);
+        }
+
         $token = $request->input('cf_turnstile_response');
 
         if (!$token) {
