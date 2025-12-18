@@ -49,6 +49,10 @@
                                     <td class="fw-bold">Nilai</td>
                                     <td>{{ grade.grade }}</td>
                                 </tr>
+                                <tr v-if="exam_group.exam.adaptive_mode">
+                                    <td class="fw-bold">Mode Ujian</td>
+                                    <td><span class="badge bg-purple"><i class="fas fa-brain me-1"></i> Adaptive (CAT)</span></td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -198,5 +202,10 @@
 
 .border-success {
     border-left: 4px solid #198754 !important;
+}
+
+.bg-purple {
+    background-color: #6f42c1 !important;
+    color: white;
 }
 </style>
