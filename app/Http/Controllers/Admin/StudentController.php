@@ -126,38 +126,54 @@ class StudentController extends Controller
             'nisn'          => ['required', Rule::unique('students')->ignore($student->id)->whereNull('deleted_at')],
             'gender'        => 'required|string',
             'classroom_id'  => 'required',
-            'password'      => 'confirmed'
+            'password'      => 'confirmed',
+            'photo'         => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
         ]);
 
-        //check passwordy
-        if($request->password == "") {
+        // Prepare update data
+        $updateData = [
+            'name'          => $request->name,
+            'nisn'          => $request->nisn,
+            'gender'        => $request->gender,
+            'classroom_id'  => $request->classroom_id
+        ];
 
-            //update student without password
-            $student->update([
-                'name'          => $request->name,
-                'nisn'          => $request->nisn,
-                'gender'        => $request->gender,
-                'classroom_id'  => $request->classroom_id
-            ]);
-
-        } else {
-
-            //update student with password
-            $student->update([
-                'name'          => $request->name,
-                'nisn'          => $request->nisn,
-                'gender'        => $request->gender,
-                'password'      => $request->password,
-                'classroom_id'  => $request->classroom_id
-            ]);
-
+        // Handle password
+        if ($request->password) {
+            $updateData['password'] = $request->password;
         }
+
+        // Handle photo upload
+        if ($request->hasFile('photo')) {
+            // Delete old photo if exists
+            if ($student->photo && \Storage::disk('public')->exists($student->photo)) {
+                \Storage::disk('public')->delete($student->photo);
+            }
+
+            // Store new photo
+            $file = $request->file('photo');
+            $ext = $file->getClientOriginalExtension();
+            $filename = "students/{$request->nisn}." . $ext;
+            
+            $file->storeAs('students', "{$request->nisn}.{$ext}", 'public');
+            $updateData['photo'] = $filename;
+        }
+
+        // Handle photo removal
+        if ($request->has('remove_photo') && $request->remove_photo == '1') {
+            if ($student->photo && \Storage::disk('public')->exists($student->photo)) {
+                \Storage::disk('public')->delete($student->photo);
+            }
+            $updateData['photo'] = null;
+        }
+
+        // Update student
+        $student->update($updateData);
 
         $this->logUpdated('student', $student, "Updated student: {$student->name}");
 
         //redirect
         return redirect()->route('admin.students.index');
-
     }
 
     /**
