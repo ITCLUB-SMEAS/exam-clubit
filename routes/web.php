@@ -72,6 +72,12 @@ Route::prefix("admin")->group(function () {
                 "downloadTemplate",
             ])->name("admin.students.template");
 
+            // Import from ZIP (Excel + Photos)
+            Route::post("/students/import-zip", [
+                \App\Http\Controllers\Admin\StudentController::class,
+                "storeImportZip",
+            ])->name("admin.students.storeImportZip");
+
             Route::post("/students/{student}/toggle-block", [
                 \App\Http\Controllers\Admin\StudentController::class,
                 "toggleBlock",

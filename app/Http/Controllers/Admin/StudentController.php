@@ -283,6 +283,170 @@ class StudentController extends Controller
     }
 
     /**
+     * Import students from ZIP file containing Excel + photos
+     */
+    public function storeImportZip(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:zip|max:102400', // 100MB max
+        ]);
+
+        return $this->safeExecute(function () use ($request) {
+            $zip = new \ZipArchive();
+            $zipPath = $request->file('file')->getRealPath();
+
+            if ($zip->open($zipPath) !== true) {
+                return back()->with('error', 'Gagal membuka file ZIP.');
+            }
+
+            $tempDir = storage_path('app/temp/import_' . uniqid());
+            mkdir($tempDir, 0755, true);
+
+            // Extract ZIP
+            $zip->extractTo($tempDir);
+            $zip->close();
+
+            // Find Excel/CSV file
+            $dataFile = null;
+            $possibleNames = ['data.xlsx', 'data.xls', 'data.csv', 'students.xlsx', 'students.xls', 'students.csv', 'siswa.xlsx', 'siswa.xls', 'siswa.csv'];
+            
+            foreach ($possibleNames as $name) {
+                if (file_exists($tempDir . '/' . $name)) {
+                    $dataFile = $tempDir . '/' . $name;
+                    break;
+                }
+            }
+
+            // Also search recursively one level
+            if (!$dataFile) {
+                $files = glob($tempDir . '/*/*.{xlsx,xls,csv}', GLOB_BRACE);
+                if (!empty($files)) {
+                    $dataFile = $files[0];
+                }
+            }
+
+            if (!$dataFile) {
+                $this->cleanupTempDir($tempDir);
+                return back()->with('error', 'File Excel/CSV tidak ditemukan dalam ZIP. Harap beri nama: data.xlsx, data.csv, students.xlsx, atau siswa.xlsx');
+            }
+
+            // Find photos directory
+            $photosDir = null;
+            $possiblePhotoDirs = ['photos', 'photo', 'foto', 'images', 'img'];
+            
+            foreach ($possiblePhotoDirs as $dir) {
+                if (is_dir($tempDir . '/' . $dir)) {
+                    $photosDir = $tempDir . '/' . $dir;
+                    break;
+                }
+            }
+
+            // If no photos folder, check root for image files
+            if (!$photosDir && glob($tempDir . '/*.{jpg,jpeg,png,webp}', GLOB_BRACE)) {
+                $photosDir = $tempDir;
+            }
+
+            // Import students from Excel
+            $import = new StudentsImport();
+            Excel::import($import, $dataFile);
+
+            $studentsImported = 0;
+            $photosMatched = 0;
+            $photosFailed = [];
+
+            // Get all newly imported students (those without photos)
+            $duplicates = $import->getSkippedDuplicates();
+            $duplicateNisns = collect($duplicates)->pluck('nisn')->toArray();
+
+            // Match photos to students
+            if ($photosDir) {
+                $allowedExt = ['jpg', 'jpeg', 'png', 'webp'];
+                $photoFiles = glob($photosDir . '/*.{' . implode(',', $allowedExt) . '}', GLOB_BRACE);
+
+                foreach ($photoFiles as $photoPath) {
+                    $filename = basename($photoPath);
+                    $nisn = pathinfo($filename, PATHINFO_FILENAME);
+                    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+
+                    // Find student by NISN
+                    $student = Student::where('nisn', $nisn)->first();
+                    
+                    if (!$student) {
+                        $photosFailed[] = "{$nisn} - Siswa tidak ditemukan";
+                        continue;
+                    }
+
+                    // Save photo
+                    $content = file_get_contents($photoPath);
+                    $newFilename = "students/{$nisn}." . $ext;
+                    
+                    \Storage::disk('public')->put($newFilename, $content);
+                    
+                    // Delete old photo if exists
+                    if ($student->photo && \Storage::disk('public')->exists($student->photo)) {
+                        \Storage::disk('public')->delete($student->photo);
+                    }
+
+                    $student->update(['photo' => $newFilename]);
+                    $photosMatched++;
+                }
+            }
+
+            // Cleanup temp directory
+            $this->cleanupTempDir($tempDir);
+
+            // Build result message
+            $messages = [];
+            
+            if (count($duplicates) > 0) {
+                $messages[] = count($duplicates) . " siswa dilewati (NISN sudah ada)";
+            }
+            
+            if ($photosMatched > 0) {
+                $messages[] = $photosMatched . " foto berhasil dipasangkan";
+            }
+
+            if (count($photosFailed) > 0) {
+                $failedList = implode(', ', array_slice($photosFailed, 0, 5));
+                if (count($photosFailed) > 5) $failedList .= '...';
+                $messages[] = count($photosFailed) . " foto gagal: " . $failedList;
+            }
+
+            $resultMessage = "Import ZIP selesai.";
+            if (!empty($messages)) {
+                $resultMessage .= " " . implode('. ', $messages);
+            }
+
+            return redirect()->route('admin.students.index')
+                ->with('success', $resultMessage);
+
+        }, 'Gagal memproses file ZIP. Pastikan format sesuai.');
+    }
+
+    /**
+     * Cleanup temporary directory
+     */
+    private function cleanupTempDir(string $dir): void
+    {
+        if (!is_dir($dir)) return;
+        
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+
+        foreach ($files as $file) {
+            if ($file->isDir()) {
+                rmdir($file->getRealPath());
+            } else {
+                unlink($file->getRealPath());
+            }
+        }
+        
+        rmdir($dir);
+    }
+
+    /**
      * Toggle block status of a student
      */
     public function toggleBlock(Student $student)
