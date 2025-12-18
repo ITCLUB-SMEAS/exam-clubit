@@ -101,7 +101,7 @@
                                                 </td>
                                                 <td>
                                                     <span v-if="item.checked_in">
-                                                        {{ item.checked_in_at }}
+                                                        {{ formatDateTime(item.checked_in_at) }}
                                                         <small class="text-muted">({{ item.checkin_method }})</small>
                                                     </span>
                                                     <span v-else>-</span>
@@ -131,6 +131,9 @@ import LayoutAdmin from '../../../Layouts/Admin.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
+
+//import date format composable
+import { formatDateTime } from '../../../composables/useDateFormat';
 
 export default {
     layout: LayoutAdmin,
@@ -227,6 +230,7 @@ export default {
             regenerateToken,
             toggleRequirement,
             manualCheckin,
+            formatDateTime,
         };
     }
 };

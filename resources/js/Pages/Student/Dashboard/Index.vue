@@ -32,11 +32,11 @@
                                 </tr>
                                 <tr>
                                     <td class="fw-bold" style="white-space: nowrap;">Mulai</td>
-                                    <td>{{ data.exam_group.exam_session?.start_time || '-' }}</td>
+                                    <td>{{ formatDateTime(data.exam_group.exam_session?.start_time) }}</td>
                                 </tr>
                                 <tr>
                                     <td class="fw-bold" style="white-space: nowrap;">Selesai</td>
-                                    <td>{{ data.exam_group.exam_session?.end_time || '-' }}</td>
+                                    <td>{{ formatDateTime(data.exam_group.exam_session?.end_time) }}</td>
                                 </tr>
                             </thead>
                         </table>
@@ -99,6 +99,9 @@
     import {
         Link
     } from '@inertiajs/vue3';
+    
+    //import date format composable
+    import { formatDateTime } from '../../../composables/useDateFormat';
 
     export default {
 
@@ -114,6 +117,11 @@
         props: {
             exam_groups: Array,
             auth: Object
+        },
+        
+        //methods
+        methods: {
+            formatDateTime
         }
 
     }

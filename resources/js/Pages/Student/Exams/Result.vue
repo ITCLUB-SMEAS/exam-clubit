@@ -33,11 +33,11 @@
                                 </tr>
                                 <tr>
                                     <td class="fw-bold">Mulai Mengerjakan</td>
-                                    <td>{{ grade.start_time }}</td>
+                                    <td>{{ formatDateTime(grade.start_time) }}</td>
                                 </tr>
                                 <tr>
                                     <td class="fw-bold">Selesai Mengerjakan</td>
-                                    <td>{{ grade.end_time }}</td>
+                                    <td>{{ formatDateTime(grade.end_time) }}</td>
                                 </tr>
                             </thead>
                             <tbody v-if="exam_group.exam.show_answer == 'Y'">
@@ -147,6 +147,9 @@
 
     //import computed from vue
     import { computed } from 'vue';
+    
+    //import date format composable
+    import { formatDateTime } from '../../../composables/useDateFormat';
 
     export default {
         //layout
@@ -181,7 +184,8 @@
             });
 
             return {
-                getTotalViolationClass
+                getTotalViolationClass,
+                formatDateTime
             };
         }
     }

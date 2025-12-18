@@ -67,7 +67,7 @@
                     <div v-if="attendance.checked_in">
                         <p class="text-success mb-0">
                             <i class="fas fa-check-circle me-2"></i>
-                            Anda sudah melakukan absensi pada {{ attendance.checked_in_at }}
+                            Anda sudah melakukan absensi pada {{ formatDateTime(attendance.checked_in_at) }}
                         </p>
                     </div>
                     <div v-else>
@@ -199,6 +199,9 @@
     import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
     import axios from 'axios';
     import LandscapeWarning from '../../../Components/LandscapeWarning.vue';
+    
+    //import date format composable
+    import { formatDateTime } from '../../../composables/useDateFormat';
 
     export default {
         layout: LayoutStudent,
@@ -355,7 +358,9 @@
                 cameraLoading,
                 cameraError,
                 previewVideo,
-                requestCamera
+                requestCamera,
+                // Date formatting
+                formatDateTime
             };
         }
     }
