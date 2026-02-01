@@ -1,0 +1,390 @@
+/**
+ * Error Pages CSS
+ * 
+ * Standalone CSS for error pages that works even when the main app is down.
+ * Built with Tailwind CSS v4 and includes all utilities used by error pages.
+ * 
+ * @source resources/css/errors.css
+ */
+
+/* Import Tailwind base (CSS v4 syntax) */
+@import "tailwindcss";
+
+/* Custom theme for error pages */
+@theme {
+    /* Pixel theme colors - used across all error pages */
+    --color-pixel-bg: #1a1b26;
+    --color-pixel-primary: #ff0055;
+    --color-pixel-accent: #00e5ff;
+    --color-pixel-yellow: #ffcc00;
+    --color-pixel-text: #e0e0e0;
+    --color-pixel-fire: #f97316;
+    --color-pixel-smoke: #4b5563;
+    --color-pixel-server: #1f2937;
+    --color-pixel-led: #10b981;
+    --color-pixel-amber: #f59e0b;
+    --color-pixel-blue: #60a5fa;
+    --color-pixel-purple: #a855f7;
+    --color-pixel-danger: #dc2626;
+    
+    /* Font families */
+    --font-pixel: "Press Start 2P", cursive;
+    --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* =====================================================
+   KEYFRAMES - All animations used by error pages
+   ===================================================== */
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes shake-hard {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-2px, -2px); }
+    20% { transform: translate(2px, 2px); }
+    30% { transform: translate(-2px, 2px); }
+    40% { transform: translate(2px, -2px); }
+    50% { transform: translate(-2px, 0); }
+    60% { transform: translate(2px, 0); }
+}
+
+@keyframes flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+@keyframes rise {
+    0% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(-20px); opacity: 0; }
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+@keyframes spin-slow {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes bounce-gentle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+/* =====================================================
+   BASE STYLES
+   ===================================================== */
+
+body.error-body {
+    background-color: #1a1b26;
+    overflow-x: hidden;
+    min-height: 100vh;
+    margin: 0;
+}
+
+/* =====================================================
+   SCANLINES - CRT Effect
+   ===================================================== */
+
+.scanlines {
+    background: linear-gradient(
+        to bottom,
+        rgba(255,255,255,0),
+        rgba(255,255,255,0) 50%,
+        rgba(0,0,0,0.2) 50%,
+        rgba(0,0,0,0.2)
+    );
+    background-size: 100% 4px;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 50;
+}
+
+/* =====================================================
+   GLITCH TEXT EFFECTS
+   ===================================================== */
+
+.glitch-text-404 {
+    text-shadow: 3px 3px 0px #ff0055, -3px -3px 0px #00e5ff;
+}
+
+.glitch-text-500 {
+    text-shadow: 3px 3px 0px #dc2626, -3px -3px 0px #facc15;
+    animation: flicker 2s infinite;
+}
+
+.glitch-text-503 {
+    text-shadow: 3px 3px 0px #f59e0b, -3px -3px 0px #60a5fa;
+}
+
+.glitch-text-default {
+    text-shadow: 3px 3px 0px #ff0055, -3px -3px 0px #00e5ff;
+}
+
+/* =====================================================
+   BACKGROUND GRIDS
+   ===================================================== */
+
+.bg-grid {
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+.bg-grid-red {
+    background-image:
+        linear-gradient(rgba(220, 38, 38, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(220, 38, 38, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+.bg-grid-amber {
+    background-image:
+        linear-gradient(rgba(245, 158, 11, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245, 158, 11, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+/* =====================================================
+   ANIMATIONS
+   ===================================================== */
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+.animate-float-slow {
+    animation: float 4s ease-in-out infinite;
+}
+
+.animate-pulse-fast {
+    animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-shake-hard {
+    animation: shake-hard 0.5s cubic-bezier(.36,.07,.19,.97) both infinite;
+}
+
+.animate-flicker {
+    animation: flicker 0.1s infinite;
+}
+
+.animate-rise {
+    animation: rise 1.5s linear infinite;
+}
+
+.animate-blink {
+    animation: blink 2s infinite;
+}
+
+.animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+}
+
+.animate-bounce-gentle {
+    animation: bounce-gentle 2s ease-in-out infinite;
+}
+
+/* Sleep animation delays */
+.sleep-z-1 { animation: float 3s ease-in-out infinite; animation-delay: 0s; }
+.sleep-z-2 { animation: float 3s ease-in-out infinite; animation-delay: 1s; }
+.sleep-z-3 { animation: float 3s ease-in-out infinite; animation-delay: 2s; }
+
+/* Smoke particle animation */
+.smoke-particle {
+    animation: rise 1.5s linear infinite;
+}
+
+/* =====================================================
+   BUTTON STYLES
+   ===================================================== */
+
+.btn-pixel-shadow {
+    position: absolute;
+    inset: 0;
+    transform: translate(4px, 4px);
+}
+
+.btn-pixel {
+    position: relative;
+    padding: 1rem 1.5rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    border: 2px solid black;
+    transition: all 0.15s ease;
+    font-size: 0.75rem;
+}
+
+.btn-pixel:hover {
+    transform: translate(-2px, -2px);
+}
+
+.btn-pixel:active {
+    transform: translate(4px, 4px);
+    box-shadow: none;
+}
+
+.shadow-hard {
+    box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+}
+
+/* =====================================================
+   UTILITY OVERRIDES FOR ERROR PAGES
+   ===================================================== */
+
+/* Font pixel */
+.font-pixel {
+    font-family: "Press Start 2P", cursive;
+}
+
+/* Selection colors */
+.selection-pixel::selection,
+.selection-pixel *::selection {
+    background-color: #ff0055;
+    color: white;
+}
+
+/* Text colors */
+.text-pixel-text { color: #e0e0e0; }
+.text-pixel-primary { color: #ff0055; }
+.text-pixel-accent { color: #00e5ff; }
+.text-pixel-yellow { color: #ffcc00; }
+.text-pixel-danger { color: #dc2626; }
+.text-pixel-amber { color: #f59e0b; }
+.text-pixel-blue { color: #60a5fa; }
+.text-pixel-purple { color: #a855f7; }
+.text-pixel-violet { color: #d600ff; }
+.text-pixel-red-warning { color: #ff3333; }
+
+/* Background colors */
+.bg-pixel-bg { background-color: #1a1b26; }
+.bg-pixel-primary { background-color: #ff0055; }
+.bg-pixel-accent { background-color: #00e5ff; }
+.bg-pixel-yellow { background-color: #ffcc00; }
+.bg-pixel-danger { background-color: #dc2626; }
+.bg-pixel-amber { background-color: #f59e0b; }
+.bg-pixel-blue { background-color: #60a5fa; }
+.bg-pixel-server { background-color: #1f2937; }
+.bg-pixel-fire { background-color: #f97316; }
+.bg-pixel-violet { background-color: #d600ff; }
+.bg-pixel-red-warning { background-color: #ff3333; }
+
+/* Border colors */
+.border-pixel-accent { border-color: #00e5ff; }
+.border-pixel-primary { border-color: #ff0055; }
+.border-pixel-amber { border-color: #f59e0b; }
+.border-pixel-blue { border-color: #60a5fa; }
+.border-pixel-violet { border-color: #d600ff; }
+.border-pixel-yellow { border-color: #ffcc00; }
+
+/* Additional glitch variants */
+.glitch-text-401 {
+    text-shadow: 3px 3px 0px #d600ff, -3px -3px 0px #00e5ff;
+}
+
+.glitch-text-403 {
+    text-shadow: 3px 3px 0px #ff3333, -3px -3px 0px #00e5ff;
+}
+
+.glitch-text-419 {
+    text-shadow: 3px 3px 0px #ff3333, -3px -3px 0px #00e5ff;
+}
+
+.glitch-text-429 {
+    text-shadow: 3px 3px 0px #ff7700, -3px -3px 0px #ffff00;
+}
+
+.glitch-text-501 {
+    text-shadow: 3px 3px 0px #a855f7, -3px -3px 0px #00e5ff;
+}
+
+.glitch-text-502 {
+    text-shadow: 3px 3px 0px #dc2626, -3px -3px 0px #f59e0b;
+}
+
+.glitch-text-504 {
+    text-shadow: 3px 3px 0px #7c3aed, -3px -3px 0px #a855f7;
+}
+
+/* Additional colors for various error pages */
+.text-pixel-orange { color: #ff7700; }
+.text-pixel-mint { color: #00ff9d; }
+.text-pixel-pure-yellow { color: #ffff00; }
+
+.bg-pixel-orange { background-color: #ff7700; }
+.bg-pixel-mint { background-color: #00ff9d; }
+.bg-pixel-pure-yellow { background-color: #ffff00; }
+
+.border-pixel-mint { border-color: #00ff9d; }
+.border-pixel-orange { border-color: #ff7700; }
+
+/* Shake animation */
+.animate-shake {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both infinite;
+}
+
+@keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+/* Bounce pixel animation for 501 */
+.animate-bounce-pixel {
+    animation: float 2s infinite;
+}
+
+/* Flash animation for 502 */
+.animate-flash {
+    animation: flash 0.2s infinite alternate;
+}
+
+@keyframes flash {
+    0% { opacity: 1; }
+    100% { opacity: 0.3; }
+}
+
+/* Drop animation for 504 */
+.animate-drop {
+    animation: drop 1s infinite;
+}
+
+@keyframes drop {
+    0% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(10px); opacity: 0; }
+}
+
+/* Additional colors for 501, 502, 504 */
+.text-pixel-construction { color: #fbbf24; }
+.text-pixel-blueprint { color: #3b82f6; }
+.text-pixel-signal-red { color: #ef4444; }
+.text-pixel-spark { color: #fbbf24; }
+.text-pixel-fuchsia { color: #d946ef; }
+.text-pixel-cyan-light { color: #22d3ee; }
+
+.bg-pixel-construction { background-color: #fbbf24; }
+.bg-pixel-blueprint { background-color: #3b82f6; }
+.bg-pixel-signal-red { background-color: #ef4444; }
+.bg-pixel-fuchsia { background-color: #d946ef; }
+.bg-pixel-cyan-light { background-color: #22d3ee; }
+
+.border-pixel-blueprint { border-color: #3b82f6; }
+.border-pixel-spark { border-color: #fbbf24; }
+.border-pixel-cyan-light { border-color: #22d3ee; }

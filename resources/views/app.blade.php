@@ -27,7 +27,7 @@
 </head>
 
 <body>
-    <script>
+    <script nonce="{{ app('csp-nonce') }}">
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.body.classList.add('dark');
         }
@@ -41,7 +41,7 @@
 <script src="{{ asset('assets/js/volt.js') }}"></script>
 
 <!-- Service Worker Registration -->
-<script>
+<script nonce="{{ app('csp-nonce') }}">
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')

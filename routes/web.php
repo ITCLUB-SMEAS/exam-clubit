@@ -10,38 +10,39 @@ Route::get('/health', \App\Http\Controllers\HealthCheckController::class)->name(
 Route::post('/language/switch', [\App\Http\Controllers\LanguageController::class, 'switch'])->name('language.switch');
 
 // Offline page for PWA
-Route::get('/offline', fn() => Inertia::render('Offline'))->name('offline');
+Route::get('/offline', fn () => Inertia::render('Offline'))->name('offline');
 
-//prefix "admin"
-Route::prefix("admin")->group(function () {
-    //middleware "auth" with rate limiting and optional IP whitelist
-    Route::group(["middleware" => ["auth", "ip.whitelist", "throttle:100,1"]], function () {
-        //route dashboard
+// prefix "admin"
+Route::prefix('admin')->group(function () {
+    // middleware "auth" with rate limiting and optional IP whitelist
+    Route::group(['middleware' => ['auth', 'ip.whitelist', 'throttle:100,1']], function () {
+        // route dashboard
         Route::get(
-            "/dashboard",
+            '/dashboard',
             App\Http\Controllers\Admin\DashboardController::class,
-        )->name("admin.dashboard");
+        )->name('admin.dashboard');
 
         // Profile
-        Route::get("/profile", [\App\Http\Controllers\Admin\ProfileController::class, "index"])->name("admin.profile.index");
-        Route::put("/profile", [\App\Http\Controllers\Admin\ProfileController::class, "update"])->name("admin.profile.update");
-        Route::put("/profile/password", [\App\Http\Controllers\Admin\ProfileController::class, "updatePassword"])->name("admin.profile.password");
-        Route::post("/profile/photo", [\App\Http\Controllers\Admin\ProfileController::class, "updatePhoto"])->name("admin.profile.photo");
-        
+        Route::get('/profile', [\App\Http\Controllers\Admin\ProfileController::class, 'index'])->name('admin.profile.index');
+        Route::put('/profile', [\App\Http\Controllers\Admin\ProfileController::class, 'update'])->name('admin.profile.update');
+        Route::put('/profile/password', [\App\Http\Controllers\Admin\ProfileController::class, 'updatePassword'])->name('admin.profile.password');
+        Route::post('/profile/photo', [\App\Http\Controllers\Admin\ProfileController::class, 'updatePhoto'])->name('admin.profile.photo');
+
         // Session extend (for timeout warning)
-        Route::post("/session/extend", function () {
+        Route::post('/session/extend', function () {
             request()->session()->regenerate();
+
             return response()->json(['success' => true]);
-        })->name("admin.session.extend");
-        
-        Route::get("/profile/2fa/setup", [\App\Http\Controllers\Admin\ProfileController::class, "setup2FA"])->name("admin.profile.2fa.setup");
-        Route::post("/profile/2fa/enable", [\App\Http\Controllers\Admin\ProfileController::class, "enable2FA"])->name("admin.profile.2fa.enable");
-        Route::post("/profile/2fa/disable", [\App\Http\Controllers\Admin\ProfileController::class, "disable2FA"])->name("admin.profile.2fa.disable");
-        Route::post("/profile/2fa/regenerate", [\App\Http\Controllers\Admin\ProfileController::class, "regenerateCodes"])->name("admin.profile.2fa.regenerate");
+        })->name('admin.session.extend');
+
+        Route::get('/profile/2fa/setup', [\App\Http\Controllers\Admin\ProfileController::class, 'setup2FA'])->name('admin.profile.2fa.setup');
+        Route::post('/profile/2fa/enable', [\App\Http\Controllers\Admin\ProfileController::class, 'enable2FA'])->name('admin.profile.2fa.enable');
+        Route::post('/profile/2fa/disable', [\App\Http\Controllers\Admin\ProfileController::class, 'disable2FA'])->name('admin.profile.2fa.disable');
+        Route::post('/profile/2fa/regenerate', [\App\Http\Controllers\Admin\ProfileController::class, 'regenerateCodes'])->name('admin.profile.2fa.regenerate');
 
         // Test Math Editor (Development only)
         if (app()->environment('local', 'testing')) {
-            Route::get("/test-math-editor", fn() => Inertia::render('Admin/TestMathEditor'))->name("admin.test.math");
+            Route::get('/test-math-editor', fn () => Inertia::render('Admin/TestMathEditor'))->name('admin.test.math');
         }
 
         // ============================================
@@ -50,766 +51,804 @@ Route::prefix("admin")->group(function () {
         Route::middleware(['admin.only'])->group(function () {
             // User Management
             Route::resource(
-                "/users",
+                '/users',
                 \App\Http\Controllers\Admin\UserController::class,
-                ["as" => "admin"]
+                ['as' => 'admin']
             );
 
-            // Student Management (sensitive data)
-            Route::get("/students/import", [
-                \App\Http\Controllers\Admin\StudentController::class,
-                "import",
-            ])->name("admin.students.import");
+            // Student Import (using StudentImportController)
+            Route::get('/students/import', [
+                \App\Http\Controllers\Admin\StudentImportController::class,
+                'import',
+            ])->name('admin.students.import');
 
-            Route::post("/students/import", [
-                \App\Http\Controllers\Admin\StudentController::class,
-                "storeImport",
-            ])->name("admin.students.storeImport");
+            Route::post('/students/import', [
+                \App\Http\Controllers\Admin\StudentImportController::class,
+                'storeImport',
+            ])->middleware('throttle:import')->name('admin.students.storeImport');
 
             // Download student import template
-            Route::get("/students/template", [
-                \App\Http\Controllers\Admin\StudentController::class,
-                "downloadTemplate",
-            ])->name("admin.students.template");
+            Route::get('/students/template', [
+                \App\Http\Controllers\Admin\StudentImportController::class,
+                'downloadTemplate',
+            ])->middleware('throttle:export')->name('admin.students.template');
 
             // Import from ZIP (Excel + Photos)
-            Route::post("/students/import-zip", [
-                \App\Http\Controllers\Admin\StudentController::class,
-                "storeImportZip",
-            ])->name("admin.students.storeImportZip");
+            Route::post('/students/import-zip', [
+                \App\Http\Controllers\Admin\StudentImportController::class,
+                'storeImportZip',
+            ])->middleware('throttle:import')->name('admin.students.storeImportZip');
 
-            Route::post("/students/{student}/toggle-block", [
+            Route::post('/students/{student}/toggle-block', [
                 \App\Http\Controllers\Admin\StudentController::class,
-                "toggleBlock",
-            ])->name("admin.students.toggleBlock");
+                'toggleBlock',
+            ])->name('admin.students.toggleBlock');
 
             // Bulk Password Reset
-            Route::get("/students-bulk-password-reset", [
+            Route::get('/students-bulk-password-reset', [
                 \App\Http\Controllers\Admin\StudentController::class,
-                "bulkPasswordReset",
-            ])->name("admin.students.bulkPasswordReset");
+                'bulkPasswordReset',
+            ])->name('admin.students.bulkPasswordReset');
 
-            Route::post("/students-bulk-password-reset", [
+            Route::post('/students-bulk-password-reset', [
                 \App\Http\Controllers\Admin\StudentController::class,
-                "executeBulkPasswordReset",
-            ])->middleware('throttle:5,1')->name("admin.students.executeBulkPasswordReset");
+                'executeBulkPasswordReset',
+            ])->middleware('throttle:5,1')->name('admin.students.executeBulkPasswordReset');
 
-            Route::get("/students-by-classroom/{classroom}", [
+            Route::get('/students-by-classroom/{classroom}', [
                 \App\Http\Controllers\Admin\StudentController::class,
-                "getByClassroom",
-            ])->name("admin.students.byClassroom");
+                'getByClassroom',
+            ])->name('admin.students.byClassroom');
 
             Route::resource(
-                "/students",
+                '/students',
                 \App\Http\Controllers\Admin\StudentController::class,
-                ["as" => "admin"],
+                ['as' => 'admin'],
             );
 
             // Activity Logs Cleanup (destructive action)
-            Route::delete("/activity-logs-cleanup", [
+            Route::delete('/activity-logs-cleanup', [
                 \App\Http\Controllers\Admin\ActivityLogController::class,
-                "cleanup",
-            ])->middleware('throttle:3,1')->name("admin.activity-logs.cleanup");
+                'cleanup',
+            ])->middleware('throttle:3,1')->name('admin.activity-logs.cleanup');
 
             // Maintenance Mode
-            Route::get("/maintenance", [
+            Route::get('/maintenance', [
                 \App\Http\Controllers\Admin\MaintenanceController::class,
-                "index",
-            ])->name("admin.maintenance.index");
+                'index',
+            ])->name('admin.maintenance.index');
 
-            Route::post("/maintenance/toggle", [
+            Route::post('/maintenance/toggle', [
                 \App\Http\Controllers\Admin\MaintenanceController::class,
-                "toggle",
-            ])->name("admin.maintenance.toggle");
+                'toggle',
+            ])->name('admin.maintenance.toggle');
 
             // Cleanup Old Data
-            Route::get("/cleanup", [
+            Route::get('/cleanup', [
                 \App\Http\Controllers\Admin\CleanupController::class,
-                "index",
-            ])->name("admin.cleanup.index");
+                'index',
+            ])->name('admin.cleanup.index');
 
-            Route::post("/cleanup", [
+            Route::post('/cleanup', [
                 \App\Http\Controllers\Admin\CleanupController::class,
-                "cleanup",
-            ])->middleware('throttle:3,1')->name("admin.cleanup.run");
+                'cleanup',
+            ])->middleware('throttle:3,1')->name('admin.cleanup.run');
         });
 
         // ============================================
         // ADMIN & GURU ROUTES (Teaching related)
         // ============================================
-        //route resource lessons
+        // route resource lessons
         Route::resource(
-            "/lessons",
+            '/lessons',
             \App\Http\Controllers\Admin\LessonController::class,
-            ["as" => "admin"],
+            ['as' => 'admin'],
         );
 
-        //route resource classrooms
+        // route resource classrooms
         Route::resource(
-            "/classrooms",
+            '/classrooms',
             \App\Http\Controllers\Admin\ClassroomController::class,
-            ["as" => "admin"],
+            ['as' => 'admin'],
         );
 
-        //route resource rooms
+        // route resource rooms
         Route::resource(
-            "/rooms",
+            '/rooms',
             \App\Http\Controllers\Admin\RoomController::class,
-            ["as" => "admin"],
+            ['as' => 'admin'],
         );
 
-        //route resource exams
+        // route resource exams
         Route::resource(
-            "/exams",
+            '/exams',
             \App\Http\Controllers\Admin\ExamController::class,
-            ["as" => "admin"],
+            ['as' => 'admin'],
         );
 
-        //custom route for create question exam
-        Route::get("/exams/{exam}/questions/create", [
-            \App\Http\Controllers\Admin\ExamController::class,
-            "createQuestion",
-        ])->name("admin.exams.createQuestion");
+        // Exam Questions (using ExamQuestionController)
+        Route::get('/exams/{exam}/questions/create', [
+            \App\Http\Controllers\Admin\ExamQuestionController::class,
+            'create',
+        ])->name('admin.exams.createQuestion');
 
-        //custom route for store question exam
-        Route::post("/exams/{exam}/questions/store", [
-            \App\Http\Controllers\Admin\ExamController::class,
-            "storeQuestion",
-        ])->name("admin.exams.storeQuestion");
+        Route::post('/exams/{exam}/questions/store', [
+            \App\Http\Controllers\Admin\ExamQuestionController::class,
+            'store',
+        ])->name('admin.exams.storeQuestion');
 
-        //custom route for edit question exam
-        Route::get("/exams/{exam}/questions/{question}/edit", [
-            \App\Http\Controllers\Admin\ExamController::class,
-            "editQuestion",
-        ])->name("admin.exams.editQuestion");
+        Route::get('/exams/{exam}/questions/{question}/edit', [
+            \App\Http\Controllers\Admin\ExamQuestionController::class,
+            'edit',
+        ])->name('admin.exams.editQuestion');
 
-        //custom route for update question exam
-        Route::put("/exams/{exam}/questions/{question}/update", [
-            \App\Http\Controllers\Admin\ExamController::class,
-            "updateQuestion",
-        ])->name("admin.exams.updateQuestion");
+        Route::put('/exams/{exam}/questions/{question}/update', [
+            \App\Http\Controllers\Admin\ExamQuestionController::class,
+            'update',
+        ])->name('admin.exams.updateQuestion');
 
-        //custom route for destroy question exam
-        Route::delete("/exams/{exam}/questions/{question}/destroy", [
-            \App\Http\Controllers\Admin\ExamController::class,
-            "destroyQuestion",
-        ])->name("admin.exams.destroyQuestion");
+        Route::delete('/exams/{exam}/questions/{question}/destroy', [
+            \App\Http\Controllers\Admin\ExamQuestionController::class,
+            'destroy',
+        ])->name('admin.exams.destroyQuestion');
 
         // Bulk question operations
-        Route::post("/exams/{exam}/questions/bulk-update-points", [
-            \App\Http\Controllers\Admin\ExamController::class,
-            "bulkUpdatePoints",
-        ])->name("admin.exams.bulkUpdatePoints");
+        Route::post('/exams/{exam}/questions/bulk-update-points', [
+            \App\Http\Controllers\Admin\ExamQuestionController::class,
+            'bulkUpdatePoints',
+        ])->name('admin.exams.bulkUpdatePoints');
 
-        Route::delete("/exams/{exam}/questions/bulk-delete", [
-            \App\Http\Controllers\Admin\ExamController::class,
-            "bulkDeleteQuestions",
-        ])->middleware('throttle:10,1')->name("admin.exams.bulkDeleteQuestions");
+        Route::delete('/exams/{exam}/questions/bulk-delete', [
+            \App\Http\Controllers\Admin\ExamQuestionController::class,
+            'bulkDelete',
+        ])->middleware('throttle:10,1')->name('admin.exams.bulkDeleteQuestions');
 
-        //route exam preview
-        Route::get("/exams/{exam}/preview", [
+        // route exam preview
+        Route::get('/exams/{exam}/preview', [
             \App\Http\Controllers\Admin\ExamController::class,
-            "preview",
-        ])->name("admin.exams.preview");
+            'preview',
+        ])->name('admin.exams.preview');
 
-        //route exam duplicate
-        Route::post("/exams/{exam}/duplicate", [
+        // route exam duplicate
+        Route::post('/exams/{exam}/duplicate', [
             \App\Http\Controllers\Admin\ExamController::class,
-            "duplicate",
-        ])->name("admin.exams.duplicate");
+            'duplicate',
+        ])->name('admin.exams.duplicate');
 
-        //route item analysis
-        Route::get("/exams/{exam}/analysis", [
+        // route item analysis
+        Route::get('/exams/{exam}/analysis', [
             \App\Http\Controllers\Admin\ItemAnalysisController::class,
-            "show",
-        ])->name("admin.exams.analysis");
+            'show',
+        ])->name('admin.exams.analysis');
 
-        //route question import
-        Route::get("/exams/{exam}/questions/import", [
-            \App\Http\Controllers\Admin\ExamController::class,
-            "import",
-        ])->name("admin.exam.questionImport");
+        // Question import routes (using ExamQuestionController)
+        Route::get('/exams/{exam}/questions/import', [
+            \App\Http\Controllers\Admin\ExamQuestionController::class,
+            'import',
+        ])->name('admin.exam.questionImport');
 
-        //route download template import soal
-        Route::get("/exams/questions/template", [
-            \App\Http\Controllers\Admin\ExamController::class,
-            "downloadTemplate",
-        ])->name("admin.exam.questionTemplate");
+        // Download template import soal
+        Route::get('/exams/questions/template', [
+            \App\Http\Controllers\Admin\ExamQuestionController::class,
+            'downloadTemplate',
+        ])->name('admin.exam.questionTemplate');
 
-        //route question store import
-        Route::post("/exams/{exam}/questions/import", [
-            \App\Http\Controllers\Admin\ExamController::class,
-            "storeImport",
-        ])->name("admin.exam.questionStoreImport");
+        // Question store import
+        Route::post('/exams/{exam}/questions/import', [
+            \App\Http\Controllers\Admin\ExamQuestionController::class,
+            'storeImport',
+        ])->name('admin.exam.questionStoreImport');
 
-        //route resource exam_sessions
+        // route resource exam_sessions
         Route::resource(
-            "/exam_sessions",
+            '/exam_sessions',
             \App\Http\Controllers\Admin\ExamSessionController::class,
-            ["as" => "admin"],
+            ['as' => 'admin'],
         );
 
-        //custom route for enrolle create
-        Route::get("/exam_sessions/{exam_session}/enrolle/create", [
+        // custom route for enrolle create
+        Route::get('/exam_sessions/{exam_session}/enrolle/create', [
             \App\Http\Controllers\Admin\ExamSessionController::class,
-            "createEnrolle",
-        ])->name("admin.exam_sessions.createEnrolle");
+            'createEnrolle',
+        ])->name('admin.exam_sessions.createEnrolle');
 
-        //custom route for enrolle store
-        Route::post("/exam_sessions/{exam_session}/enrolle/store", [
+        // custom route for enrolle store
+        Route::post('/exam_sessions/{exam_session}/enrolle/store', [
             \App\Http\Controllers\Admin\ExamSessionController::class,
-            "storeEnrolle",
-        ])->name("admin.exam_sessions.storeEnrolle");
+            'storeEnrolle',
+        ])->name('admin.exam_sessions.storeEnrolle');
 
-        //custom route for enrolle destroy
+        // custom route for enrolle destroy
         Route::delete(
-            "/exam_sessions/{exam_session}/enrolle/{exam_group}/destroy",
+            '/exam_sessions/{exam_session}/enrolle/{exam_group}/destroy',
             [
                 \App\Http\Controllers\Admin\ExamSessionController::class,
-                "destroyEnrolle",
+                'destroyEnrolle',
             ],
-        )->name("admin.exam_sessions.destroyEnrolle");
+        )->name('admin.exam_sessions.destroyEnrolle');
 
         // Bulk enrollment routes
-        Route::post("/exam_sessions/{exam_session}/bulk-enroll", [
+        Route::post('/exam_sessions/{exam_session}/bulk-enroll', [
             \App\Http\Controllers\Admin\ExamSessionController::class,
-            "bulkEnrollClass",
-        ])->name("admin.exam_sessions.bulkEnroll");
+            'bulkEnrollClass',
+        ])->name('admin.exam_sessions.bulkEnroll');
 
-        Route::delete("/exam_sessions/{exam_session}/bulk-unenroll", [
+        Route::delete('/exam_sessions/{exam_session}/bulk-unenroll', [
             \App\Http\Controllers\Admin\ExamSessionController::class,
-            "bulkUnenrollClass",
-        ])->middleware('throttle:10,1')->name("admin.exam_sessions.bulkUnenroll");
+            'bulkUnenrollClass',
+        ])->middleware('throttle:10,1')->name('admin.exam_sessions.bulkUnenroll');
 
         // Attendance routes
-        Route::get("/exam_sessions/{exam_session}/attendance", [
+        Route::get('/exam_sessions/{exam_session}/attendance', [
             \App\Http\Controllers\Admin\AttendanceController::class,
-            "show",
-        ])->name("admin.exam_sessions.attendance");
+            'show',
+        ])->name('admin.exam_sessions.attendance');
 
-        Route::get("/exam_sessions/{exam_session}/attendance/qr", [
+        Route::get('/exam_sessions/{exam_session}/attendance/qr', [
             \App\Http\Controllers\Admin\AttendanceController::class,
-            "getQrCode",
-        ])->name("admin.exam_sessions.attendance.qr");
+            'getQrCode',
+        ])->name('admin.exam_sessions.attendance.qr');
 
-        Route::post("/exam_sessions/{exam_session}/attendance/regenerate-token", [
+        Route::post('/exam_sessions/{exam_session}/attendance/regenerate-token', [
             \App\Http\Controllers\Admin\AttendanceController::class,
-            "regenerateToken",
-        ])->name("admin.exam_sessions.attendance.regenerateToken");
+            'regenerateToken',
+        ])->name('admin.exam_sessions.attendance.regenerateToken');
 
-        Route::post("/exam_sessions/{exam_session}/attendance/toggle", [
+        Route::post('/exam_sessions/{exam_session}/attendance/toggle', [
             \App\Http\Controllers\Admin\AttendanceController::class,
-            "toggleRequirement",
-        ])->name("admin.exam_sessions.attendance.toggle");
+            'toggleRequirement',
+        ])->name('admin.exam_sessions.attendance.toggle');
 
-        Route::post("/exam_sessions/{exam_session}/attendance/manual-checkin", [
+        Route::post('/exam_sessions/{exam_session}/attendance/manual-checkin', [
             \App\Http\Controllers\Admin\AttendanceController::class,
-            "manualCheckIn",
-        ])->name("admin.exam_sessions.attendance.manualCheckin");
+            'manualCheckIn',
+        ])->name('admin.exam_sessions.attendance.manualCheckin');
 
-        Route::get("/exam_sessions/{exam_session}/attendance/list", [
+        Route::get('/exam_sessions/{exam_session}/attendance/list', [
             \App\Http\Controllers\Admin\AttendanceController::class,
-            "getAttendanceList",
-        ])->name("admin.exam_sessions.attendance.list");
+            'getAttendanceList',
+        ])->name('admin.exam_sessions.attendance.list');
 
         // Exam Cards routes
-        Route::get("/exam_sessions/{exam_session}/cards", [
+        Route::get('/exam_sessions/{exam_session}/cards', [
             \App\Http\Controllers\Admin\ExamCardController::class,
-            "preview",
-        ])->name("admin.exam_sessions.cards.preview");
+            'preview',
+        ])->name('admin.exam_sessions.cards.preview');
 
-        Route::get("/exam_sessions/{exam_session}/cards/print", [
+        Route::get('/exam_sessions/{exam_session}/cards/print', [
             \App\Http\Controllers\Admin\ExamCardController::class,
-            "print",
-        ])->name("admin.exam_sessions.cards.print");
+            'print',
+        ])->name('admin.exam_sessions.cards.print');
 
-        Route::get("/exam_sessions/{exam_session}/cards/print/{student}", [
+        Route::get('/exam_sessions/{exam_session}/cards/print/{student}', [
             \App\Http\Controllers\Admin\ExamCardController::class,
-            "printSingle",
-        ])->name("admin.exam_sessions.cards.printSingle");
+            'printSingle',
+        ])->name('admin.exam_sessions.cards.printSingle');
 
-        //route index reports
-        Route::get("/reports", [
+        // route index reports
+        Route::get('/reports', [
             \App\Http\Controllers\Admin\ReportController::class,
-            "index",
-        ])->name("admin.reports.index");
+            'index',
+        ])->name('admin.reports.index');
 
-        //route index reports filter
-        Route::get("/reports/filter", [
+        // route index reports filter
+        Route::get('/reports/filter', [
             \App\Http\Controllers\Admin\ReportController::class,
-            "filter",
-        ])->name("admin.reports.filter");
+            'filter',
+        ])->name('admin.reports.filter');
 
-        //route index reports export
-        Route::get("/reports/export", [
+        // route index reports export
+        Route::get('/reports/export', [
             \App\Http\Controllers\Admin\ReportController::class,
-            "export",
-        ])->name("admin.reports.export");
+            'export',
+        ])->name('admin.reports.export');
 
-        //route activity logs
-        Route::get("/activity-logs", [
+        // route activity logs
+        Route::get('/activity-logs', [
             \App\Http\Controllers\Admin\ActivityLogController::class,
-            "index",
-        ])->name("admin.activity-logs.index");
+            'index',
+        ])->name('admin.activity-logs.index');
 
-        //route activity logs show
-        Route::get("/activity-logs/{activityLog}", [
+        // route activity logs show
+        Route::get('/activity-logs/{activityLog}', [
             \App\Http\Controllers\Admin\ActivityLogController::class,
-            "show",
-        ])->name("admin.activity-logs.show");
+            'show',
+        ])->name('admin.activity-logs.show');
 
-        //route activity logs stats (API)
-        Route::get("/activity-logs-stats", [
+        // route activity logs stats (API)
+        Route::get('/activity-logs-stats', [
             \App\Http\Controllers\Admin\ActivityLogController::class,
-            "stats",
-        ])->name("admin.activity-logs.stats");
+            'stats',
+        ])->name('admin.activity-logs.stats');
 
-        //route activity logs export
-        Route::get("/activity-logs-export", [
+        // route activity logs export
+        Route::get('/activity-logs-export', [
             \App\Http\Controllers\Admin\ActivityLogController::class,
-            "export",
-        ])->name("admin.activity-logs.export");
+            'export',
+        ])->name('admin.activity-logs.export');
 
         // Violation Logs (Anti-Cheat)
-        Route::get("/violation-logs", [
+        Route::get('/violation-logs', [
             \App\Http\Controllers\Admin\ViolationLogController::class,
-            "index",
-        ])->name("admin.violation-logs.index");
+            'index',
+        ])->name('admin.violation-logs.index');
 
-        Route::get("/violation-logs/{violation}/snapshot", [
+        Route::get('/violation-logs/{violation}/snapshot', [
             \App\Http\Controllers\Admin\ViolationLogController::class,
-            "snapshot",
-        ])->name("admin.violation-logs.snapshot");
+            'snapshot',
+        ])->name('admin.violation-logs.snapshot');
 
         // Analytics & Statistics
-        Route::get("/analytics", [
+        Route::get('/analytics', [
             \App\Http\Controllers\Admin\AnalyticsController::class,
-            "index",
-        ])->name("admin.analytics.index");
+            'index',
+        ])->name('admin.analytics.index');
 
-        Route::get("/analytics/exam/{exam}", [
+        Route::get('/analytics/exam/{exam}', [
             \App\Http\Controllers\Admin\AnalyticsController::class,
-            "examDetail",
-        ])->name("admin.analytics.exam");
+            'examDetail',
+        ])->name('admin.analytics.exam');
 
-        Route::get("/analytics/students", [
+        Route::get('/analytics/students', [
             \App\Http\Controllers\Admin\AnalyticsController::class,
-            "studentPerformance",
-        ])->name("admin.analytics.students");
+            'studentPerformance',
+        ])->name('admin.analytics.students');
+
+        // Predictive Analytics (At-Risk Students)
+        Route::get('/analytics/at-risk', [
+            \App\Http\Controllers\Admin\PredictiveAnalyticsController::class,
+            'index',
+        ])->name('admin.analytics.at-risk');
+
+        Route::get('/analytics/at-risk/{prediction}', [
+            \App\Http\Controllers\Admin\PredictiveAnalyticsController::class,
+            'show',
+        ])->name('admin.analytics.at-risk.show');
+
+        Route::post('/analytics/at-risk/{prediction}/acknowledge', [
+            \App\Http\Controllers\Admin\PredictiveAnalyticsController::class,
+            'acknowledge',
+        ])->name('admin.analytics.at-risk.acknowledge');
+
+        Route::post('/analytics/at-risk/{prediction}/intervene', [
+            \App\Http\Controllers\Admin\PredictiveAnalyticsController::class,
+            'intervene',
+        ])->name('admin.analytics.at-risk.intervene');
+
+        Route::post('/analytics/at-risk/{prediction}/resolve', [
+            \App\Http\Controllers\Admin\PredictiveAnalyticsController::class,
+            'resolve',
+        ])->name('admin.analytics.at-risk.resolve');
+
+        Route::post('/analytics/calculate-risks', [
+            \App\Http\Controllers\Admin\PredictiveAnalyticsController::class,
+            'calculate',
+        ])->name('admin.analytics.calculate-risks');
+
+        Route::get('/analytics/at-risk-widget', [
+            \App\Http\Controllers\Admin\PredictiveAnalyticsController::class,
+            'widgetData',
+        ])->name('admin.analytics.at-risk.widget');
+
+        Route::post('/analytics/at-risk/bulk-acknowledge', [
+            \App\Http\Controllers\Admin\PredictiveAnalyticsController::class,
+            'bulkAcknowledge',
+        ])->name('admin.analytics.at-risk.bulk-acknowledge');
 
         // Notifications
-        Route::get("/notifications", [\App\Http\Controllers\Admin\NotificationController::class, "index"])->name("admin.notifications.index");
-        Route::get("/notifications/unread", [\App\Http\Controllers\Admin\NotificationController::class, "unread"])->name("admin.notifications.unread");
-        Route::post("/notifications/mark-read", [\App\Http\Controllers\Admin\NotificationController::class, "markAsRead"])->name("admin.notifications.markAsRead");
-        Route::delete("/notifications/{id}", [\App\Http\Controllers\Admin\NotificationController::class, "destroy"])->name("admin.notifications.destroy");
-        Route::delete("/notifications", [\App\Http\Controllers\Admin\NotificationController::class, "destroyAll"])->middleware('throttle:5,1')->name("admin.notifications.destroyAll");
+        Route::get('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('admin.notifications.index');
+        Route::get('/notifications/unread', [\App\Http\Controllers\Admin\NotificationController::class, 'unread'])->name('admin.notifications.unread');
+        Route::post('/notifications/mark-read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('admin.notifications.markAsRead');
+        Route::delete('/notifications/{id}', [\App\Http\Controllers\Admin\NotificationController::class, 'destroy'])->name('admin.notifications.destroy');
+        Route::delete('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'destroyAll'])->middleware('throttle:5,1')->name('admin.notifications.destroyAll');
 
         // Question Categories
         Route::resource(
-            "/question-categories",
+            '/question-categories',
             \App\Http\Controllers\Admin\QuestionCategoryController::class,
-            ["as" => "admin"]
+            ['as' => 'admin']
         );
 
         // Question Bank
         Route::resource(
-            "/question-bank",
+            '/question-bank',
             \App\Http\Controllers\Admin\QuestionBankController::class,
-            ["as" => "admin"]
+            ['as' => 'admin']
         );
 
         // Question Bank - Export/Import
-        Route::get("/question-bank-export", [
+        Route::get('/question-bank-export', [
             \App\Http\Controllers\Admin\QuestionBankController::class,
-            "export",
-        ])->name("admin.question-bank.export");
+            'export',
+        ])->name('admin.question-bank.export');
 
-        Route::post("/question-bank-import", [
+        Route::post('/question-bank-import', [
             \App\Http\Controllers\Admin\QuestionBankController::class,
-            "import",
-        ])->name("admin.question-bank.import");
+            'import',
+        ])->name('admin.question-bank.import');
 
-        Route::get("/question-bank-template", [
+        Route::get('/question-bank-template', [
             \App\Http\Controllers\Admin\QuestionBankController::class,
-            "downloadTemplate",
-        ])->name("admin.question-bank.template");
+            'downloadTemplate',
+        ])->name('admin.question-bank.template');
 
         // Question Bank - Preview & Duplicate Check
-        Route::post("/question-bank-preview", [
+        Route::post('/question-bank-preview', [
             \App\Http\Controllers\Admin\QuestionBankController::class,
-            "preview",
-        ])->name("admin.question-bank.preview");
+            'preview',
+        ])->name('admin.question-bank.preview');
 
-        Route::post("/question-bank-check-duplicate", [
+        Route::post('/question-bank-check-duplicate', [
             \App\Http\Controllers\Admin\QuestionBankController::class,
-            "checkDuplicate",
-        ])->name("admin.question-bank.checkDuplicate");
+            'checkDuplicate',
+        ])->name('admin.question-bank.checkDuplicate');
 
         // Import from bank to exam
-        Route::post("/exams/{exam}/import-from-bank", [
+        Route::post('/exams/{exam}/import-from-bank', [
             \App\Http\Controllers\Admin\QuestionBankController::class,
-            "importToExam",
-        ])->name("admin.exams.importFromBank");
+            'importToExam',
+        ])->name('admin.exams.importFromBank');
 
         // API: Get questions for selection
-        Route::get("/question-bank-list", [
+        Route::get('/question-bank-list', [
             \App\Http\Controllers\Admin\QuestionBankController::class,
-            "getQuestions",
-        ])->name("admin.question-bank.list");
+            'getQuestions',
+        ])->name('admin.question-bank.list');
 
         // Question Bank - Import from Exam
-        Route::post("/question-bank-import-from-exam", [
+        Route::post('/question-bank-import-from-exam', [
             \App\Http\Controllers\Admin\QuestionBankController::class,
-            "importFromExam",
-        ])->name("admin.question-bank.importFromExam");
+            'importFromExam',
+        ])->name('admin.question-bank.importFromExam');
 
-        Route::get("/question-bank-exams", [
+        Route::get('/question-bank-exams', [
             \App\Http\Controllers\Admin\QuestionBankController::class,
-            "getExamsForImport",
-        ])->name("admin.question-bank.exams");
+            'getExamsForImport',
+        ])->name('admin.question-bank.exams');
 
-        Route::get("/question-bank-exam-questions/{exam}", [
+        Route::get('/question-bank-exam-questions/{exam}', [
             \App\Http\Controllers\Admin\QuestionBankController::class,
-            "getExamQuestions",
-        ])->name("admin.question-bank.examQuestions");
+            'getExamQuestions',
+        ])->name('admin.question-bank.examQuestions');
 
         // Question Bank - Bulk Operations
-        Route::post("/question-bank-bulk-delete", [
+        Route::post('/question-bank-bulk-delete', [
             \App\Http\Controllers\Admin\QuestionBankController::class,
-            "bulkDelete",
-        ])->middleware('throttle:10,1')->name("admin.question-bank.bulkDelete");
+            'bulkDelete',
+        ])->middleware('throttle:10,1')->name('admin.question-bank.bulkDelete');
 
-        Route::post("/question-bank-bulk-tags", [
+        Route::post('/question-bank-bulk-tags', [
             \App\Http\Controllers\Admin\QuestionBankController::class,
-            "bulkUpdateTags",
-        ])->name("admin.question-bank.bulkTags");
+            'bulkUpdateTags',
+        ])->name('admin.question-bank.bulkTags');
 
         // Question Bank - Statistics
-        Route::get("/question-bank/{questionBank}/statistics", [
+        Route::get('/question-bank/{questionBank}/statistics', [
             \App\Http\Controllers\Admin\QuestionBankController::class,
-            "statistics",
-        ])->name("admin.question-bank.statistics");
+            'statistics',
+        ])->name('admin.question-bank.statistics');
 
         // AI Generate Tags
-        Route::post("/question-bank-generate-tags", [
+        Route::post('/question-bank-generate-tags', [
             \App\Http\Controllers\Admin\QuestionBankController::class,
-            "generateTags",
-        ])->middleware('throttle:20,1')->name("admin.question-bank.generateTags");
+            'generateTags',
+        ])->middleware('throttle:20,1')->name('admin.question-bank.generateTags');
 
         // Time Extension
-        Route::get("/time-extension", [
+        Route::get('/time-extension', [
             \App\Http\Controllers\Admin\TimeExtensionController::class,
-            "index",
-        ])->name("admin.time-extension.index");
+            'index',
+        ])->name('admin.time-extension.index');
 
-        Route::post("/time-extension/{grade}", [
+        Route::post('/time-extension/{grade}', [
             \App\Http\Controllers\Admin\TimeExtensionController::class,
-            "extend",
-        ])->name("admin.time-extension.extend");
+            'extend',
+        ])->name('admin.time-extension.extend');
 
         // Exam Pause/Resume
-        Route::get("/exam-pause", [
+        Route::get('/exam-pause', [
             \App\Http\Controllers\Admin\ExamPauseController::class,
-            "index",
-        ])->name("admin.exam-pause.index");
+            'index',
+        ])->name('admin.exam-pause.index');
 
-        Route::post("/exam-pause/{grade}", [
+        Route::post('/exam-pause/{grade}', [
             \App\Http\Controllers\Admin\ExamPauseController::class,
-            "pause",
-        ])->name("admin.exam-pause.pause");
+            'pause',
+        ])->name('admin.exam-pause.pause');
 
-        Route::post("/exam-resume/{grade}", [
+        Route::post('/exam-resume/{grade}', [
             \App\Http\Controllers\Admin\ExamPauseController::class,
-            "resume",
-        ])->name("admin.exam-pause.resume");
+            'resume',
+        ])->name('admin.exam-pause.resume');
 
-        Route::post("/exam-pause-all/{examSession}", [
+        Route::post('/exam-pause-all/{examSession}', [
             \App\Http\Controllers\Admin\ExamPauseController::class,
-            "pauseAll",
-        ])->name("admin.exam-pause.pauseAll");
+            'pauseAll',
+        ])->name('admin.exam-pause.pauseAll');
 
-        Route::post("/exam-resume-all/{examSession}", [
+        Route::post('/exam-resume-all/{examSession}', [
             \App\Http\Controllers\Admin\ExamPauseController::class,
-            "resumeAll",
-        ])->name("admin.exam-pause.resumeAll");
+            'resumeAll',
+        ])->name('admin.exam-pause.resumeAll');
 
-        // Duplicate Question Check API
-        Route::post("/questions/check-duplicate", [
-            \App\Http\Controllers\Admin\ExamController::class,
-            "checkDuplicate",
-        ])->name("admin.questions.checkDuplicate");
+        // Duplicate Question Check API (using ExamQuestionController)
+        Route::post('/questions/check-duplicate', [
+            \App\Http\Controllers\Admin\ExamQuestionController::class,
+            'checkDuplicate',
+        ])->name('admin.questions.checkDuplicate');
 
         // AI Question Generator
-        Route::get("/ai-generator", [
+        Route::get('/ai-generator', [
             \App\Http\Controllers\Admin\AIQuestionController::class,
-            "index",
-        ])->name("admin.ai.index");
+            'index',
+        ])->name('admin.ai.index');
 
-        Route::post("/ai/generate-questions", [
+        Route::post('/ai/generate-questions', [
             \App\Http\Controllers\Admin\AIQuestionController::class,
-            "generate",
-        ])->name("admin.ai.generateQuestions");
+            'generate',
+        ])->name('admin.ai.generateQuestions');
 
-        Route::post("/exams/{exam}/ai-save-questions", [
+        Route::post('/exams/{exam}/ai-save-questions', [
             \App\Http\Controllers\Admin\AIQuestionController::class,
-            "saveToExam",
-        ])->name("admin.ai.saveToExam");
+            'saveToExam',
+        ])->name('admin.ai.saveToExam');
 
         // Plagiarism Detection
-        Route::get("/plagiarism", [
+        Route::get('/plagiarism', [
             \App\Http\Controllers\Admin\PlagiarismController::class,
-            "index",
-        ])->name("admin.plagiarism.index");
+            'index',
+        ])->name('admin.plagiarism.index');
 
         // PDF Export Routes (rate limited to prevent DoS)
         Route::middleware('throttle:10,1')->group(function () {
-            Route::get("/export/grade/{grade}/pdf", [
+            Route::get('/export/grade/{grade}/pdf', [
                 \App\Http\Controllers\Admin\ExportController::class,
-                "exportGradePdf",
-            ])->name("admin.export.grade.pdf");
+                'exportGradePdf',
+            ])->name('admin.export.grade.pdf');
 
-            Route::get("/export/exam/{exam}/pdf", [
+            Route::get('/export/exam/{exam}/pdf', [
                 \App\Http\Controllers\Admin\ExportController::class,
-                "exportExamResultsPdf",
-            ])->name("admin.export.exam.pdf");
+                'exportExamResultsPdf',
+            ])->name('admin.export.exam.pdf');
 
-            Route::get("/export/student/{student}/pdf", [
+            Route::get('/export/student/{student}/pdf', [
                 \App\Http\Controllers\Admin\ExportController::class,
-                "exportStudentReportPdf",
-            ])->name("admin.export.student.pdf");
+                'exportStudentReportPdf',
+            ])->name('admin.export.student.pdf');
         });
 
         // Essay Grading Routes
-        Route::get("/essay-grading", [
+        Route::get('/essay-grading', [
             \App\Http\Controllers\Admin\EssayGradingController::class,
-            "index",
-        ])->name("admin.essay-grading.index");
+            'index',
+        ])->name('admin.essay-grading.index');
 
-        Route::post("/essay-grading/{answer}", [
+        Route::post('/essay-grading/{answer}', [
             \App\Http\Controllers\Admin\EssayGradingController::class,
-            "grade",
-        ])->name("admin.essay-grading.grade");
+            'grade',
+        ])->name('admin.essay-grading.grade');
 
-        Route::post("/essay-grading-bulk", [
+        Route::post('/essay-grading-bulk', [
             \App\Http\Controllers\Admin\EssayGradingController::class,
-            "bulkGrade",
-        ])->name("admin.essay-grading.bulk");
+            'bulkGrade',
+        ])->name('admin.essay-grading.bulk');
 
-        Route::post("/essay-grading/{answer}/ai", [
+        Route::post('/essay-grading/{answer}/ai', [
             \App\Http\Controllers\Admin\EssayGradingController::class,
-            "aiGrade",
-        ])->name("admin.essay-grading.ai");
+            'aiGrade',
+        ])->name('admin.essay-grading.ai');
 
-        Route::post("/essay-grading-ai-bulk", [
+        Route::post('/essay-grading-ai-bulk', [
             \App\Http\Controllers\Admin\EssayGradingController::class,
-            "aiBulkGrade",
-        ])->name("admin.essay-grading.ai-bulk");
+            'aiBulkGrade',
+        ])->name('admin.essay-grading.ai-bulk');
 
-        Route::post("/essay-grading/{answer}/apply-ai", [
+        Route::post('/essay-grading/{answer}/apply-ai', [
             \App\Http\Controllers\Admin\EssayGradingController::class,
-            "applyAiGrade",
-        ])->name("admin.essay-grading.apply-ai");
+            'applyAiGrade',
+        ])->name('admin.essay-grading.apply-ai');
 
         // Real-time Exam Monitor
-        Route::get("/monitor", [\App\Http\Controllers\Admin\ExamMonitorController::class, "index"])->name("admin.monitor.index");
-        Route::get("/monitor/{examSession}", [\App\Http\Controllers\Admin\ExamMonitorController::class, "show"])->name("admin.monitor.show");
-        Route::get("/monitor/{examSession}/participants", [\App\Http\Controllers\Admin\ExamMonitorController::class, "participants"])->name("admin.monitor.participants");
-        Route::get("/monitor/{examSession}/violations", [\App\Http\Controllers\Admin\ExamMonitorController::class, "violations"])->name("admin.monitor.violations");
+        Route::get('/monitor', [\App\Http\Controllers\Admin\ExamMonitorController::class, 'index'])->name('admin.monitor.index');
+        Route::get('/monitor/{examSession}', [\App\Http\Controllers\Admin\ExamMonitorController::class, 'show'])->name('admin.monitor.show');
+        Route::get('/monitor/{examSession}/participants', [\App\Http\Controllers\Admin\ExamMonitorController::class, 'participants'])->name('admin.monitor.participants');
+        Route::get('/monitor/{examSession}/violations', [\App\Http\Controllers\Admin\ExamMonitorController::class, 'violations'])->name('admin.monitor.violations');
 
         // Backup Management (Admin Only) - rate limited
         Route::middleware(['admin.only', 'throttle:5,1'])->group(function () {
-            Route::get("/backup", [\App\Http\Controllers\Admin\BackupController::class, "index"])->name("admin.backup.index");
-            Route::post("/backup", [\App\Http\Controllers\Admin\BackupController::class, "create"])->name("admin.backup.create");
-            Route::get("/backup/{filename}/download", [\App\Http\Controllers\Admin\BackupController::class, "download"])->name("admin.backup.download");
-            Route::delete("/backup/{filename}", [\App\Http\Controllers\Admin\BackupController::class, "destroy"])->name("admin.backup.destroy");
-            Route::post("/backup/cleanup", [\App\Http\Controllers\Admin\BackupController::class, "cleanup"])->name("admin.backup.cleanup");
+            Route::get('/backup', [\App\Http\Controllers\Admin\BackupController::class, 'index'])->name('admin.backup.index');
+            Route::post('/backup', [\App\Http\Controllers\Admin\BackupController::class, 'create'])->name('admin.backup.create');
+            Route::get('/backup/{filename}/download', [\App\Http\Controllers\Admin\BackupController::class, 'download'])->name('admin.backup.download');
+            Route::delete('/backup/{filename}', [\App\Http\Controllers\Admin\BackupController::class, 'destroy'])->name('admin.backup.destroy');
+            Route::post('/backup/cleanup', [\App\Http\Controllers\Admin\BackupController::class, 'cleanup'])->name('admin.backup.cleanup');
         });
 
         // Question Version History
-        Route::get("/questions/{question}/versions", [\App\Http\Controllers\Admin\QuestionVersionController::class, "index"])->name("admin.questions.versions");
-        Route::post("/questions/{question}/restore/{version}", [\App\Http\Controllers\Admin\QuestionVersionController::class, "restore"])->name("admin.questions.restore");
+        Route::get('/questions/{question}/versions', [\App\Http\Controllers\Admin\QuestionVersionController::class, 'index'])->name('admin.questions.versions');
+        Route::post('/questions/{question}/restore/{version}', [\App\Http\Controllers\Admin\QuestionVersionController::class, 'restore'])->name('admin.questions.restore');
     });
 
     // 2FA Challenge (outside main auth middleware)
-    Route::get("/two-factor/challenge", [\App\Http\Controllers\Admin\TwoFactorChallengeController::class, "show"])->name("admin.two-factor.challenge");
-    Route::post("/two-factor/challenge", [\App\Http\Controllers\Admin\TwoFactorChallengeController::class, "verify"])->name("admin.two-factor.verify");
+    Route::get('/two-factor/challenge', [\App\Http\Controllers\Admin\TwoFactorChallengeController::class, 'show'])->name('admin.two-factor.challenge');
+    Route::post('/two-factor/challenge', [\App\Http\Controllers\Admin\TwoFactorChallengeController::class, 'verify'])->name('admin.two-factor.verify');
 });
 
-//route homepage (student login)
-Route::get("/", function () {
-    //cek session student dulu (prioritas)
-    if (auth()->guard("student")->check()) {
-        return redirect()->route("student.dashboard");
+// route homepage (student login)
+Route::get('/', function () {
+    // cek session student dulu (prioritas)
+    if (auth()->guard('student')->check()) {
+        return redirect()->route('student.dashboard');
     }
 
-    //cek session admin
+    // cek session admin
     if (auth()->check()) {
-        return redirect()->route("admin.dashboard");
+        return redirect()->route('admin.dashboard');
     }
 
-    //return view login
-    return \Inertia\Inertia::render("Student/Login/Index", [
+    // return view login
+    return \Inertia\Inertia::render('Student/Login/Index', [
         'turnstileSiteKey' => config('services.turnstile.site_key'),
     ]);
 });
 
-//override fortify login with turnstile middleware
+// override fortify login with turnstile middleware
 Route::post('/admin/login', [\Laravel\Fortify\Http\Controllers\AuthenticatedSessionController::class, 'store'])
     ->middleware(['guest:web', 'turnstile', 'throttle:5,1'])
     ->name('login.store');
 
-//redirect /login to admin login
+// redirect /login to admin login
 Route::redirect('/login', '/admin/login');
 
-//login students
+// login students
 Route::post(
-    "/students/login",
+    '/students/login',
     \App\Http\Controllers\Student\LoginController::class,
-)->middleware(['turnstile', 'throttle:5,1'])->name("student.login");
+)->middleware(['turnstile', 'throttle:5,1'])->name('student.login');
 
-//prefix "student"
-Route::prefix("student")->group(function () {
-    //middleware "student"
-    Route::group(["middleware" => "student"], function () {
-        //route dashboard
+// prefix "student"
+Route::prefix('student')->group(function () {
+    // middleware "student"
+    Route::group(['middleware' => 'student'], function () {
+        // route dashboard
         Route::get(
-            "/dashboard",
+            '/dashboard',
             App\Http\Controllers\Student\DashboardController::class,
-        )->name("student.dashboard");
+        )->name('student.dashboard');
 
-        //route logout student
+        // route logout student
         Route::post(
-            "/logout",
+            '/logout',
             App\Http\Controllers\Student\LogoutController::class,
-        )->name("student.logout");
+        )->name('student.logout');
 
-        //route student profile
-        Route::get("/profile", [
+        // route student profile
+        Route::get('/profile', [
             App\Http\Controllers\Student\ProfileController::class,
-            "index",
-        ])->name("student.profile");
+            'index',
+        ])->middleware('throttle:profile')->name('student.profile');
 
-        Route::put("/profile", [
+        Route::put('/profile', [
             App\Http\Controllers\Student\ProfileController::class,
-            "update",
-        ])->name("student.profile.update");
+            'update',
+        ])->middleware('throttle:profile')->name('student.profile.update');
 
-        Route::put("/profile/password", [
+        Route::put('/profile/password', [
             App\Http\Controllers\Student\ProfileController::class,
-            "updatePassword",
-        ])->name("student.profile.password");
+            'updatePassword',
+        ])->middleware('throttle:profile')->name('student.profile.password');
 
         // Session extend (for timeout warning)
-        Route::post("/session/extend", function () {
+        Route::post('/session/extend', function () {
             request()->session()->regenerate();
-            return response()->json(['success' => true]);
-        })->middleware('throttle:heartbeat')->name("student.session.extend");
 
-        //route exam confirmation
-        Route::get("/exam-confirmation/{id}", [
+            return response()->json(['success' => true]);
+        })->middleware('throttle:heartbeat')->name('student.session.extend');
+
+        // route exam confirmation
+        Route::get('/exam-confirmation/{id}', [
             App\Http\Controllers\Student\ExamController::class,
-            "confirmation",
-        ])->name("student.exams.confirmation");
+            'confirmation',
+        ])->middleware('throttle:exam')->name('student.exams.confirmation');
 
         // Attendance check-in routes
-        Route::post("/checkin/qr", [
+        Route::post('/checkin/qr', [
             App\Http\Controllers\Student\CheckinController::class,
-            "qrCheckin",
-        ])->name("student.checkin.qr");
+            'qrCheckin',
+        ])->middleware('throttle:profile')->name('student.checkin.qr');
 
-        Route::post("/checkin/token", [
+        Route::post('/checkin/token', [
             App\Http\Controllers\Student\CheckinController::class,
-            "tokenCheckin",
-        ])->name("student.checkin.token");
+            'tokenCheckin',
+        ])->middleware('throttle:profile')->name('student.checkin.token');
 
-        //route exam start
-        Route::get("/exam-start/{id}", [
+        // route exam start
+        Route::get('/exam-start/{id}', [
             App\Http\Controllers\Student\ExamController::class,
-            "startExam",
-        ])->name("student.exams.startExam");
+            'startExam',
+        ])->name('student.exams.startExam');
 
-        //route exam retry (remedial)
-        Route::get("/exam-retry/{id}", [
+        // route exam retry (remedial)
+        Route::get('/exam-retry/{id}', [
             App\Http\Controllers\Student\ExamController::class,
-            "retryExam",
-        ])->name("student.exams.retryExam");
+            'retryExam',
+        ])->name('student.exams.retryExam');
 
-        //route exam show
-        Route::get("/exam/{id}/{page}", [
+        // route exam show
+        Route::get('/exam/{id}/{page}', [
             App\Http\Controllers\Student\ExamController::class,
-            "show",
-        ])->middleware('throttle:exam')->name("student.exams.show");
+            'show',
+        ])->middleware('throttle:exam')->name('student.exams.show');
 
-        //route exam update duration
-        Route::put("/exam-duration/update/{grade_id}", [
+        // route exam update duration
+        Route::put('/exam-duration/update/{grade_id}', [
             App\Http\Controllers\Student\ExamController::class,
-            "updateDuration",
-        ])->middleware('throttle:heartbeat')->name("student.exams.update_duration");
+            'updateDuration',
+        ])->middleware('throttle:heartbeat')->name('student.exams.update_duration');
 
-        //route answer question (with server-side anti-cheat)
-        Route::post("/exam-answer", [
+        // route answer question (with server-side anti-cheat)
+        Route::post('/exam-answer', [
             App\Http\Controllers\Student\ExamController::class,
-            "answerQuestion",
-        ])->middleware(['anticheat.server', 'throttle:exam'])->name("student.exams.answerQuestion");
+            'answerQuestion',
+        ])->middleware(['anticheat.server', 'throttle:exam'])->name('student.exams.answerQuestion');
 
-        //route exam end (with server-side anti-cheat)
-        Route::post("/exam-end", [
+        // route exam end (with server-side anti-cheat)
+        Route::post('/exam-end', [
             App\Http\Controllers\Student\ExamController::class,
-            "endExam",
-        ])->middleware('anticheat.server')->name("student.exams.endExam");
+            'endExam',
+        ])->middleware('anticheat.server')->name('student.exams.endExam');
 
-        //route exam result
-        Route::get("/exam-result/{exam_group_id}", [
+        // route exam result
+        Route::get('/exam-result/{exam_group_id}', [
             App\Http\Controllers\Student\ExamController::class,
-            "resultExam",
-        ])->name("student.exams.resultExam");
+            'resultExam',
+        ])->name('student.exams.resultExam');
 
-        //route anti-cheat violation
-        Route::post("/anticheat/violation", [
+        // route anti-cheat violation
+        Route::post('/anticheat/violation', [
             App\Http\Controllers\Student\AntiCheatController::class,
-            "recordViolation",
-        ])->middleware('throttle:anticheat')->name("student.anticheat.violation");
+            'recordViolation',
+        ])->middleware('throttle:anticheat')->name('student.anticheat.violation');
 
-        //route anti-cheat batch violations
-        Route::post("/anticheat/violations", [
+        // route anti-cheat batch violations
+        Route::post('/anticheat/violations', [
             App\Http\Controllers\Student\AntiCheatController::class,
-            "recordBatchViolations",
-        ])->middleware('throttle:anticheat')->name("student.anticheat.violations");
+            'recordBatchViolations',
+        ])->middleware('throttle:anticheat')->name('student.anticheat.violations');
 
-        //route anti-cheat status
-        Route::get("/anticheat/status", [
+        // route anti-cheat status
+        Route::get('/anticheat/status', [
             App\Http\Controllers\Student\AntiCheatController::class,
-            "getViolationStatus",
-        ])->middleware('throttle:anticheat')->name("student.anticheat.status");
+            'getViolationStatus',
+        ])->middleware('throttle:anticheat')->name('student.anticheat.status');
 
-        //route anti-cheat config
-        Route::get("/anticheat/config/{examId}", [
+        // route anti-cheat config
+        Route::get('/anticheat/config/{examId}', [
             App\Http\Controllers\Student\AntiCheatController::class,
-            "getConfig",
-        ])->middleware('throttle:anticheat')->name("student.anticheat.config");
+            'getConfig',
+        ])->middleware('throttle:anticheat')->name('student.anticheat.config');
 
-        //route anti-cheat heartbeat
-        Route::post("/anticheat/heartbeat", [
+        // route anti-cheat heartbeat
+        Route::post('/anticheat/heartbeat', [
             App\Http\Controllers\Student\AntiCheatController::class,
-            "heartbeat",
-        ])->middleware('throttle:heartbeat')->name("student.anticheat.heartbeat");
+            'heartbeat',
+        ])->middleware('throttle:heartbeat')->name('student.anticheat.heartbeat');
 
-        //route anti-cheat server time
-        Route::get("/anticheat/server-time", [
+        // route anti-cheat server time
+        Route::get('/anticheat/server-time', [
             App\Http\Controllers\Student\AntiCheatController::class,
-            "serverTime",
-        ])->middleware('throttle:heartbeat')->name("student.anticheat.serverTime");
+            'serverTime',
+        ])->middleware('throttle:heartbeat')->name('student.anticheat.serverTime');
 
         // Offline exam sync routes
-        Route::post("/exam-sync", [
+        Route::post('/exam-sync', [
             App\Http\Controllers\Student\ExamSyncController::class,
-            "sync",
-        ])->name("student.exam.sync");
+            'sync',
+        ])->name('student.exam.sync');
 
-        Route::get("/exam-offline/{examGroupId}", [
+        Route::get('/exam-offline/{examGroupId}', [
             App\Http\Controllers\Student\ExamSyncController::class,
-            "getExamForOffline",
-        ])->name("student.exam.offline");
+            'getExamForOffline',
+        ])->name('student.exam.offline');
     });
 });
 
@@ -817,4 +856,3 @@ Route::prefix("student")->group(function () {
 Route::post('/telegram/webhook', [App\Http\Controllers\TelegramWebhookController::class, 'handle'])
     ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])
     ->name('telegram.webhook');
-

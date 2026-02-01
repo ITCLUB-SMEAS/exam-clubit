@@ -230,7 +230,7 @@ export function useAntiCheat(options = {}) {
                     snapshot: snapshot,
                 }, {
                     headers: {
-                        'X-Session-ID': sessionStorage.getItem('exam_session_id') || Math.random().toString(36)
+                        'X-Session-ID': sessionStorage.getItem('exam_session_id') || 'fallback-' + Date.now().toString(36)
                     }
                 });
 
@@ -1162,9 +1162,12 @@ export function useAntiCheat(options = {}) {
     const initialize = async () => {
         if (!config.value.enabled) return;
 
-        // Generate and store session ID
+        // Generate and store session ID using cryptographically secure random
         if (!sessionStorage.getItem('exam_session_id')) {
-            sessionStorage.setItem('exam_session_id', Math.random().toString(36).substring(2) + Date.now().toString(36));
+            const array = new Uint8Array(16);
+            crypto.getRandomValues(array);
+            const secureId = Array.from(array, b => b.toString(16).padStart(2, '0')).join('') + Date.now().toString(36);
+            sessionStorage.setItem('exam_session_id', secureId);
         }
 
         // Initialize video stream for snapshots

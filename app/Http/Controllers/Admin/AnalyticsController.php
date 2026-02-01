@@ -3,13 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Classroom;
 use App\Models\Exam;
 use App\Models\Grade;
-use App\Models\Answer;
 use App\Models\Question;
 use App\Models\Student;
-use App\Models\Classroom;
-use App\Models\Lesson;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -21,7 +19,7 @@ class AnalyticsController extends Controller
         $totalExams = Exam::count();
         $totalStudents = Student::count();
         $totalGrades = Grade::whereNotNull('end_time')->count();
-        
+
         $avgGrade = Grade::whereNotNull('end_time')->avg('grade') ?? 0;
         $passedCount = Grade::where('status', 'passed')->count();
         $failedCount = Grade::where('status', 'failed')->count();
@@ -29,10 +27,10 @@ class AnalyticsController extends Controller
 
         // Recent exams performance
         $recentExams = Exam::with('lesson')
-            ->withCount(['grades as completed_count' => function($q) {
+            ->withCount(['grades as completed_count' => function ($q) {
                 $q->whereNotNull('end_time');
             }])
-            ->withAvg(['grades as avg_grade' => function($q) {
+            ->withAvg(['grades as avg_grade' => function ($q) {
                 $q->whereNotNull('end_time');
             }], 'grade')
             ->latest()
@@ -52,18 +50,18 @@ class AnalyticsController extends Controller
                 COUNT(*) as count
             ")
             ->groupBy('grade_range')
-            ->orderByRaw("MIN(grade) DESC")
+            ->orderByRaw('MIN(grade) DESC')
             ->get();
 
         // Performance by classroom - optimized single query
         $classroomPerformance = DB::table('classrooms')
-            ->leftJoin('students', function($join) {
+            ->leftJoin('students', function ($join) {
                 $join->on('classrooms.id', '=', 'students.classroom_id')
-                     ->whereNull('students.deleted_at');
+                    ->whereNull('students.deleted_at');
             })
-            ->leftJoin('grades', function($join) {
+            ->leftJoin('grades', function ($join) {
                 $join->on('students.id', '=', 'grades.student_id')
-                     ->whereNotNull('grades.end_time');
+                    ->whereNotNull('grades.end_time');
             })
             ->select(
                 'classrooms.id',
@@ -74,7 +72,7 @@ class AnalyticsController extends Controller
             )
             ->groupBy('classrooms.id', 'classrooms.title')
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'name' => $item->name,
                 'students_count' => (int) $item->students_count,
                 'avg_grade' => (float) $item->avg_grade,
@@ -123,7 +121,7 @@ class AnalyticsController extends Controller
             ->groupBy('question_id')
             ->pluck('correct', 'question_id')
             ->toArray();
-        
+
         $answerTotals = DB::table('answers')
             ->where('exam_id', $exam->id)
             ->select('question_id', DB::raw('COUNT(*) as total'))
@@ -131,18 +129,21 @@ class AnalyticsController extends Controller
             ->pluck('total', 'question_id')
             ->toArray();
 
-        $questionStats = $exam->questions->map(function($question) use ($answerStats, $answerTotals) {
+        $questionStats = $exam->questions->map(function ($question) use ($answerStats, $answerTotals) {
             $total = $answerTotals[$question->id] ?? 0;
             $correct = $answerStats[$question->id] ?? 0;
             $difficulty = $total > 0 ? round(($correct / $total) * 100, 1) : 0;
 
             $level = 'Sedang';
-            if ($difficulty >= 70) $level = 'Mudah';
-            elseif ($difficulty < 40) $level = 'Sulit';
+            if ($difficulty >= 70) {
+                $level = 'Mudah';
+            } elseif ($difficulty < 40) {
+                $level = 'Sulit';
+            }
 
             return [
                 'id' => $question->id,
-                'question' => strip_tags(substr($question->question, 0, 100)) . '...',
+                'question' => strip_tags(substr($question->question, 0, 100)).'...',
                 'type' => $question->question_type,
                 'total_answers' => $total,
                 'correct_answers' => $correct,
@@ -158,7 +159,7 @@ class AnalyticsController extends Controller
             ->orderByDesc('grade')
             ->limit(10)
             ->get()
-            ->map(fn($g) => [
+            ->map(fn ($g) => [
                 'name' => $g->student->name,
                 'grade' => $g->grade,
                 'status' => $g->status,
@@ -174,27 +175,45 @@ class AnalyticsController extends Controller
 
     public function studentPerformance(Request $request)
     {
-        $query = Student::with('classroom');
+        $query = Student::with('classroom:id,title')
+            ->select('students.id', 'students.name', 'students.nisn', 'students.classroom_id')
+            // Count completed exams
+            ->withCount(['grades as exams_taken' => function ($q) {
+                $q->whereNotNull('end_time');
+            }])
+            // Average grade (only completed exams)
+            ->withAvg(['grades as avg_grade' => function ($q) {
+                $q->whereNotNull('end_time');
+            }], 'grade')
+            // Count passed exams
+            ->withCount(['grades as passed' => function ($q) {
+                $q->whereNotNull('end_time')->where('status', 'passed');
+            }])
+            // Count failed exams
+            ->withCount(['grades as failed' => function ($q) {
+                $q->whereNotNull('end_time')->where('status', 'failed');
+            }]);
 
         if ($request->classroom_id) {
             $query->where('classroom_id', $request->classroom_id);
         }
 
-        $students = $query->get()->map(function($student) {
-            $grades = Grade::where('student_id', $student->id)->whereNotNull('end_time');
-            return [
+        // Get paginated results with sorting
+        $students = $query->orderByDesc('avg_grade')
+            ->paginate(20)
+            ->withQueryString()
+            ->through(fn ($student) => [
                 'id' => $student->id,
                 'name' => $student->name,
                 'nisn' => $student->nisn,
                 'classroom' => $student->classroom->title ?? '-',
-                'exams_taken' => $grades->count(),
-                'avg_grade' => round($grades->avg('grade') ?? 0, 1),
-                'passed' => $grades->clone()->where('status', 'passed')->count(),
-                'failed' => $grades->clone()->where('status', 'failed')->count(),
-            ];
-        })->sortByDesc('avg_grade')->values();
+                'exams_taken' => (int) $student->exams_taken,
+                'avg_grade' => round((float) ($student->avg_grade ?? 0), 1),
+                'passed' => (int) $student->passed,
+                'failed' => (int) $student->failed,
+            ]);
 
-        $classrooms = Classroom::all();
+        $classrooms = Classroom::select('id', 'title')->get();
 
         return inertia('Admin/Analytics/StudentPerformance', [
             'students' => $students,

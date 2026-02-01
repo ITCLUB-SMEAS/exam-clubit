@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\ExamCompleted;
 use App\Models\Answer;
 use App\Models\ExamGroup;
 use App\Models\Grade;
@@ -33,16 +34,16 @@ class ExamCompletionService
                 ->where('student_id', $studentId)
                 ->get();
 
-            $totalPoints = $questions->sum(fn($q) => $q->points ?? 1);
-            $earnedPoints = $answers->sum(fn($a) => $a->points_awarded ?? 0);
+            $totalPoints = $questions->sum(fn ($q) => $q->points ?? 1);
+            $earnedPoints = $answers->sum(fn ($a) => $a->points_awarded ?? 0);
             $correctCount = $answers->where('is_correct', 'Y')->count();
 
-            $gradeValue = $totalPoints > 0 
-                ? round(($earnedPoints / $totalPoints) * 100, 2) 
+            $gradeValue = $totalPoints > 0
+                ? round(($earnedPoints / $totalPoints) * 100, 2)
                 : 0;
 
             $passingGrade = $examGroup->exam->passing_grade ?? 0;
-            $status = $passingGrade > 0 
+            $status = $passingGrade > 0
                 ? ($gradeValue >= $passingGrade ? 'passed' : 'failed')
                 : 'pending';
 
@@ -74,6 +75,9 @@ class ExamCompletionService
                     $status === 'passed'
                 );
             }
+
+            // Dispatch ExamCompleted event for additional processing
+            ExamCompleted::dispatch($grade, false);
         });
     }
 

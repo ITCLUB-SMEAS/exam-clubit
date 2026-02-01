@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\QuestionBankExport;
 use App\Http\Controllers\Controller;
+use App\Imports\QuestionBankImport;
+use App\Models\Exam;
+use App\Models\Question;
 use App\Models\QuestionBank;
 use App\Models\QuestionCategory;
-use App\Models\Question;
-use App\Models\Exam;
-use App\Exports\QuestionBankExport;
-use App\Imports\QuestionBankImport;
 use App\Services\QuestionBankDuplicateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -18,8 +18,7 @@ class QuestionBankController extends Controller
 {
     protected function getCategories()
     {
-        return Cache::remember('question_categories_with_count', 300, fn() => 
-            QuestionCategory::withCount('questions')->get()
+        return Cache::remember('question_categories_with_count', 300, fn () => QuestionCategory::withCount('questions')->get()
         );
     }
 
@@ -51,15 +50,22 @@ class QuestionBankController extends Controller
         $questions = $query->latest()->paginate(10)->withQueryString();
         $categories = $this->getCategories();
 
-        // Get popular tags
-        $popularTags = QuestionBank::whereNotNull('tags')
-            ->get()
-            ->pluck('tags')
-            ->flatten()
-            ->countBy()
-            ->sortDesc()
-            ->take(10)
-            ->keys();
+        // Get popular tags using cached aggregation (memory efficient)
+        $popularTags = Cache::remember('question_bank_popular_tags', 300, function () {
+            // Use raw query to count tags efficiently without loading all records
+            $tagsData = QuestionBank::whereNotNull('tags')
+                ->select('tags')
+                ->cursor()  // Use cursor for memory efficiency
+                ->flatMap(function ($item) {
+                    return $item->tags ?? [];
+                })
+                ->countBy()
+                ->sortDesc()
+                ->take(10)
+                ->keys();
+
+            return $tagsData;
+        });
 
         return inertia('Admin/QuestionBank/Index', compact('questions', 'categories', 'popularTags'));
     }
@@ -67,6 +73,7 @@ class QuestionBankController extends Controller
     public function create()
     {
         $categories = $this->getCategories();
+
         return inertia('Admin/QuestionBank/Create', compact('categories'));
     }
 
@@ -91,8 +98,8 @@ class QuestionBankController extends Controller
 
         // Check for duplicates
         $similar = $duplicateService->findSimilar($validated['question']);
-        
-        if (!empty($similar) && !$request->force_create) {
+
+        if (! empty($similar) && ! $request->force_create) {
             return back()->with('warning', [
                 'message' => 'Ditemukan soal yang mirip',
                 'similar' => $similar,
@@ -155,8 +162,9 @@ class QuestionBankController extends Controller
 
         $bankQuestions = QuestionBank::whereIn('id', $request->question_ids)->get();
 
-        foreach ($bankQuestions as $bq) {
-            Question::create([
+        // Prepare batch insert data
+        $questionsToInsert = $bankQuestions->map(function ($bq) use ($exam) {
+            return [
                 'exam_id' => $exam->id,
                 'question' => $bq->question,
                 'question_type' => $bq->question_type,
@@ -168,17 +176,28 @@ class QuestionBankController extends Controller
                 'option_4' => $bq->option_4,
                 'option_5' => $bq->option_5,
                 'answer' => $bq->answer,
-                'correct_answers' => $bq->correct_answers,
-                'matching_pairs' => $bq->matching_pairs,
-            ]);
+                'correct_answers' => is_array($bq->correct_answers) ? json_encode($bq->correct_answers) : $bq->correct_answers,
+                'matching_pairs' => is_array($bq->matching_pairs) ? json_encode($bq->matching_pairs) : $bq->matching_pairs,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        })->toArray();
 
-            // Update usage stats
-            $bq->increment('usage_count');
-            $bq->update(['last_used_at' => now()]);
-        }
+        // Batch insert questions
+        Question::insert($questionsToInsert);
+
+        // Batch update usage stats for bank questions
+        QuestionBank::whereIn('id', $request->question_ids)
+            ->increment('usage_count');
+
+        QuestionBank::whereIn('id', $request->question_ids)
+            ->update(['last_used_at' => now()]);
+
+        // Clear popular tags cache since usage stats changed
+        Cache::forget('question_bank_popular_tags');
 
         return redirect()->route('admin.exams.show', $exam)
-            ->with('success', count($bankQuestions) . ' soal berhasil diimport');
+            ->with('success', count($bankQuestions).' soal berhasil diimport');
     }
 
     public function getQuestions(Request $request)
@@ -198,10 +217,10 @@ class QuestionBankController extends Controller
     public function export(Request $request)
     {
         $filters = $request->only(['category_id', 'difficulty', 'question_type']);
-        
+
         return Excel::download(
             new QuestionBankExport($filters),
-            'question-bank-' . date('Y-m-d') . '.xlsx'
+            'question-bank-'.date('Y-m-d').'.xlsx'
         );
     }
 
@@ -217,7 +236,7 @@ class QuestionBankController extends Controller
             return redirect()->route('admin.question-bank.index')
                 ->with('success', 'Soal berhasil diimport dari Excel');
         } catch (\Exception $e) {
-            return back()->with('error', 'Import gagal: ' . $e->getMessage());
+            return back()->with('error', 'Import gagal: '.$e->getMessage());
         }
     }
 
@@ -235,7 +254,7 @@ class QuestionBankController extends Controller
         $similar = $duplicateService->findSimilar($question);
 
         return response()->json([
-            'has_similar' => !empty($similar),
+            'has_similar' => ! empty($similar),
             'similar' => $similar,
         ]);
     }
@@ -279,10 +298,19 @@ class QuestionBankController extends Controller
         $data = [$headers, $example];
 
         return Excel::download(
-            new class($data) implements \Maatwebsite\Excel\Concerns\FromArray {
+            new class($data) implements \Maatwebsite\Excel\Concerns\FromArray
+            {
                 protected $data;
-                public function __construct($data) { $this->data = $data; }
-                public function array(): array { return $this->data; }
+
+                public function __construct($data)
+                {
+                    $this->data = $data;
+                }
+
+                public function array(): array
+                {
+                    return $this->data;
+                }
             },
             'template-question-bank.xlsx'
         );
@@ -298,16 +326,16 @@ class QuestionBankController extends Controller
         ]);
 
         $query = Question::where('exam_id', $request->exam_id);
-        
+
         if ($request->question_ids) {
             $query->whereIn('id', $request->question_ids);
         }
 
         $questions = $query->get();
-        $imported = 0;
 
-        foreach ($questions as $q) {
-            QuestionBank::create([
+        // Prepare batch insert data
+        $questionsToInsert = $questions->map(function ($q) use ($request) {
+            return [
                 'category_id' => $request->category_id,
                 'question' => $q->question,
                 'question_type' => $q->question_type,
@@ -319,11 +347,22 @@ class QuestionBankController extends Controller
                 'option_4' => $q->option_4,
                 'option_5' => $q->option_5,
                 'answer' => $q->answer,
-                'correct_answers' => $q->correct_answers,
-                'matching_pairs' => $q->matching_pairs,
-            ]);
-            $imported++;
-        }
+                'correct_answers' => is_array($q->correct_answers) ? json_encode($q->correct_answers) : $q->correct_answers,
+                'matching_pairs' => is_array($q->matching_pairs) ? json_encode($q->matching_pairs) : $q->matching_pairs,
+                'usage_count' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        })->toArray();
+
+        // Batch insert
+        QuestionBank::insert($questionsToInsert);
+
+        // Clear caches
+        Cache::forget('question_bank_popular_tags');
+        Cache::forget('question_categories_with_count');
+
+        $imported = count($questionsToInsert);
 
         return back()->with('success', "$imported soal berhasil diimport ke bank soal");
     }
@@ -332,6 +371,7 @@ class QuestionBankController extends Controller
     public function getExamsForImport()
     {
         $exams = Exam::withCount('questions')->having('questions_count', '>', 0)->get(['id', 'title']);
+
         return response()->json($exams);
     }
 
@@ -346,6 +386,7 @@ class QuestionBankController extends Controller
     {
         $request->validate(['ids' => 'required|array|min:1']);
         $deleted = QuestionBank::whereIn('id', $request->ids)->delete();
+
         return back()->with('success', "$deleted soal berhasil dihapus");
     }
 
@@ -358,18 +399,26 @@ class QuestionBankController extends Controller
             'mode' => 'required|in:replace,append',
         ]);
 
-        $questions = QuestionBank::whereIn('id', $request->ids)->get();
-        
-        foreach ($questions as $q) {
-            if ($request->mode === 'replace') {
-                $q->tags = $request->tags;
-            } else {
-                $q->tags = array_unique(array_merge($q->tags ?? [], $request->tags));
-            }
-            $q->save();
+        $count = count($request->ids);
+
+        if ($request->mode === 'replace') {
+            // Batch update for replace mode - single query
+            QuestionBank::whereIn('id', $request->ids)
+                ->update(['tags' => json_encode($request->tags)]);
+        } else {
+            // Append mode requires reading existing tags, so we chunk the operation
+            QuestionBank::whereIn('id', $request->ids)
+                ->cursor()
+                ->each(function ($q) use ($request) {
+                    $q->tags = array_unique(array_merge($q->tags ?? [], $request->tags));
+                    $q->save();
+                });
         }
 
-        return back()->with('success', count($questions) . ' soal berhasil diupdate');
+        // Clear popular tags cache
+        Cache::forget('question_bank_popular_tags');
+
+        return back()->with('success', $count.' soal berhasil diupdate');
     }
 
     // AI Generate Tags
@@ -385,7 +434,7 @@ class QuestionBankController extends Controller
             $request->category
         );
 
-        if (!$tags) {
+        if (! $tags) {
             return response()->json(['error' => 'Gagal generate tags. Coba lagi.'], 500);
         }
 

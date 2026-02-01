@@ -4,64 +4,53 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Offline - No Connection</title>
-        <!-- Tailwind CSS CDN -->
-        <script src="https://cdn.tailwindcss.com"></script>
-        <!-- Font Pixel -->
-        <link
-            href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
-            rel="stylesheet"
-        />
-
-        <script>
-            tailwind.config = {
-                theme: {
-                    extend: {
-                        fontFamily: {
-                            pixel: ['"Press Start 2P"', "cursive"],
-                        },
-                        colors: {
-                            retro: {
-                                bg: "#0f172a" /* Dark Slate */,
-                                text: "#cbd5e1" /* Light Slate */,
-                                accent: "#ef4444" /* Red Error */,
-                                green: "#22c55e" /* Green Success */,
-                                yellow: "#facc15" /* Yellow Warning */,
-                            },
-                        },
-                        boxShadow: {
-                            hard: "4px 4px 0px 0px rgba(0,0,0,1)",
-                            "hard-sm": "2px 2px 0px 0px rgba(0,0,0,1)",
-                        },
-                        animation: {
-                            hop: "hop 1s steps(2, start) infinite",
-                            blink: "blink 0.2s infinite",
-                            scroll: "scroll 2s linear infinite",
-                        },
-                        keyframes: {
-                            hop: {
-                                "0%, 100%": { transform: "translateY(0)" },
-                                "50%": { transform: "translateY(-10px)" },
-                            },
-                            blink: {
-                                "0%, 100%": { opacity: "1" },
-                                "50%": { opacity: "0.5" },
-                            },
-                            scroll: {
-                                "0%": { backgroundPosition: "0 0" },
-                                "100%": { backgroundPosition: "-20px 0" },
-                            },
-                        },
-                    },
-                },
-            };
-        </script>
-
+        
+        <!-- 
+            Offline page uses inlined CSS to ensure it works without network.
+            Font fallback to system monospace if Press Start 2P is not cached.
+        -->
         <style>
-            /* Efek CRT Scanline */
-            .scanlines::before {
+            /* =====================================================
+               BASE STYLES - Offline Page
+               ===================================================== */
+            
+            /* Try to load Press Start 2P if available, otherwise fallback */
+            @font-face {
+                font-family: 'Press Start 2P';
+                font-style: normal;
+                font-weight: 400;
+                font-display: swap;
+                src: url('https://fonts.gstatic.com/s/pressstart2p/v15/e3t4euO8T-267oIAQAu6jDQyK3nVivM.woff2') format('woff2');
+            }
+            
+            *, *::before, *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            
+            body {
+                min-height: 100vh;
+                width: 100%;
+                background-color: #0f172a;
+                font-family: 'Press Start 2P', 'Courier New', monospace;
+                color: #cbd5e1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+                overflow: hidden;
+            }
+            
+            /* =====================================================
+               CRT SCANLINES EFFECT
+               ===================================================== */
+            
+            body::before {
                 content: " ";
                 display: block;
-                position: absolute;
+                position: fixed;
                 top: 0;
                 left: 0;
                 bottom: 0;
@@ -78,20 +67,53 @@
                         rgba(0, 0, 255, 0.06)
                     );
                 z-index: 50;
-                background-size:
-                    100% 2px,
-                    3px 100%;
+                background-size: 100% 2px, 3px 100%;
                 pointer-events: none;
             }
-
-            /* Glitch Text Effect */
-            .glitch-text {
-                text-shadow:
-                    2px 2px 0px #ef4444,
-                    -2px -2px 0px #22c55e;
+            
+            /* =====================================================
+               ANIMATIONS
+               ===================================================== */
+            
+            @keyframes hop {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-10px); }
             }
-
-            /* Pattern Tanah Berjalan */
+            
+            @keyframes blink {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.5; }
+            }
+            
+            @keyframes scroll {
+                0% { background-position: 0 0; }
+                100% { background-position: -20px 0; }
+            }
+            
+            .animate-hop {
+                animation: hop 1s steps(2, start) infinite;
+            }
+            
+            .animate-blink {
+                animation: blink 0.2s infinite;
+            }
+            
+            .animate-scroll {
+                animation: scroll 2s linear infinite;
+            }
+            
+            /* =====================================================
+               GLITCH TEXT
+               ===================================================== */
+            
+            .glitch-text {
+                text-shadow: 2px 2px 0px #ef4444, -2px -2px 0px #22c55e;
+            }
+            
+            /* =====================================================
+               GROUND PATTERN
+               ===================================================== */
+            
             .ground-pattern {
                 background-image: repeating-linear-gradient(
                     90deg,
@@ -102,13 +124,177 @@
                 );
                 background-size: 20px 4px;
             }
+            
+            /* =====================================================
+               LAYOUT UTILITIES
+               ===================================================== */
+            
+            .container {
+                z-index: 10;
+                text-align: center;
+                padding: 0 1rem;
+                max-width: 32rem;
+                width: 100%;
+            }
+            
+            .mb-4 { margin-bottom: 1rem; }
+            .mb-8 { margin-bottom: 2rem; }
+            .pb-2 { padding-bottom: 0.5rem; }
+            .p-4 { padding: 1rem; }
+            .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+            .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+            
+            .inline-block { display: inline-block; }
+            .flex { display: flex; }
+            .flex-col { flex-direction: column; }
+            .items-center { align-items: center; }
+            .justify-between { justify-content: space-between; }
+            .justify-center { justify-content: center; }
+            .gap-2 { gap: 0.5rem; }
+            .gap-4 { gap: 1rem; }
+            
+            .w-full { width: 100%; }
+            .h-1 { height: 0.25rem; }
+            
+            /* =====================================================
+               TYPOGRAPHY
+               ===================================================== */
+            
+            .text-white { color: #ffffff; }
+            .text-slate-400 { color: #94a3b8; }
+            .text-slate-600 { color: #475569; }
+            .text-retro-yellow { color: #facc15; }
+            
+            .text-xs { font-size: 0.75rem; line-height: 1rem; }
+            .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+            .text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
+            
+            .font-bold { font-weight: 700; }
+            .uppercase { text-transform: uppercase; }
+            .tracking-widest { letter-spacing: 0.1em; }
+            .leading-6 { line-height: 1.5rem; }
+            
+            /* =====================================================
+               BACKGROUNDS & BORDERS
+               ===================================================== */
+            
+            .bg-slate-800 { background-color: #1e293b; }
+            .bg-slate-900 { background-color: #0f172a; }
+            .bg-retro-green { background-color: #22c55e; }
+            .bg-retro-yellow { background-color: #facc15; }
+            .bg-transparent { background-color: transparent; }
+            
+            .border-2 { border-width: 2px; border-style: solid; }
+            .border-slate-700 { border-color: #334155; }
+            .border-slate-900 { border-color: #0f172a; }
+            .border-white { border-color: #ffffff; }
+            .border-b-2 { border-bottom-width: 2px; border-bottom-style: solid; }
+            
+            /* =====================================================
+               SHADOW
+               ===================================================== */
+            
+            .shadow-hard {
+                box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+            }
+            
+            /* =====================================================
+               BUTTON STYLES
+               ===================================================== */
+            
+            .btn-wrapper {
+                position: relative;
+                display: inline-block;
+            }
+            
+            .btn-wrapper:focus { outline: none; }
+            
+            .btn-shadow {
+                position: absolute;
+                inset: 0;
+                transition: transform 0.15s;
+            }
+            
+            .btn-shadow-green {
+                background-color: #22c55e;
+                transform: translate(4px, 4px);
+            }
+            
+            .btn-shadow-yellow {
+                background-color: #facc15;
+                transform: translate(4px, 4px);
+            }
+            
+            .btn-content {
+                position: relative;
+                background-color: #0f172a;
+                color: #ffffff;
+                border: 2px solid #ffffff;
+                padding: 1rem 1.5rem;
+                transition: all 0.15s;
+                cursor: pointer;
+            }
+            
+            .btn-content:hover {
+                transform: translate(-4px, -4px);
+                background-color: #1e293b;
+            }
+            
+            .btn-wrapper:hover .btn-shadow {
+                transform: translate(8px, 8px);
+            }
+            
+            .btn-content:active {
+                transform: translate(0, 0);
+            }
+            
+            .btn-disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+            
+            .btn-disabled:hover {
+                opacity: 1;
+            }
+            
+            /* =====================================================
+               CORNER DECORATIONS
+               ===================================================== */
+            
+            .corner-text {
+                position: absolute;
+                font-size: 10px;
+                color: #475569;
+            }
+            
+            .corner-top-left {
+                top: 1rem;
+                left: 1rem;
+            }
+            
+            .corner-bottom-right {
+                bottom: 1rem;
+                right: 1rem;
+            }
+            
+            /* =====================================================
+               RESPONSIVE
+               ===================================================== */
+            
+            @media (min-width: 640px) {
+                .sm\:flex-row { flex-direction: row; }
+            }
+            
+            @media (min-width: 768px) {
+                .md\:text-6xl { font-size: 3.75rem; line-height: 1; }
+                .md\:text-xs { font-size: 0.75rem; line-height: 1rem; }
+                .md\:text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+            }
         </style>
     </head>
-    <body
-        class="h-screen w-full bg-retro-bg font-pixel text-retro-text flex flex-col items-center justify-center relative overflow-hidden scanlines"
-    >
+    <body>
         <!-- Container Utama -->
-        <div class="z-10 text-center px-4 max-w-lg w-full">
+        <div class="container">
             <!-- Ikon Dino Pixel (SVG) -->
             <div class="mb-8 inline-block animate-hop">
                 <svg
@@ -141,7 +327,8 @@
 
             <!-- Garis Tanah Berjalan -->
             <div
-                class="w-full h-1 bg-transparent ground-pattern animate-scroll mb-8 opacity-50"
+                class="w-full h-1 bg-transparent ground-pattern animate-scroll mb-8"
+                style="opacity: 0.5;"
             ></div>
 
             <!-- Judul Glitch -->
@@ -156,7 +343,7 @@
                 class="bg-slate-800 border-2 border-slate-900 p-4 mb-8 shadow-hard inline-block w-full"
             >
                 <div
-                    class="flex justify-between text-[10px] md:text-xs text-retro-yellow mb-2 border-b-2 border-slate-700 pb-2"
+                    class="flex justify-between text-xs text-retro-yellow mb-4 border-b-2 border-slate-700 pb-2"
                 >
                     <span>ERR_INTERNET_DISCONNECTED</span>
                     <span>CODE: 000</span>
@@ -172,16 +359,12 @@
                 <!-- Tombol Coba Lagi (Primary) -->
                 <button
                     onclick="window.location.reload()"
-                    class="group relative inline-block focus:outline-none"
+                    class="btn-wrapper"
                 >
-                    <div
-                        class="absolute inset-0 bg-retro-green translate-x-1 translate-y-1 transition-transform group-hover:translate-x-2 group-hover:translate-y-2"
-                    ></div>
-                    <div
-                        class="relative bg-slate-900 text-white border-2 border-white px-6 py-4 hover:-translate-x-1 hover:-translate-y-1 hover:bg-slate-800 transition-all active:translate-x-0 active:translate-y-0 cursor-pointer"
-                    >
+                    <div class="btn-shadow btn-shadow-green"></div>
+                    <div class="btn-content">
                         <span class="text-xs uppercase flex items-center gap-2">
-                            <span>↻</span> COBA LAGI
+                            <span>&#8635;</span> COBA LAGI
                         </span>
                     </div>
                 </button>
@@ -189,25 +372,21 @@
                 <!-- Tombol Dino Game (Secondary) -->
                 <a
                     href="chrome://dino"
-                    class="group relative inline-block focus:outline-none opacity-50 hover:opacity-100 transition-opacity"
+                    class="btn-wrapper btn-disabled"
                 >
-                    <div
-                        class="absolute inset-0 bg-retro-yellow translate-x-1 translate-y-1"
-                    ></div>
-                    <div
-                        class="relative bg-slate-900 text-white border-2 border-white px-6 py-4 hover:-translate-x-1 hover:-translate-y-1 hover:bg-slate-800 transition-all active:translate-x-0 active:translate-y-0 cursor-not-allowed"
-                    >
-                        <span class="text-xs uppercase"> MAIN DINO 🦖 </span>
+                    <div class="btn-shadow btn-shadow-yellow"></div>
+                    <div class="btn-content" style="cursor: not-allowed;">
+                        <span class="text-xs uppercase">MAIN DINO</span>
                     </div>
                 </a>
             </div>
         </div>
 
         <!-- Dekorasi Sudut -->
-        <div class="absolute top-4 left-4 text-[10px] text-slate-600">
+        <div class="corner-text corner-top-left">
             SYS.NET // DOWN
         </div>
-        <div class="absolute bottom-4 right-4 text-[10px] text-slate-600">
+        <div class="corner-text corner-bottom-right">
             PING: TIMEOUT
         </div>
     </body>

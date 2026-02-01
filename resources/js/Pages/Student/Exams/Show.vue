@@ -51,32 +51,19 @@
                                 </span>
                             </div>
                         </div>
-                        <div class="d-flex flex-column align-items-end" role="timer" aria-label="Waktu ujian">
-                            <div class="d-flex flex-wrap gap-2 mb-1">
-                                <!-- Violation counter for mobile -->
-                                <span v-if="antiCheatConfig.enabled" :class="violationBadgeClass" class="badge p-2 d-md-none" role="status">
-                                    <i class="fas fa-shield-alt me-1" aria-hidden="true"></i>
-                                    {{ antiCheat.violationCount.value }}/{{ antiCheatConfig.max_violations }}
-                                </span>
-                                <!-- Timer per soal (jika aktif) -->
-                                <VueCountdown v-if="questionTimeLimit > 0" :time="questionTimeRemaining" @end="handleQuestionTimeEnd" v-slot="{ minutes, seconds }">
-                                    <span class="badge bg-warning text-dark p-2" role="timer" aria-label="Waktu soal">
-                                        <i class="fas fa-stopwatch" aria-hidden="true"></i> <span class="d-none d-sm-inline">Soal:</span> {{ minutes }}:{{ String(seconds).padStart(2, '0') }}
-                                    </span>
-                                </VueCountdown>
-                                <!-- Timer total ujian -->
-                                <VueCountdown :time="duration" @progress="handleChangeDuration" @end="showModalEndTimeExam = true" v-slot="{ hours, minutes, seconds }">
-                                    <span class="badge bg-info p-2" role="timer" aria-label="Sisa waktu ujian">
-                                        <i class="fas fa-clock" aria-hidden="true"></i>
-                                        <span class="d-none d-sm-inline">{{ hours }}j {{ minutes }}m {{ seconds }}d</span>
-                                        <span class="d-sm-none">{{ hours }}:{{ String(minutes).padStart(2, '0') }}:{{ String(seconds).padStart(2, '0') }}</span>
-                                    </span>
-                                </VueCountdown>
-                            </div>
-                            <div class="progress w-100" style="height: 5px;">
-                                <div class="progress-bar" :class="timerProgressColor" role="progressbar" :style="{ width: timerProgress + '%' }" :aria-valuenow="timerProgress" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                        </div>
+                        <ExamTimer
+                            :duration="duration"
+                            :total-duration="exam_group.exam.duration * 60 * 1000"
+                            :question-time-limit="questionTimeLimit"
+                            :question-time-remaining="questionTimeRemaining"
+                            :show-violation-badge="antiCheatConfig.enabled"
+                            :violation-count="antiCheat.violationCount.value"
+                            :max-violations="antiCheatConfig.max_violations"
+                            :violation-badge-class="violationBadgeClass"
+                            @progress="handleChangeDuration"
+                            @time-end="showModalEndTimeExam = true"
+                            @question-time-end="handleQuestionTimeEnd"
+                        />
                     </div>
                 </div>
                 <div class="card-body">
@@ -87,96 +74,23 @@
                             <p v-html="question_active.question.question"></p>
                         </div>
 
-                        <div v-if="isMultipleChoiceSingle" role="radiogroup" aria-label="Pilihan jawaban">
-                            <table>
-                                <tbody>
-                                    <tr v-for="(answer, index) in answer_order" :key="index">
-                                        <td width="50" style="padding: 10px;">
-
-                                            <button v-if="answer == question_active.answer" class="btn btn-info btn-sm w-100 shdaow" aria-pressed="true" :aria-label="'Pilihan ' + options[index] + ' (terpilih)'">{{ options[index] }}</button>
-
-                                            <button v-else @click.prevent="submitAnswerSingle(answer)" class="btn btn-outline-info btn-sm w-100 shdaow" aria-pressed="false" :aria-label="'Pilih jawaban ' + options[index]">{{ options[index] }}</button>
-
-                                        </td>
-                                        <td style="padding: 10px;">
-                                            {{ question_active.question['option_'+answer] }}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div v-else-if="isMultipleChoiceMultiple" role="group" aria-label="Pilihan jawaban (pilih lebih dari satu)">
-                            <div class="list-group">
-                                <label v-for="(answer, index) in answer_order" :key="index" class="list-group-item d-flex align-items-center">
-                                    <input class="form-check-input me-2" type="checkbox" :value="answer" v-model="selectedOptions" :aria-label="'Pilihan ' + options[index]">
-                                    <span class="badge bg-secondary me-2" aria-hidden="true">{{ options[index] }}</span>
-                                    {{ question_active.question['option_'+answer] }}
-                                </label>
-                            </div>
-                            <button @click.prevent="submitAnswerMultiple" class="btn btn-info btn-sm mt-3">Simpan Jawaban</button>
-                        </div>
-
-                        <div v-else-if="isShortAnswer">
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <label class="form-label fw-bold" for="short-answer-input">Jawaban Singkat</label>
-                                    <span v-if="isAnswered(question_active)" class="badge bg-success"><i class="fas fa-check"></i> Tersimpan</span>
-                                    <span v-else class="badge bg-secondary">Belum dijawab</span>
-                                </div>
-                                <input type="text" id="short-answer-input" class="form-control" v-model="textAnswer" placeholder="Ketik jawaban Anda" aria-describedby="short-answer-help" />
-                            </div>
-                            <button @click.prevent="submitAnswerText" class="btn btn-info btn-sm" :disabled="isSubmitting">
-                                <span v-if="isSubmitting"><i class="fas fa-spinner fa-spin me-1"></i> Menyimpan...</span>
-                                <span v-else>Simpan Jawaban</span>
-                            </button>
-                        </div>
-
-                        <div v-else-if="isEssay">
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <label class="form-label fw-bold">Jawaban Essay</label>
-                                    <span v-if="isAnswered(question_active)" class="badge bg-success"><i class="fas fa-check"></i> Tersimpan</span>
-                                    <span v-else class="badge bg-secondary">Belum dijawab</span>
-                                </div>
-                                <textarea class="form-control" rows="6" v-model="textAnswer" placeholder="Tulis jawaban Anda"></textarea>
-                                <small class="text-muted">Jawaban akan dinilai manual.</small>
-                            </div>
-                            <button @click.prevent="submitAnswerText" class="btn btn-info btn-sm" :disabled="isSubmitting">
-                                <span v-if="isSubmitting"><i class="fas fa-spinner fa-spin me-1"></i> Menyimpan...</span>
-                                <span v-else>Simpan Jawaban</span>
-                            </button>
-                        </div>
-
-                        <div v-else-if="isTrueFalse">
-                            <div class="d-flex gap-3">
-                                <button @click.prevent="submitAnswerSingle(1)" :class="['btn', 'btn-lg', question_active.answer == 1 ? 'btn-success' : 'btn-outline-success']">
-                                    <i class="fas fa-check me-2"></i> Benar
-                                </button>
-                                <button @click.prevent="submitAnswerSingle(2)" :class="['btn', 'btn-lg', question_active.answer == 2 ? 'btn-danger' : 'btn-outline-danger']">
-                                    <i class="fas fa-times me-2"></i> Salah
-                                </button>
-                            </div>
-                        </div>
-
-                        <div v-else-if="isMatching">
-                            <div class="mb-3">
-                                <p class="text-muted mb-3">Jodohkan pernyataan di kiri dengan jawaban yang tepat di kanan.</p>
-                                <div v-for="(pair, idx) in matchingLeftItems" :key="idx" class="row mb-2 align-items-center">
-                                    <div class="col-5">
-                                        <div class="p-2 bg-light rounded">{{ pair }}</div>
-                                    </div>
-                                    <div class="col-2 text-center">→</div>
-                                    <div class="col-5">
-                                        <select class="form-select" v-model="matchingAnswers[pair]">
-                                            <option value="">-- Pilih --</option>
-                                            <option v-for="right in matchingRightItems" :key="right" :value="right">{{ right }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <button @click.prevent="submitAnswerMatching" class="btn btn-info btn-sm">Simpan Jawaban</button>
-                        </div>
+                        <AnswerInput
+                            :question-type="question_active.question.question_type || 'multiple_choice_single'"
+                            :question="question_active.question"
+                            :answer-order="answer_order"
+                            :current-answer="question_active.answer"
+                            :selected-options="selectedOptions"
+                            :text-answer="textAnswer"
+                            :matching-answers="matchingAnswers"
+                            :matching-left-items="matchingLeftItems"
+                            :matching-right-items="matchingRightItems"
+                            :is-answered="isAnswered(question_active)"
+                            :is-submitting="isSubmitting"
+                            @answer-single="submitAnswerSingle"
+                            @answer-multiple="submitAnswerMultiple"
+                            @answer-text="submitAnswerText"
+                            @answer-matching="submitAnswerMatching"
+                        />
 
                     </div>
 
@@ -217,43 +131,18 @@
                 </div>
 
                 <!-- Adaptive Ability Progress (shown in adaptive mode) -->
-                <div v-if="isAdaptiveMode" class="card-body border-bottom py-2">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <small class="text-muted"><i class="fas fa-chart-line me-1"></i> Level Kemampuan</small>
-                        <small :class="abilityLevelClass">{{ abilityLevelText }}</small>
-                    </div>
-                    <div class="progress" style="height: 8px;">
-                        <div class="progress-bar" :class="abilityProgressClass" role="progressbar" 
-                             :style="{ width: abilityProgressWidth }" 
-                             :aria-valuenow="abilityProgress" aria-valuemin="0" aria-valuemax="100">
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between mt-1">
-                        <small class="text-muted" style="font-size: 10px;">Mudah</small>
-                        <small class="text-muted" style="font-size: 10px;">Sedang</small>
-                        <small class="text-muted" style="font-size: 10px;">Sulit</small>
-                    </div>
-                </div>
+                <AdaptiveProgress
+                    :is-adaptive-mode="isAdaptiveMode"
+                    :current-difficulty="currentDifficulty"
+                    :questions="all_questions"
+                />
                 <div class="card-body" style="max-height: 330px; overflow-y: auto">
-                    <div class="d-flex flex-wrap">
-                        <div v-for="(question, index) in all_questions" :key="index" class="p-1" style="width: 20%; min-width: 45px;">
-                            <!-- If time_per_question active, only allow current and next questions -->
-                            <template v-if="questionTimeLimit">
-                                <button v-if="index+1 == page" class="btn btn-gray-400 btn-sm w-100" disabled :aria-label="'Soal nomor ' + (index + 1) + ', sedang dibuka'">{{ index + 1 }}</button>
-                                <button v-else-if="index+1 < page" class="btn btn-secondary btn-sm w-100" disabled :title="'Soal sudah dilewati'" :aria-label="'Soal nomor ' + (index + 1) + ', terkunci'">
-                                    <i class="fas fa-lock" style="font-size: 10px;"></i>
-                                </button>
-                                <button v-else-if="!isAnswered(question)" class="btn btn-outline-info btn-sm w-100" disabled :aria-label="'Soal nomor ' + (index + 1) + ', belum dikerjakan'">{{ index + 1 }}</button>
-                                <button v-else class="btn btn-info btn-sm w-100" disabled :aria-label="'Soal nomor ' + (index + 1) + ', sudah dikerjakan'">{{ index + 1 }}</button>
-                            </template>
-                            <!-- Normal navigation -->
-                            <template v-else>
-                                <button @click.prevent="clickQuestion(index)" v-if="index+1 == page" class="btn btn-gray-400 btn-sm w-100" :aria-label="'Soal nomor ' + (index + 1) + ', sedang dibuka'">{{ index + 1 }}</button>
-                                <button @click.prevent="clickQuestion(index)" v-else-if="!isAnswered(question)" class="btn btn-outline-info btn-sm w-100" :aria-label="'Soal nomor ' + (index + 1) + ', belum dikerjakan'">{{ index + 1 }}</button>
-                                <button @click.prevent="clickQuestion(index)" v-else class="btn btn-info btn-sm w-100" :aria-label="'Soal nomor ' + (index + 1) + ', sudah dikerjakan'">{{ index + 1 }}</button>
-                            </template>
-                        </div>
-                    </div>
+                    <QuestionNavigation
+                        :questions="all_questions"
+                        :current-page="page"
+                        :question-time-limit="questionTimeLimit"
+                        @navigate="clickQuestion"
+                    />
                 </div>
                 <div class="card-footer">
                     <button @click="confirmEndExam" class="btn btn-danger btn-md border-0 shadow w-100">Akhiri Ujian</button>
@@ -262,176 +151,25 @@
         </div>
     </div>
 
-    <!-- modal waktu ujian berakhir -->
-    <div v-if="showModalEndTimeExam" class="modal fade" :class="{ 'show': showModalEndTimeExam }" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true" style="display:block;" role="dialog">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Waktu Habis !</h5>
-                </div>
-                <div class="modal-body">
-                    Waktu ujian sudah berakhir!. Klik <strong class="fw-bold">Ya</strong> untuk mengakhiri ujian.
-                </div>
-                <div class="modal-footer">
-                    <button @click.prevent="endExam" type="button" class="btn btn-primary">Ya</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Peringatan Pelanggaran -->
-    <div v-if="showViolationWarning" class="modal fade show" tabindex="-1" style="display:block; background: rgba(0,0,0,0.7);" role="dialog">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-warning">
-                <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Peringatan Pelanggaran!
-                    </h5>
-                </div>
-                <div class="modal-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-shield-alt fa-4x text-warning"></i>
-                    </div>
-                    <h5 class="text-danger">{{ lastViolationMessage }}</h5>
-                    <p class="mb-2">
-                        Total Pelanggaran: <strong>{{ antiCheat.violationCount.value }}</strong> / {{ antiCheatConfig.max_violations }}
-                    </p>
-                    <div class="progress mb-3" style="height: 20px;">
-                        <div class="progress-bar"
-                             :class="violationProgressClass"
-                             role="progressbar"
-                             :style="{ width: violationProgressWidth }"
-                             :aria-valuenow="antiCheat.violationCount.value"
-                             aria-valuemin="0"
-                             :aria-valuemax="antiCheatConfig.max_violations">
-                            {{ antiCheat.violationCount.value }} / {{ antiCheatConfig.max_violations }}
-                        </div>
-                    </div>
-                    <p class="text-muted small">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Jika Anda mencapai batas maksimal pelanggaran, ujian dapat diakhiri secara otomatis.
-                    </p>
-                </div>
-                <div class="modal-footer justify-content-center">
-                    <button @click="dismissViolationWarning" type="button" class="btn btn-warning">
-                        <i class="fas fa-check me-1"></i> Saya Mengerti
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Auto Submit (Max Violations) -->
-    <div v-if="showAutoSubmitModal" class="modal fade show" tabindex="-1" style="display:block; background: rgba(0,0,0,0.8);" role="dialog">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-danger">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title">
-                        <i class="fas fa-ban me-2"></i>
-                        Batas Pelanggaran Tercapai!
-                    </h5>
-                </div>
-                <div class="modal-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-times-circle fa-4x text-danger"></i>
-                    </div>
-                    <h5>Ujian akan diakhiri secara otomatis</h5>
-                    <p>Anda telah mencapai batas maksimal pelanggaran ({{ antiCheatConfig.max_violations }}).</p>
-                    <p class="text-muted">Ujian akan diakhiri dalam <strong>{{ autoSubmitCountdown }}</strong> detik...</p>
-                </div>
-                <div class="modal-footer justify-content-center">
-                    <button @click.prevent="endExam" type="button" class="btn btn-danger">
-                        <i class="fas fa-stop me-1"></i> Akhiri Sekarang
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Liveness Verification -->
-    <div v-if="livenessModalVisible" class="modal fade show" tabindex="-1" style="display:block; background: rgba(0,0,0,0.9);" role="dialog">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-warning">
-                <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title">
-                        <i class="fas fa-user-check me-2"></i>
-                        Verifikasi Kehadiran
-                    </h5>
-                </div>
-                <div class="modal-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-camera fa-4x text-warning"></i>
-                    </div>
-                    <h5>{{ livenessChallenge?.instruction || 'Ikuti instruksi berikut' }}</h5>
-                    <p class="text-muted">Pastikan wajah Anda terlihat jelas di kamera</p>
-                    <div class="mt-3">
-                        <div class="progress" style="height: 25px;">
-                            <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" 
-                                 :style="{ width: (livenessCountdown / 15 * 100) + '%' }">
-                                {{ livenessCountdown }} detik
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Fullscreen Required -->
-    <div v-if="showFullscreenModal" class="modal fade show" tabindex="-1" style="display:block; background: rgba(0,0,0,0.9);" role="dialog">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">
-                        <i class="fas fa-expand me-2"></i>
-                        Mode Fullscreen Diperlukan
-                    </h5>
-                </div>
-                <div class="modal-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-desktop fa-4x text-primary"></i>
-                    </div>
-                    <h5>Ujian ini memerlukan mode fullscreen</h5>
-                    <p class="text-muted">Klik tombol di bawah untuk masuk ke mode fullscreen dan melanjutkan ujian.</p>
-                </div>
-                <div class="modal-footer justify-content-center">
-                    <button @click="requestFullscreen" type="button" class="btn btn-primary btn-lg">
-                        <i class="fas fa-expand me-1"></i> Masuk Fullscreen
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Blocked Environment (Multiple Monitors / VM) -->
-    <div v-if="showBlockedModal" class="modal fade show" tabindex="-1" style="display:block; background: rgba(0,0,0,0.95);" role="dialog">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-danger">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title">
-                        <i class="fas fa-ban me-2"></i>
-                        Lingkungan Tidak Diizinkan
-                    </h5>
-                </div>
-                <div class="modal-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-exclamation-circle fa-4x text-danger"></i>
-                    </div>
-                    <h5 class="text-danger">{{ blockedMessage }}</h5>
-                    <p class="text-muted">
-                        Ujian ini tidak dapat dilanjutkan dengan konfigurasi perangkat Anda saat ini.
-                        Silakan gunakan satu monitor dan pastikan tidak menggunakan Virtual Machine.
-                    </p>
-                </div>
-                <div class="modal-footer justify-content-center">
-                    <Link href="/student/dashboard" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left me-1"></i> Kembali ke Dashboard
-                    </Link>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- All Violation and System Modals -->
+    <ViolationModals
+        :show-violation-warning="showViolationWarning"
+        :show-auto-submit-modal="showAutoSubmitModal"
+        :show-fullscreen-modal="showFullscreenModal"
+        :show-blocked-modal="showBlockedModal"
+        :show-time-end-modal="showModalEndTimeExam"
+        :show-liveness-modal="livenessModalVisible"
+        :last-violation-message="lastViolationMessage"
+        :violation-count="antiCheat.violationCount.value"
+        :max-violations="antiCheatConfig.max_violations"
+        :auto-submit-countdown="autoSubmitCountdown"
+        :blocked-message="blockedMessage"
+        :liveness-challenge="livenessChallenge"
+        :liveness-countdown="livenessCountdown"
+        @dismiss="dismissViolationWarning"
+        @end-exam="endExam"
+        @request-fullscreen="requestFullscreen"
+    />
 
 </template>
 
@@ -485,6 +223,15 @@
     //import ExamOnboarding component
     import ExamOnboarding from '../../../Components/ExamOnboarding.vue';
 
+    //import Exam components
+    import { 
+        ExamTimer, 
+        QuestionNavigation, 
+        ViolationModals, 
+        AnswerInput, 
+        AdaptiveProgress 
+    } from '../../../Components/Exam';
+
     export default {
         //layout
         layout: LayoutStudent,
@@ -495,7 +242,12 @@
             Link,
             VueCountdown,
             LandscapeWarning,
-            ExamOnboarding
+            ExamOnboarding,
+            ExamTimer,
+            QuestionNavigation,
+            ViolationModals,
+            AnswerInput,
+            AdaptiveProgress
         },
 
         //props
@@ -1138,12 +890,14 @@
             });
 
             //method submit answer (multiple choice multiple)
-            const submitAnswerMultiple = (() => {
+            const submitAnswerMultiple = ((options) => {
+                // Use emitted options or fallback to local state
+                const answersToSubmit = options || selectedOptions.value;
                 router.post('/student/exam-answer', {
                     exam_id: props.exam_group.exam.id,
                     exam_session_id: props.exam_group.exam_session.id,
                     question_id: props.question_active.question.id,
-                    answer_options: selectedOptions.value,
+                    answer_options: answersToSubmit,
                     duration: duration.value
                 }, {
                     preserveScroll: true,
@@ -1164,13 +918,15 @@
             const isSubmitting = ref(false);
 
             //method submitAnswerText
-            const submitAnswerText = (() => {
+            const submitAnswerText = ((text) => {
+                // Use emitted text or fallback to local state
+                const answerToSubmit = text || textAnswer.value;
                 isSubmitting.value = true;
                 router.post('/student/exam-answer', {
                     exam_id: props.exam_group.exam.id,
                     exam_session_id: props.exam_group.exam_session.id,
                     question_id: props.question_active.question.id,
-                    answer_text: textAnswer.value,
+                    answer_text: answerToSubmit,
                     duration: duration.value
                 }, {
                     preserveScroll: true,
@@ -1191,12 +947,14 @@
             });
 
             //method submit answer (matching)
-            const submitAnswerMatching = (() => {
+            const submitAnswerMatching = ((answers) => {
+                // Use emitted answers or fallback to local state
+                const answersToSubmit = answers || matchingAnswers.value;
                 router.post('/student/exam-answer', {
                     exam_id: props.exam_group.exam.id,
                     exam_session_id: props.exam_group.exam_session.id,
                     question_id: props.question_active.question.id,
-                    matching_answers: matchingAnswers.value,
+                    matching_answers: answersToSubmit,
                     duration: duration.value
                 }, {
                     preserveScroll: true,

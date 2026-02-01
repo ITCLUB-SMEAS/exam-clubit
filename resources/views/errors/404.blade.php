@@ -4,84 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 - Game Over</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="{{ asset('build/assets/errors.css') }}" rel="stylesheet">
     <!-- Import Font 'Press Start 2P' untuk nuansa 8-bit yang autentik -->
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        'pixel': ['"Press Start 2P"', 'cursive'],
-                    },
-                    colors: {
-                        pixel: {
-                            bg: '#1a1b26',       /* Gelap malam */
-                            primary: '#ff0055',  /* Merah Neon */
-                            accent: '#00e5ff',   /* Cyan Neon */
-                            yellow: '#ffcc00',   /* Kuning Koin */
-                            text: '#e0e0e0',
-                        }
-                    },
-                    boxShadow: {
-                        'hard': '4px 4px 0px 0px rgba(0,0,0,1)',
-                        'hard-hover': '2px 2px 0px 0px rgba(0,0,0,1)',
-                    },
-                    animation: {
-                        'float': 'float 3s ease-in-out infinite',
-                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-10px)' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-
     <style>
-        /* CSS Tambahan untuk efek Scanline CRT dan Glitch */
+        /* Additional page-specific styles */
         body {
             background-color: #1a1b26;
             overflow-x: hidden;
         }
-
-        /* Garis-garis halus layar TV lama */
-        .scanlines {
-            background: linear-gradient(
-                to bottom,
-                rgba(255,255,255,0),
-                rgba(255,255,255,0) 50%,
-                rgba(0,0,0,0.2) 50%,
-                rgba(0,0,0,0.2)
-            );
-            background-size: 100% 4px;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
-            z-index: 50;
-        }
-
-        /* Efek Glitch pada teks 404 */
-        .glitch-text {
-            position: relative;
-            text-shadow: 3px 3px 0px #ff0055, -3px -3px 0px #00e5ff;
-        }
-
-        /* Membuat grid latar belakang */
-        .bg-grid {
-            background-image:
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-        }
     </style>
 </head>
-<body class="h-screen w-full flex flex-col items-center justify-center font-pixel text-pixel-text bg-grid selection:bg-pixel-primary selection:text-white relative">
+<body class="error-body h-screen w-full flex flex-col items-center justify-center font-pixel text-pixel-text bg-grid selection-pixel relative">
 
     <!-- Layer Efek CRT -->
     <div class="scanlines"></div>
@@ -110,7 +45,7 @@
         </div>
 
         <!-- Header Besar -->
-        <h1 class="text-6xl md:text-8xl font-bold mb-2 glitch-text tracking-widest">
+        <h1 class="text-6xl md:text-8xl font-bold mb-2 glitch-text-404 tracking-widest">
             404
         </h1>
 

@@ -100,7 +100,7 @@
         <!-- Second Charts Row -->
         <div class="row">
             <!-- Grade Distribution -->
-            <div class="col-12 col-xl-6 mb-4">
+            <div class="col-12 col-xl-4 mb-4">
                 <div class="card border-0 shadow">
                     <div class="card-header">
                         <h5 class="mb-0">Distribusi Nilai</h5>
@@ -111,8 +111,13 @@
                 </div>
             </div>
 
+            <!-- At-Risk Students Widget -->
+            <div class="col-12 col-xl-4 mb-4">
+                <AtRiskWidget />
+            </div>
+
             <!-- Top Exams -->
-            <div class="col-12 col-xl-6 mb-4">
+            <div class="col-12 col-xl-4 mb-4">
                 <div class="card border-0 shadow">
                     <div class="card-header">
                         <h5 class="mb-0">Top 5 Ujian (Peserta Terbanyak)</h5>
@@ -194,6 +199,7 @@
 import { computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import LayoutAdmin from '../../../Layouts/Admin.vue';
+import AtRiskWidget from '../../../Components/Dashboard/AtRiskWidget.vue';
 import { Line, Doughnut, Bar } from 'vue-chartjs';
 import {
     Chart as ChartJS,

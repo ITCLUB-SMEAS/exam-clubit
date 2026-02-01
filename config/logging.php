@@ -127,6 +127,24 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Security Audit Log Channel
+        |--------------------------------------------------------------------------
+        |
+        | Dedicated channel for security-related events. Uses daily rotation
+        | with extended retention for compliance and forensic analysis.
+        |
+        */
+
+        'security' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/security.log'),
+            'level' => env('SECURITY_LOG_LEVEL', 'info'),
+            'days' => env('SECURITY_LOG_DAYS', 90),
+            'replace_placeholders' => true,
+        ],
+
     ],
 
 ];

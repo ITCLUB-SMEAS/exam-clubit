@@ -2,21 +2,22 @@
 
 namespace App\Http\Controllers\Student;
 
-use Carbon\Carbon;
-use App\Models\Grade;
-use App\Models\Answer;
-use App\Models\Question;
-use App\Models\ExamGroup;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Events\ExamStarted;
 use App\Http\Controllers\Controller;
+use App\Models\Answer;
+use App\Models\ExamGroup;
+use App\Models\Grade;
+use App\Models\Question;
 use App\Services\ActivityLogService;
+use App\Services\AdaptiveTestingService;
+use App\Services\AnswerTimingService;
 use App\Services\AntiCheatService;
+use App\Services\ExamCompletionService;
 use App\Services\ExamScoringService;
 use App\Services\ExamTimerService;
-use App\Services\ExamCompletionService;
-use App\Services\AnswerTimingService;
-use App\Services\AdaptiveTestingService;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ExamController extends Controller
 {
@@ -26,33 +27,34 @@ class ExamController extends Controller
         protected ExamCompletionService $completionService,
         protected AdaptiveTestingService $adaptiveService
     ) {}
+
     /**
      * confirmation
      *
-     * @param  mixed $id
+     * @param  mixed  $id
      * @return void
      */
     public function confirmation($id)
     {
-        //get exam group with ownership check
+        // get exam group with ownership check
         $exam_group = ExamGroup::with(
-            "exam.lesson",
-            "exam_session",
-            "student.classroom",
+            'exam.lesson',
+            'exam_session',
+            'student.classroom',
         )
-            ->where("student_id", auth()->guard("student")->user()->id)
-            ->where("id", $id)
+            ->where('student_id', auth()->guard('student')->user()->id)
+            ->where('id', $id)
             ->first();
 
-        if (!$exam_group) {
-            return redirect()->route("student.dashboard")
-                ->with("error", "Ujian tidak ditemukan.");
+        if (! $exam_group) {
+            return redirect()->route('student.dashboard')
+                ->with('error', 'Ujian tidak ditemukan.');
         }
 
-        //get grade / nilai with ownership check
-        $grade = Grade::where("exam_id", $exam_group->exam->id)
-            ->where("exam_session_id", $exam_group->exam_session->id)
-            ->where("student_id", auth()->guard("student")->user()->id)
+        // get grade / nilai with ownership check
+        $grade = Grade::where('exam_id', $exam_group->exam->id)
+            ->where('exam_session_id', $exam_group->exam_session->id)
+            ->where('student_id', auth()->guard('student')->user()->id)
             ->first();
 
         // Get anti-cheat config for display
@@ -60,16 +62,16 @@ class ExamController extends Controller
             $exam_group->exam,
         );
 
-        //return with inertia
-        return inertia("Student/Exams/Confirmation", [
-            "exam_group" => $exam_group,
-            "grade" => $grade,
-            "anticheat_config" => $anticheat_config,
-            "attendance" => [
-                "required" => $exam_group->exam_session->require_attendance,
-                "checked_in" => $exam_group->isCheckedIn(),
-                "checked_in_at" => $exam_group->checked_in_at?->format('H:i:s'),
-                "session_id" => $exam_group->exam_session_id,
+        // return with inertia
+        return inertia('Student/Exams/Confirmation', [
+            'exam_group' => $exam_group,
+            'grade' => $grade,
+            'anticheat_config' => $anticheat_config,
+            'attendance' => [
+                'required' => $exam_group->exam_session->require_attendance,
+                'checked_in' => $exam_group->isCheckedIn(),
+                'checked_in_at' => $exam_group->checked_in_at?->format('H:i:s'),
+                'session_id' => $exam_group->exam_session_id,
             ],
         ]);
     }
@@ -79,18 +81,18 @@ class ExamController extends Controller
      */
     public function retryExam($id)
     {
-        $exam_group = ExamGroup::with("exam", "exam_session")
-            ->where("student_id", auth()->guard("student")->user()->id)
-            ->where("id", $id)
+        $exam_group = ExamGroup::with('exam', 'exam_session')
+            ->where('student_id', auth()->guard('student')->user()->id)
+            ->where('id', $id)
             ->first();
 
-        if (!$exam_group) {
-            return redirect()->route("student.dashboard")->with("error", "Ujian tidak ditemukan.");
+        if (! $exam_group) {
+            return redirect()->route('student.dashboard')->with('error', 'Ujian tidak ditemukan.');
         }
 
-        $grade = Grade::where("exam_id", $exam_group->exam->id)
-            ->where("exam_session_id", $exam_group->exam_session->id)
-            ->where("student_id", auth()->guard("student")->user()->id)
+        $grade = Grade::where('exam_id', $exam_group->exam->id)
+            ->where('exam_session_id', $exam_group->exam_session->id)
+            ->where('student_id', auth()->guard('student')->user()->id)
             ->first();
 
         // Check if retry is allowed
@@ -98,14 +100,14 @@ class ExamController extends Controller
         $currentAttempt = $grade->attempt_number ?? 1;
 
         if ($grade->status !== 'failed' || $currentAttempt >= $maxAttempts) {
-            return redirect()->route("student.exams.confirmation", $id)
-                ->with("error", "Anda tidak dapat mengulang ujian ini.");
+            return redirect()->route('student.exams.confirmation', $id)
+                ->with('error', 'Anda tidak dapat mengulang ujian ini.');
         }
 
         // Delete old answers for this attempt
-        Answer::where("exam_id", $exam_group->exam->id)
-            ->where("exam_session_id", $exam_group->exam_session->id)
-            ->where("student_id", auth()->guard("student")->user()->id)
+        Answer::where('exam_id', $exam_group->exam->id)
+            ->where('exam_session_id', $exam_group->exam_session->id)
+            ->where('student_id', auth()->guard('student')->user()->id)
             ->delete();
 
         // Delete old violation records for this grade (keep data consistent)
@@ -133,52 +135,52 @@ class ExamController extends Controller
             'flag_reason' => null,
         ]);
 
-        return redirect()->route("student.exams.startExam", $id);
+        return redirect()->route('student.exams.startExam', $id);
     }
 
     /**
      * startExam
      *
-     * @param  mixed $id
+     * @param  mixed  $id
      * @return void
      */
     public function startExam($id)
     {
-        //get exam group
+        // get exam group
         $exam_group = ExamGroup::with(
-            "exam.lesson",
-            "exam_session",
-            "student.classroom",
+            'exam.lesson',
+            'exam_session',
+            'student.classroom',
         )
-            ->where("student_id", auth()->guard("student")->user()->id)
-            ->where("id", $id)
+            ->where('student_id', auth()->guard('student')->user()->id)
+            ->where('id', $id)
             ->first();
 
-        if (!$exam_group) {
+        if (! $exam_group) {
             return redirect()
-                ->route("student.dashboard")
-                ->with("error", "Ujian tidak ditemukan.");
+                ->route('student.dashboard')
+                ->with('error', 'Ujian tidak ditemukan.');
         }
 
-        //get grade / nilai
-        $grade = Grade::where("exam_id", $exam_group->exam->id)
-            ->where("exam_session_id", $exam_group->exam_session->id)
-            ->where("student_id", auth()->guard("student")->user()->id)
+        // get grade / nilai
+        $grade = Grade::where('exam_id', $exam_group->exam->id)
+            ->where('exam_session_id', $exam_group->exam_session->id)
+            ->where('student_id', auth()->guard('student')->user()->id)
             ->first();
 
-        if (!$grade) {
+        if (! $grade) {
             return redirect()
-                ->route("student.dashboard")
-                ->with("error", "Data ujian tidak ditemukan.");
+                ->route('student.dashboard')
+                ->with('error', 'Data ujian tidak ditemukan.');
         }
 
         // Prevent restart after completion (check FIRST to avoid race condition)
         if (
             $grade->end_time !== null ||
-            $grade->attempt_status === "completed"
+            $grade->attempt_status === 'completed'
         ) {
             return redirect()->route(
-                "student.exams.resultExam",
+                'student.exams.resultExam',
                 $exam_group->id,
             );
         }
@@ -189,10 +191,10 @@ class ExamController extends Controller
         }
 
         // Guard: check attendance if required
-        if ($exam_group->exam_session->require_attendance && !$exam_group->isCheckedIn()) {
+        if ($exam_group->exam_session->require_attendance && ! $exam_group->isCheckedIn()) {
             return redirect()
-                ->route("student.exams.confirmation", $exam_group->id)
-                ->with("error", "Anda harus melakukan absensi terlebih dahulu sebelum memulai ujian.");
+                ->route('student.exams.confirmation', $exam_group->id)
+                ->with('error', 'Anda harus melakukan absensi terlebih dahulu sebelum memulai ujian.');
         }
 
         // Use database lock to prevent race condition on concurrent requests
@@ -200,7 +202,7 @@ class ExamController extends Controller
         DB::transaction(function () use ($grade, $exam_group, &$justStarted) {
             // Lock the grade row for update
             $grade = Grade::where('id', $grade->id)->lockForUpdate()->first();
-            
+
             // Set start time once
             if ($grade->start_time === null) {
                 $grade->start_time = Carbon::now();
@@ -210,9 +212,9 @@ class ExamController extends Controller
             // Mark attempt in progress and increment attempt count on first start
             if (
                 $grade->attempt_status === null ||
-                $grade->attempt_status === "not_started"
+                $grade->attempt_status === 'not_started'
             ) {
-                $grade->attempt_status = "in_progress";
+                $grade->attempt_status = 'in_progress';
                 $grade->attempt_count = ($grade->attempt_count ?? 0) + 1;
                 $justStarted = true;
             }
@@ -224,15 +226,16 @@ class ExamController extends Controller
             );
             $grade->save();
         });
-        
+
         // Refresh grade after transaction
         $grade->refresh();
 
         // Auto-end if duration already exhausted
         if ($grade->duration <= 0) {
             $this->finalizeExam($exam_group, $grade);
+
             return redirect()->route(
-                "student.exams.resultExam",
+                'student.exams.resultExam',
                 $exam_group->id,
             );
         }
@@ -240,47 +243,51 @@ class ExamController extends Controller
         // Log exam start activity (only first time)
         if ($justStarted) {
             ActivityLogService::logExamStart(
-                auth()->guard("student")->user(),
+                auth()->guard('student')->user(),
                 $exam_group->exam,
                 $exam_group->exam_session,
             );
+
+            // Dispatch exam started event
+            ExamStarted::dispatch($grade);
         }
 
         // Check if answers already exist (to preserve question selection on refresh)
-        $existingAnswers = Answer::where("student_id", auth()->guard("student")->user()->id)
-            ->where("exam_id", $exam_group->exam->id)
-            ->where("exam_session_id", $exam_group->exam_session->id)
+        $existingAnswers = Answer::where('student_id', auth()->guard('student')->user()->id)
+            ->where('exam_id', $exam_group->exam->id)
+            ->where('exam_session_id', $exam_group->exam_session->id)
             ->exists();
 
         // Only generate new questions if no answers exist yet
-        if (!$existingAnswers) {
-            DB::transaction(function () use ($exam_group, $grade) {
+        if (! $existingAnswers) {
+            DB::transaction(function () use ($exam_group) {
                 // For adaptive mode, only create first question (medium difficulty)
                 if ($exam_group->exam->adaptive_mode) {
-                    $question = Question::where("exam_id", $exam_group->exam->id)
-                        ->where("difficulty", "medium")
+                    $question = Question::where('exam_id', $exam_group->exam->id)
+                        ->where('difficulty', 'medium')
                         ->inRandomOrder()
                         ->first();
-                    
+
                     // Fallback to any question if no medium found
-                    if (!$question) {
-                        $question = Question::where("exam_id", $exam_group->exam->id)
+                    if (! $question) {
+                        $question = Question::where('exam_id', $exam_group->exam->id)
                             ->inRandomOrder()
                             ->first();
                     }
-                    
+
                     if ($question) {
                         $this->createAnswerRecord($exam_group, $question, 1);
                     }
+
                     return;
                 }
 
-                //cek apakah questions / soal ujian di random
-                if ($exam_group->exam->random_question == "Y") {
-                    $query = Question::where("exam_id", $exam_group->exam->id)
+                // cek apakah questions / soal ujian di random
+                if ($exam_group->exam->random_question == 'Y') {
+                    $query = Question::where('exam_id', $exam_group->exam->id)
                         ->inRandomOrder();
                 } else {
-                    $query = Question::where("exam_id", $exam_group->exam->id);
+                    $query = Question::where('exam_id', $exam_group->exam->id);
                 }
 
                 // Apply question limit if set
@@ -298,65 +305,65 @@ class ExamController extends Controller
             });
         }
 
-        //redirect ke ujian halaman 1
-        return redirect()->route("student.exams.show", [
-            "id" => $exam_group->id,
-            "page" => 1,
+        // redirect ke ujian halaman 1
+        return redirect()->route('student.exams.show', [
+            'id' => $exam_group->id,
+            'page' => 1,
         ]);
     }
 
     /**
      * show
      *
-     * @param  mixed $id
-     * @param  mixed $page
+     * @param  mixed  $id
+     * @param  mixed  $page
      * @return void
      */
     public function show($id, $page)
     {
-        //get exam group
+        // get exam group
         $exam_group = ExamGroup::with(
-            "exam.lesson",
-            "exam_session",
-            "student.classroom",
+            'exam.lesson',
+            'exam_session',
+            'student.classroom',
         )
-            ->where("student_id", auth()->guard("student")->user()->id)
-            ->where("id", $id)
+            ->where('student_id', auth()->guard('student')->user()->id)
+            ->where('id', $id)
             ->first();
 
-        if (!$exam_group) {
-            return redirect()->route("student.dashboard");
+        if (! $exam_group) {
+            return redirect()->route('student.dashboard');
         }
 
-        //get grade / nilai
-        $grade = Grade::where("exam_id", $exam_group->exam->id)
-            ->where("exam_session_id", $exam_group->exam_session->id)
-            ->where("student_id", auth()->guard("student")->user()->id)
+        // get grade / nilai
+        $grade = Grade::where('exam_id', $exam_group->exam->id)
+            ->where('exam_session_id', $exam_group->exam_session->id)
+            ->where('student_id', auth()->guard('student')->user()->id)
             ->first();
 
-        if (!$grade) {
+        if (! $grade) {
             return redirect()
-                ->route("student.dashboard")
-                ->with("error", "Data ujian tidak ditemukan.");
+                ->route('student.dashboard')
+                ->with('error', 'Data ujian tidak ditemukan.');
         }
 
         // Prevent accessing after completion
         if (
             $grade->end_time !== null ||
-            $grade->attempt_status === "completed"
+            $grade->attempt_status === 'completed'
         ) {
             return redirect()->route(
-                "student.exams.resultExam",
+                'student.exams.resultExam',
                 $exam_group->id,
             );
         }
 
         // Check if exam is paused
         if ($grade->is_paused) {
-            return inertia("Student/Exams/Paused", [
-                "exam_group" => $exam_group,
-                "grade" => $grade,
-                "pause_reason" => $grade->pause_reason,
+            return inertia('Student/Exams/Paused', [
+                'exam_group' => $exam_group,
+                'grade' => $grade,
+                'pause_reason' => $grade->pause_reason,
             ]);
         }
 
@@ -372,9 +379,9 @@ class ExamController extends Controller
 
         if (
             $grade->attempt_status === null ||
-            $grade->attempt_status === "not_started"
+            $grade->attempt_status === 'not_started'
         ) {
-            $grade->attempt_status = "in_progress";
+            $grade->attempt_status = 'in_progress';
             $grade->attempt_count = ($grade->attempt_count ?? 0) + 1;
         }
 
@@ -389,61 +396,62 @@ class ExamController extends Controller
         // Auto-end if waktu habis
         if ($remainingDuration <= 0) {
             $this->finalizeExam($exam_group, $grade);
+
             return redirect()->route(
-                "student.exams.resultExam",
+                'student.exams.resultExam',
                 $exam_group->id,
             );
         }
 
-        //get all questions - single query with eager loading
-        $all_questions = Answer::with("question:id,question,question_type,option_1,option_2,option_3,option_4,option_5,correct_answers,points,matching_pairs")
-            ->where("student_id", auth()->guard("student")->user()->id)
-            ->where("exam_id", $exam_group->exam->id)
-            ->orderBy("question_order", "ASC")
+        // get all questions - single query with eager loading
+        $all_questions = Answer::with('question:id,question,question_type,option_1,option_2,option_3,option_4,option_5,correct_answers,points,matching_pairs')
+            ->where('student_id', auth()->guard('student')->user()->id)
+            ->where('exam_id', $exam_group->exam->id)
+            ->orderBy('question_order', 'ASC')
             ->get();
 
         // Validate navigation for time_per_question mode
         if ($exam_group->exam->time_per_question > 0) {
             $lastAnsweredOrder = $all_questions
-                ->filter(fn($q) => $q->answer != 0 || !empty($q->answer_text) || !empty($q->answer_options))
+                ->filter(fn ($q) => $q->answer != 0 || ! empty($q->answer_text) || ! empty($q->answer_options))
                 ->max('question_order') ?? 0;
-            
+
             $allowedPage = $lastAnsweredOrder + 1;
-            
+
             // Can't go back to previous questions
             if ((int) $page < $allowedPage && (int) $page <= $lastAnsweredOrder) {
                 return redirect()->route('student.exams.show', [$id, $allowedPage]);
             }
-            
+
             // Can't skip ahead
             if ((int) $page > $allowedPage) {
                 return redirect()->route('student.exams.show', [$id, $allowedPage]);
             }
         }
 
-        //count all question answered (support text/multiple)
+        // count all question answered (support text/multiple)
         $question_answered = $all_questions
             ->filter(function ($item) {
                 return $item->answer != 0 ||
-                    !empty($item->answer_text) ||
-                    !empty($item->answer_options);
+                    ! empty($item->answer_text) ||
+                    ! empty($item->answer_options);
             })
             ->count();
 
-        //get question active from already loaded collection
-        $question_active = $all_questions->firstWhere("question_order", $page);
+        // get question active from already loaded collection
+        $question_active = $all_questions->firstWhere('question_order', $page);
         if ($question_active) {
-            $question_active->load("question.exam:id,title,random_answer");
+            $question_active->load('question.exam:id,title,random_answer');
         }
 
-        //explode atau pecah jawaban
+        // explode atau pecah jawaban
         if ($question_active) {
-            $answer_order = explode(",", $question_active->answer_order);
+            $answer_order = explode(',', $question_active->answer_order);
         } else {
             $answer_order = [];
         }
 
-        //pass latest duration (already server-calculated)
+        // pass latest duration (already server-calculated)
         $duration = $grade;
 
         // Record question view time for answer timing validation
@@ -457,72 +465,72 @@ class ExamController extends Controller
         // Get initial violation count
         $initial_violations = $duration->violation_count ?? 0;
 
-        //return with inertia
-        return inertia("Student/Exams/Show", [
-            "id" => (int) $id,
-            "page" => (int) $page,
-            "exam_group" => $exam_group,
-            "all_questions" => $all_questions,
-            "question_answered" => $question_answered,
-            "question_active" => $question_active,
-            "answer_order" => $answer_order,
-            "duration" => $duration,
-            "anticheat_config" => $anticheat_config,
-            "initial_violations" => $initial_violations,
-            "face_detection_enabled" => $exam_group->exam->face_detection_enabled ?? false,
-            "audio_detection_enabled" => $exam_group->exam->audio_detection_enabled ?? false,
+        // return with inertia
+        return inertia('Student/Exams/Show', [
+            'id' => (int) $id,
+            'page' => (int) $page,
+            'exam_group' => $exam_group,
+            'all_questions' => $all_questions,
+            'question_answered' => $question_answered,
+            'question_active' => $question_active,
+            'answer_order' => $answer_order,
+            'duration' => $duration,
+            'anticheat_config' => $anticheat_config,
+            'initial_violations' => $initial_violations,
+            'face_detection_enabled' => $exam_group->exam->face_detection_enabled ?? false,
+            'audio_detection_enabled' => $exam_group->exam->audio_detection_enabled ?? false,
         ]);
     }
 
     /**
      * updateDuration
      *
-     * @param  mixed $request
-     * @param  mixed $grade_id
+     * @param  mixed  $request
+     * @param  mixed  $grade_id
      * @return void
      */
     public function updateDuration(Request $request, $grade_id)
     {
-        $grade = Grade::where("id", $grade_id)
-            ->where("student_id", auth()->guard("student")->user()->id)
+        $grade = Grade::where('id', $grade_id)
+            ->where('student_id', auth()->guard('student')->user()->id)
             ->firstOrFail();
 
-        $exam_group = ExamGroup::where("exam_id", $grade->exam_id)
-            ->where("exam_session_id", $grade->exam_session_id)
-            ->where("student_id", $grade->student_id)
+        $exam_group = ExamGroup::where('exam_id', $grade->exam_id)
+            ->where('exam_session_id', $grade->exam_session_id)
+            ->where('student_id', $grade->student_id)
             ->first();
 
-        if (!$exam_group) {
+        if (! $exam_group) {
             return response()->json(
                 [
-                    "success" => false,
-                    "message" => "Ujian tidak ditemukan.",
+                    'success' => false,
+                    'message' => 'Ujian tidak ditemukan.',
                 ],
                 404,
             );
         }
 
-        $exam_group->load("exam", "exam_session");
+        $exam_group->load('exam', 'exam_session');
 
         if ($grade->end_time !== null) {
             return response()->json([
-                "success" => false,
-                "message" => "Ujian sudah berakhir.",
+                'success' => false,
+                'message' => 'Ujian sudah berakhir.',
             ]);
         }
 
-        if ($grade->attempt_status === "completed") {
+        if ($grade->attempt_status === 'completed') {
             return response()->json([
-                "success" => false,
-                "message" => "Ujian sudah berakhir.",
+                'success' => false,
+                'message' => 'Ujian sudah berakhir.',
             ]);
         }
 
         $now = Carbon::now();
         if ($now->lt($exam_group->exam_session->start_time)) {
             return response()->json([
-                "success" => false,
-                "message" => "Ujian belum dimulai.",
+                'success' => false,
+                'message' => 'Ujian belum dimulai.',
             ]);
         }
 
@@ -532,9 +540,9 @@ class ExamController extends Controller
 
         if (
             $grade->attempt_status === null ||
-            $grade->attempt_status === "not_started"
+            $grade->attempt_status === 'not_started'
         ) {
-            $grade->attempt_status = "in_progress";
+            $grade->attempt_status = 'in_progress';
             $grade->attempt_count = ($grade->attempt_count ?? 0) + 1;
         }
 
@@ -549,62 +557,75 @@ class ExamController extends Controller
             $this->finalizeExam($exam_group, $grade);
 
             return response()->json([
-                "success" => true,
-                "ended" => true,
-                "duration" => 0,
+                'success' => true,
+                'ended' => true,
+                'duration' => 0,
             ]);
         }
 
         return response()->json([
-            "success" => true,
-            "message" => "Duration updated successfully.",
-            "duration" => $remaining,
+            'success' => true,
+            'message' => 'Duration updated successfully.',
+            'duration' => $remaining,
         ]);
     }
 
     /**
      * answerQuestion
      *
-     * @param  mixed $request
+     * @param  mixed  $request
      * @return void
      */
     public function answerQuestion(Request $request)
     {
-        $grade = Grade::where("exam_id", $request->exam_id)
-            ->where("exam_session_id", $request->exam_session_id)
-            ->where("student_id", auth()->guard("student")->user()->id)
+        // Validate input to prevent IDOR and ensure data integrity
+        $validated = $request->validate([
+            'exam_id' => 'required|integer|exists:exams,id',
+            'exam_session_id' => 'required|integer|exists:exam_sessions,id',
+            'question_id' => 'required|integer|exists:questions,id',
+            'answer' => 'nullable|integer|min:0|max:5',
+            'answer_text' => 'nullable|string|max:50000',
+            'answer_options' => 'nullable|array',
+            'answer_options.*' => 'integer|min:1|max:5',
+            'matching_answers' => 'nullable|array',
+            'question_number' => 'nullable|integer|min:1',
+        ]);
+
+        $grade = Grade::where('exam_id', $validated['exam_id'])
+            ->where('exam_session_id', $validated['exam_session_id'])
+            ->where('student_id', auth()->guard('student')->user()->id)
             ->firstOrFail();
 
-        $exam_group = ExamGroup::where("exam_id", $request->exam_id)
-            ->where("exam_session_id", $request->exam_session_id)
-            ->where("student_id", auth()->guard("student")->user()->id)
+        $exam_group = ExamGroup::where('exam_id', $validated['exam_id'])
+            ->where('exam_session_id', $validated['exam_session_id'])
+            ->where('student_id', auth()->guard('student')->user()->id)
             ->first();
 
-        if (!$exam_group) {
+        if (! $exam_group) {
             return redirect()
-                ->route("student.dashboard")
-                ->with("error", "Ujian tidak ditemukan.");
+                ->route('student.dashboard')
+                ->with('error', 'Ujian tidak ditemukan.');
         }
 
-        $exam_group->load("exam", "exam_session");
+        $exam_group->load('exam', 'exam_session');
 
         if ($grade->end_time !== null) {
             return redirect()->route(
-                "student.exams.resultExam",
+                'student.exams.resultExam',
                 $exam_group->id,
             );
         }
 
-        if ($grade->attempt_status === "completed") {
+        if ($grade->attempt_status === 'completed') {
             return redirect()->route(
-                "student.exams.resultExam",
+                'student.exams.resultExam',
                 $exam_group->id,
             );
         }
 
         // Check if exam is paused
         if ($grade->is_paused) {
-            return redirect()->back()->with("error", "Ujian sedang di-pause.");
+            return redirect()->back()->with('error', 'Ujian sedang di-pause.');
         }
 
         if ($redirect = $this->guardExamSchedule($exam_group, $grade)) {
@@ -617,9 +638,9 @@ class ExamController extends Controller
 
         if (
             $grade->attempt_status === null ||
-            $grade->attempt_status === "not_started"
+            $grade->attempt_status === 'not_started'
         ) {
-            $grade->attempt_status = "in_progress";
+            $grade->attempt_status = 'in_progress';
             $grade->attempt_count = ($grade->attempt_count ?? 0) + 1;
         }
 
@@ -629,13 +650,14 @@ class ExamController extends Controller
 
         if ($remaining <= 0) {
             $this->finalizeExam($exam_group, $grade);
+
             return redirect()->route(
-                "student.exams.resultExam",
+                'student.exams.resultExam',
                 $exam_group->id,
             );
         }
 
-        //get question
+        // get question
         $question = Question::findOrFail($request->question_id);
 
         // Validate answer timing (anti-cheat)
@@ -645,20 +667,20 @@ class ExamController extends Controller
             $request->input('question_number', 0)
         );
 
-        //get answer
-        $answer = Answer::where("exam_id", $request->exam_id)
-            ->where("exam_session_id", $request->exam_session_id)
-            ->where("student_id", auth()->guard("student")->user()->id)
-            ->where("question_id", $request->question_id)
+        // get answer
+        $answer = Answer::where('exam_id', $request->exam_id)
+            ->where('exam_session_id', $request->exam_session_id)
+            ->where('student_id', auth()->guard('student')->user()->id)
+            ->where('question_id', $request->question_id)
             ->first();
 
         $submittedOptions = $request->input(
-            "answer_options",
-            $request->input("answers"),
+            'answer_options',
+            $request->input('answers'),
         );
-        $submittedText = $request->input("answer_text");
-        $submittedAnswer = $request->input("answer");
-        $matchingAnswers = $request->input("matching_answers");
+        $submittedText = $request->input('answer_text');
+        $submittedAnswer = $request->input('answer');
+        $matchingAnswers = $request->input('matching_answers');
 
         [$isCorrect, $pointsAwarded, $needsReview] = $this->scoreAnswer(
             $question,
@@ -668,7 +690,7 @@ class ExamController extends Controller
             $matchingAnswers,
         );
 
-        //update jawaban
+        // update jawaban
         if ($answer) {
             $answer->answer = $submittedAnswer ?? 0;
             $answer->answer_text = $submittedText;
@@ -686,11 +708,11 @@ class ExamController extends Controller
         if ($exam_group->exam->adaptive_mode) {
             $nextQuestion = $this->generateNextAdaptiveQuestion($exam_group, $grade);
             if ($nextQuestion) {
-                $currentMaxOrder = Answer::where("student_id", auth()->guard("student")->user()->id)
-                    ->where("exam_id", $exam_group->exam->id)
-                    ->where("exam_session_id", $exam_group->exam_session->id)
-                    ->max("question_order") ?? 0;
-                
+                $currentMaxOrder = Answer::where('student_id', auth()->guard('student')->user()->id)
+                    ->where('exam_id', $exam_group->exam->id)
+                    ->where('exam_session_id', $exam_group->exam_session->id)
+                    ->max('question_order') ?? 0;
+
                 $this->createAnswerRecord($exam_group, $nextQuestion, $currentMaxOrder + 1);
             }
         }
@@ -701,30 +723,37 @@ class ExamController extends Controller
     /**
      * endExam
      *
-     * @param  mixed $request
+     * @param  mixed  $request
      * @return void
      */
     public function endExam(Request $request)
     {
-        $grade = Grade::where("exam_id", $request->exam_id)
-            ->where("exam_session_id", $request->exam_session_id)
-            ->where("student_id", auth()->guard("student")->user()->id)
+        // Validate input
+        $validated = $request->validate([
+            'exam_id' => 'required|integer|exists:exams,id',
+            'exam_session_id' => 'required|integer|exists:exam_sessions,id',
+            'exam_group_id' => 'required|integer|exists:exam_groups,id',
+        ]);
+
+        $grade = Grade::where('exam_id', $validated['exam_id'])
+            ->where('exam_session_id', $validated['exam_session_id'])
+            ->where('student_id', auth()->guard('student')->user()->id)
             ->firstOrFail();
 
-        $exam_group = ExamGroup::with("exam", "exam_session")
-            ->where("id", $request->exam_group_id)
-            ->where("student_id", auth()->guard("student")->user()->id)
+        $exam_group = ExamGroup::with('exam', 'exam_session')
+            ->where('id', $validated['exam_group_id'])
+            ->where('student_id', auth()->guard('student')->user()->id)
             ->first();
 
-        if (!$exam_group) {
+        if (! $exam_group) {
             return redirect()
-                ->route("student.dashboard")
-                ->with("error", "Ujian tidak ditemukan.");
+                ->route('student.dashboard')
+                ->with('error', 'Ujian tidak ditemukan.');
         }
 
         if ($grade->end_time !== null) {
             return redirect()->route(
-                "student.exams.resultExam",
+                'student.exams.resultExam',
                 $exam_group->id,
             );
         }
@@ -736,45 +765,45 @@ class ExamController extends Controller
 
         $this->finalizeExam($exam_group, $grade);
 
-        //redirect hasil
+        // redirect hasil
         return redirect()->route(
-            "student.exams.resultExam",
-            $request->exam_group_id,
+            'student.exams.resultExam',
+            $validated['exam_group_id'],
         );
     }
 
     /**
      * resultExam
      *
-     * @param  mixed $id
+     * @param  mixed  $id
      * @return void
      */
     public function resultExam($exam_group_id)
     {
-        //get exam group with ownership check
+        // get exam group with ownership check
         $exam_group = ExamGroup::with(
-            "exam.lesson",
-            "exam_session",
-            "student.classroom",
+            'exam.lesson',
+            'exam_session',
+            'student.classroom',
         )
-            ->where("student_id", auth()->guard("student")->user()->id)
-            ->where("id", $exam_group_id)
+            ->where('student_id', auth()->guard('student')->user()->id)
+            ->where('id', $exam_group_id)
             ->first();
 
-        if (!$exam_group) {
-            return redirect()->route("student.dashboard")
-                ->with("error", "Hasil ujian tidak ditemukan.");
+        if (! $exam_group) {
+            return redirect()->route('student.dashboard')
+                ->with('error', 'Hasil ujian tidak ditemukan.');
         }
 
-        //get grade / nilai with ownership check
-        $grade = Grade::where("exam_id", $exam_group->exam->id)
-            ->where("exam_session_id", $exam_group->exam_session->id)
-            ->where("student_id", auth()->guard("student")->user()->id)
+        // get grade / nilai with ownership check
+        $grade = Grade::where('exam_id', $exam_group->exam->id)
+            ->where('exam_session_id', $exam_group->exam_session->id)
+            ->where('student_id', auth()->guard('student')->user()->id)
             ->first();
 
-        if (!$grade) {
-            return redirect()->route("student.dashboard")
-                ->with("error", "Data nilai tidak ditemukan.");
+        if (! $grade) {
+            return redirect()->route('student.dashboard')
+                ->with('error', 'Data nilai tidak ditemukan.');
         }
 
         // Get violation summary if anti-cheat was enabled
@@ -783,11 +812,11 @@ class ExamController extends Controller
             $violation_summary = $grade->getViolationsSummary();
         }
 
-        //return with inertia
-        return inertia("Student/Exams/Result", [
-            "exam_group" => $exam_group,
-            "grade" => $grade,
-            "violation_summary" => $violation_summary,
+        // return with inertia
+        return inertia('Student/Exams/Result', [
+            'exam_group' => $exam_group,
+            'grade' => $grade,
+            'violation_summary' => $violation_summary,
         ]);
     }
 
@@ -798,18 +827,19 @@ class ExamController extends Controller
     private function guardExamSchedule(ExamGroup $exam_group, Grade $grade)
     {
         $error = $this->timerService->validateSessionWindow($exam_group);
-        
+
         if ($error === 'Ujian belum dapat dimulai. Silakan cek jadwal.') {
-            return redirect()->route("student.dashboard")->with("error", $error);
+            return redirect()->route('student.dashboard')->with('error', $error);
         }
 
         if ($error === 'Sesi ujian telah berakhir.') {
             $this->completionService->finalizeExam(
-                $exam_group, 
-                $grade, 
-                auth()->guard("student")->user()->id
+                $exam_group,
+                $grade,
+                auth()->guard('student')->user()->id
             );
-            return redirect()->route("student.exams.resultExam", $exam_group->id);
+
+            return redirect()->route('student.exams.resultExam', $exam_group->id);
         }
 
         return null;
@@ -831,7 +861,7 @@ class ExamController extends Controller
         $this->completionService->finalizeExam(
             $exam_group,
             $grade,
-            auth()->guard("student")->user()->id
+            auth()->guard('student')->user()->id
         );
     }
 
@@ -861,33 +891,39 @@ class ExamController extends Controller
     private function createAnswerRecord(ExamGroup $exam_group, Question $question, int $question_order): void
     {
         $options = [1, 2];
-        if (!empty($question->option_3)) $options[] = 3;
-        if (!empty($question->option_4)) $options[] = 4;
-        if (!empty($question->option_5)) $options[] = 5;
+        if (! empty($question->option_3)) {
+            $options[] = 3;
+        }
+        if (! empty($question->option_4)) {
+            $options[] = 4;
+        }
+        if (! empty($question->option_5)) {
+            $options[] = 5;
+        }
 
-        if ($exam_group->exam->random_answer == "Y") {
+        if ($exam_group->exam->random_answer == 'Y') {
             shuffle($options);
         }
 
         $isEssay = $question->question_type === Question::TYPE_ESSAY;
         $isMultiple = in_array($question->question_type, [
             Question::TYPE_MULTIPLE_CHOICE_SINGLE,
-            Question::TYPE_MULTIPLE_CHOICE_MULTIPLE
+            Question::TYPE_MULTIPLE_CHOICE_MULTIPLE,
         ]);
 
         Answer::create([
-            "exam_id" => $exam_group->exam->id,
-            "exam_session_id" => $exam_group->exam_session->id,
-            "question_id" => $question->id,
-            "student_id" => auth()->guard("student")->user()->id,
-            "question_order" => $question_order,
-            "answer_order" => $isMultiple ? implode(",", $options) : "1",
-            "answer" => 0,
-            "is_correct" => "N",
-            "answer_text" => null,
-            "answer_options" => null,
-            "points_awarded" => 0,
-            "needs_manual_review" => $isEssay,
+            'exam_id' => $exam_group->exam->id,
+            'exam_session_id' => $exam_group->exam_session->id,
+            'question_id' => $question->id,
+            'student_id' => auth()->guard('student')->user()->id,
+            'question_order' => $question_order,
+            'answer_order' => $isMultiple ? implode(',', $options) : '1',
+            'answer' => 0,
+            'is_correct' => 'N',
+            'answer_text' => null,
+            'answer_options' => null,
+            'points_awarded' => 0,
+            'needs_manual_review' => $isEssay,
         ]);
     }
 
@@ -896,10 +932,10 @@ class ExamController extends Controller
      */
     private function generateNextAdaptiveQuestion(ExamGroup $exam_group, Grade $grade): ?Question
     {
-        $answeredQuestionIds = Answer::where("student_id", auth()->guard("student")->user()->id)
-            ->where("exam_id", $exam_group->exam->id)
-            ->where("exam_session_id", $exam_group->exam_session->id)
-            ->pluck("question_id")
+        $answeredQuestionIds = Answer::where('student_id', auth()->guard('student')->user()->id)
+            ->where('exam_id', $exam_group->exam->id)
+            ->where('exam_session_id', $exam_group->exam_session->id)
+            ->pluck('question_id')
             ->toArray();
 
         // Check question limit

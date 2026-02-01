@@ -31,7 +31,7 @@
                     </div>
                 </div>
 
-                <div v-if="grades.length > 0" class="card border-0 shadow">
+                <div v-if="gradesData.length > 0" class="card border-0 shadow">
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-9 col-12">
@@ -57,20 +57,23 @@
                                 </thead>
                                 <div class="mt-2"></div>
                                 <tbody>
-                                    <tr v-for="(grade, index) in grades" :key="grade.id">
+                                    <tr v-for="(grade, index) in gradesData" :key="grade.id">
                                         <td class="fw-bold text-center">
-                                            {{ index + 1 }}
+                                            {{ startIndex + index + 1 }}
                                         </td>
                                         <td>{{ grade.exam?.title || '-' }}</td>
                                         <td>{{ grade.exam_session?.title || '-' }}</td>
                                         <td>{{ grade.student?.name || '-' }}</td>
-                                        <td class="text-center">{{ grade.exam?.classroom?.title || '-' }}</td>
+                                        <td class="text-center">{{ grade.student?.classroom?.title || '-' }}</td>
                                         <td>{{ grade.exam?.lesson?.title || '-' }}</td>
                                         <td class="fw-bold text-center">{{ grade.grade }}</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
+                        
+                        <!-- Pagination -->
+                        <Pagination v-if="grades.links" :links="grades.links" align="end" />
                     </div>
                 </div>
             </div>
@@ -81,6 +84,9 @@
 <script>
     //import layout Admin
     import LayoutAdmin from '../../../Layouts/Admin.vue';
+    
+    //import Pagination component
+    import Pagination from '../../../Components/Pagination.vue';
 
     //import Head from Inertia
     import {
@@ -88,8 +94,8 @@
         router
     } from '@inertiajs/vue3';
 
-    //import reactive from vue
-    import { reactive } from 'vue';
+    //import reactive and computed from vue
+    import { reactive, computed } from 'vue';
 
     export default {
 
@@ -99,21 +105,41 @@
         //register components
         components: {
             Head,
+            Pagination,
         },
 
         //props
         props: {
             errors: Object,
             exams: Array,
-            grades: Array,
+            grades: {
+                type: [Array, Object],
+                default: () => []
+            },
         },
 
         //inisialisasi composition API
-        setup() {
+        setup(props) {
 
             //define state
             const form = reactive({
                 'exam_id': '' || (new URL(document.location)).searchParams.get('exam_id'),
+            });
+
+            // Computed property to handle both array and paginated object
+            const gradesData = computed(() => {
+                if (Array.isArray(props.grades)) {
+                    return props.grades;
+                }
+                return props.grades.data || [];
+            });
+
+            // Computed property for pagination start index
+            const startIndex = computed(() => {
+                if (props.grades && props.grades.from) {
+                    return props.grades.from - 1;
+                }
+                return 0;
             });
 
              //define methods filter
@@ -131,7 +157,9 @@
             //return
             return {
                 form,
-                filter
+                filter,
+                gradesData,
+                startIndex,
             }
 
         }

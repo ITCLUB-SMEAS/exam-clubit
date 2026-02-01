@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Events\StudentBlocked;
+use App\Events\ViolationRecorded;
 use App\Models\Exam;
 use App\Models\ExamViolation;
 use App\Models\Grade;
@@ -14,16 +16,6 @@ class AntiCheatService
 {
     /**
      * Record a violation
-     *
-     * @param Student $student
-     * @param Exam $exam
-     * @param int $examSessionId
-     * @param Grade $grade
-     * @param string $violationType
-     * @param string|null $description
-     * @param array|null $metadata
-     * @param string|null $snapshotPath
-     * @return ExamViolation
      */
     public static function recordViolation(
         Student $student,
@@ -56,7 +48,7 @@ class AntiCheatService
         ActivityLogService::log(
             action: 'violation',
             module: 'anticheat',
-            description: "Pelanggaran: " . self::getViolationLabel($violationType),
+            description: 'Pelanggaran: '.self::getViolationLabel($violationType),
             subject: $violation,
             metadata: [
                 'violation_type' => $violationType,
@@ -84,6 +76,9 @@ class AntiCheatService
             'total_violations' => $grade->violation_count,
         ]);
 
+        // Dispatch violation recorded event
+        ViolationRecorded::dispatch($violation, $grade->violation_count);
+
         return $violation;
     }
 
@@ -105,7 +100,7 @@ class AntiCheatService
         // Get full path for snapshot (local disk root is storage/app/private)
         $fullSnapshotPath = null;
         if ($snapshotPath && self::isValidSnapshotPath($snapshotPath)) {
-            $fullSnapshotPath = storage_path('app/private/' . $snapshotPath);
+            $fullSnapshotPath = storage_path('app/private/'.$snapshotPath);
         }
 
         // Send Telegram notification with photo
@@ -123,12 +118,7 @@ class AntiCheatService
     /**
      * Record multiple violations at once (batch)
      *
-     * @param Student $student
-     * @param Exam $exam
-     * @param int $examSessionId
-     * @param Grade $grade
-     * @param array $violations Array of ['type' => string, 'description' => string|null, 'metadata' => array|null]
-     * @return array
+     * @param  array  $violations  Array of ['type' => string, 'description' => string|null, 'metadata' => array|null]
      */
     public static function recordBatchViolations(
         Student $student,
@@ -157,7 +147,6 @@ class AntiCheatService
     /**
      * Get violations for a specific exam attempt
      *
-     * @param int $gradeId
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public static function getViolationsForGrade(int $gradeId)
@@ -169,9 +158,6 @@ class AntiCheatService
 
     /**
      * Get violation summary for a grade
-     *
-     * @param Grade $grade
-     * @return array
      */
     public static function getViolationSummary(Grade $grade): array
     {
@@ -200,49 +186,36 @@ class AntiCheatService
 
     /**
      * Check if violation limit has been exceeded
-     *
-     * @param Grade $grade
-     * @param Exam $exam
-     * @return bool
      */
     public static function hasExceededLimit(Grade $grade, Exam $exam): bool
     {
         $maxViolations = $exam->max_violations ?? 3;
+
         return $grade->violation_count >= $maxViolations;
     }
 
     /**
      * Check if warning threshold has been reached
-     *
-     * @param Grade $grade
-     * @param Exam $exam
-     * @return bool
      */
     public static function hasReachedWarningThreshold(Grade $grade, Exam $exam): bool
     {
         $warningThreshold = $exam->warning_threshold ?? 3;
+
         return $grade->violation_count >= $warningThreshold;
     }
 
     /**
      * Get remaining violations before limit
-     *
-     * @param Grade $grade
-     * @param Exam $exam
-     * @return int
      */
     public static function getRemainingViolations(Grade $grade, Exam $exam): int
     {
         $maxViolations = $exam->max_violations ?? 3;
+
         return max(0, $maxViolations - $grade->violation_count);
     }
 
     /**
      * Check and flag the grade if violation threshold is met
-     *
-     * @param Grade $grade
-     * @param Exam $exam
-     * @return void
      */
     protected static function checkAndFlagIfNeeded(Grade $grade, Exam $exam): void
     {
@@ -250,7 +223,7 @@ class AntiCheatService
         $maxViolations = $exam->max_violations ?? 3;
 
         // Flag if exceeded warning threshold but not yet flagged
-        if ($grade->violation_count >= $warningThreshold && !$grade->is_flagged) {
+        if ($grade->violation_count >= $warningThreshold && ! $grade->is_flagged) {
             $grade->flagAsSuspicious(
                 "Melebihi batas peringatan ({$grade->violation_count} pelanggaran)"
             );
@@ -268,20 +241,32 @@ class AntiCheatService
     }
 
     /**
-     * Check and block student if they have 3 or more violations
+     * Check and block student if they exceed the configured violation threshold
      */
     public static function checkAndBlockStudent(Grade $grade): bool
     {
-        $student = Student::find($grade->student_id);
-        
-        if (!$student || $student->is_blocked) {
+        // Check if auto-blocking is enabled
+        if (! config('security.anticheat.auto_block_enabled', true)) {
             return false;
         }
 
-        if ($grade->violation_count >= 3) {
-            $reason = "Akun diblokir otomatis: {$grade->violation_count} pelanggaran anti-cheat";
+        $threshold = (int) config('security.anticheat.auto_block_threshold', 3);
+
+        // Threshold of 0 means disabled
+        if ($threshold <= 0) {
+            return false;
+        }
+
+        $student = Student::find($grade->student_id);
+
+        if (! $student || $student->is_blocked) {
+            return false;
+        }
+
+        if ($grade->violation_count >= $threshold) {
+            $reason = "Akun diblokir otomatis: {$grade->violation_count} pelanggaran anti-cheat (batas: {$threshold})";
             $student->block($reason);
-            
+
             ActivityLogService::log(
                 action: 'block',
                 module: 'anticheat',
@@ -290,6 +275,7 @@ class AntiCheatService
                 metadata: [
                     'grade_id' => $grade->id,
                     'violation_count' => $grade->violation_count,
+                    'threshold' => $threshold,
                 ]
             );
 
@@ -297,7 +283,11 @@ class AntiCheatService
                 'student_id' => $student->id,
                 'student_name' => $student->name,
                 'violation_count' => $grade->violation_count,
+                'threshold' => $threshold,
             ]);
+
+            // Dispatch student blocked event
+            StudentBlocked::dispatch($student, $reason);
 
             // Send Telegram notification
             app(TelegramService::class)->sendStudentBlockedAlert($student, $reason);
@@ -310,9 +300,6 @@ class AntiCheatService
 
     /**
      * Get the anti-cheat configuration for an exam
-     *
-     * @param Exam $exam
-     * @return array
      */
     public static function getAntiCheatConfig(Exam $exam): array
     {
@@ -331,9 +318,6 @@ class AntiCheatService
 
     /**
      * Get default description for a violation type
-     *
-     * @param string $type
-     * @return string
      */
     public static function getDefaultDescription(string $type): string
     {
@@ -363,22 +347,16 @@ class AntiCheatService
 
     /**
      * Get violation type label
-     *
-     * @param string $type
-     * @return string
      */
     public static function getViolationLabel(string $type): string
     {
         $labels = ExamViolation::getViolationTypes();
+
         return $labels[$type] ?? $type;
     }
 
     /**
      * Get statistics for an exam session
-     *
-     * @param int $examId
-     * @param int $examSessionId
-     * @return array
      */
     public static function getExamSessionStats(int $examId, int $examSessionId): array
     {
@@ -387,11 +365,11 @@ class AntiCheatService
             ->get();
 
         $byType = $violations->groupBy('violation_type')
-            ->map(fn($group) => $group->count())
+            ->map(fn ($group) => $group->count())
             ->toArray();
 
         $byStudent = $violations->groupBy('student_id')
-            ->map(fn($group) => $group->count())
+            ->map(fn ($group) => $group->count())
             ->toArray();
 
         $flaggedGrades = Grade::where('exam_id', $examId)
@@ -405,17 +383,13 @@ class AntiCheatService
             'flagged_students' => $flaggedGrades,
             'by_type' => $byType,
             'most_common' => $violations->isNotEmpty()
-                ? $violations->groupBy('violation_type')->sortByDesc(fn($group) => $group->count())->keys()->first()
+                ? $violations->groupBy('violation_type')->sortByDesc(fn ($group) => $group->count())->keys()->first()
                 : null,
         ];
     }
 
     /**
      * Clear all violations for a grade (admin function)
-     *
-     * @param Grade $grade
-     * @param string $reason
-     * @return void
      */
     public static function clearViolations(Grade $grade, string $reason = ''): void
     {
@@ -449,9 +423,6 @@ class AntiCheatService
 
     /**
      * Validate if a violation type is valid
-     *
-     * @param string $type
-     * @return bool
      */
     public static function isValidViolationType(string $type): bool
     {
@@ -482,14 +453,11 @@ class AntiCheatService
 
     /**
      * Validate snapshot path to prevent path traversal
-     *
-     * @param string $path
-     * @return bool
      */
     public static function isValidSnapshotPath(string $path): bool
     {
         // Must be in snapshots directory with valid format
-        if (!preg_match('/^snapshots\/\d+\/[a-zA-Z0-9_-]+\.(jpg|jpeg|png)$/', $path)) {
+        if (! preg_match('/^snapshots\/\d+\/[a-zA-Z0-9_-]+\.(jpg|jpeg|png)$/', $path)) {
             return false;
         }
 

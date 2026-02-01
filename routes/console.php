@@ -37,3 +37,7 @@ Schedule::command('cache:warmup')->hourly();
 
 // Database optimization weekly on Sunday at 03:00
 Schedule::command('db:optimize')->weeklyOn(0, '03:00');
+
+// Calculate student risk predictions daily at 18:00 (evening before exam day)
+// This runs H-1 to give teachers time for intervention
+Schedule::command('students:calculate-risks --notify')->dailyAt('18:00');

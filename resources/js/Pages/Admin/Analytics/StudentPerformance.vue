@@ -32,8 +32,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(student, idx) in students" :key="student.id">
-                                <td>{{ idx + 1 }}</td>
+                            <tr v-for="(student, idx) in studentsData" :key="student.id">
+                                <td>{{ startIndex + idx + 1 }}</td>
                                 <td>{{ student.nisn }}</td>
                                 <td>{{ student.name }}</td>
                                 <td>{{ student.classroom }}</td>
@@ -47,6 +47,9 @@
                         </tbody>
                     </table>
                 </div>
+                
+                <!-- Pagination -->
+                <Pagination v-if="students.links" :links="students.links" align="end" />
             </div>
         </div>
     </div>
@@ -54,19 +57,39 @@
 
 <script>
 import LayoutAdmin from '../../../Layouts/Admin.vue';
+import Pagination from '../../../Components/Pagination.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 export default {
     layout: LayoutAdmin,
-    components: { Head, Link },
+    components: { Head, Link, Pagination },
     props: {
-        students: Array,
+        students: {
+            type: [Array, Object],
+            default: () => []
+        },
         classrooms: Array,
         selectedClassroom: [String, Number],
     },
     setup(props) {
         const selectedClass = ref(props.selectedClassroom || '');
+
+        // Computed property to handle both array and paginated object
+        const studentsData = computed(() => {
+            if (Array.isArray(props.students)) {
+                return props.students;
+            }
+            return props.students.data || [];
+        });
+
+        // Computed property for pagination start index
+        const startIndex = computed(() => {
+            if (props.students && props.students.from) {
+                return props.students.from - 1;
+            }
+            return 0;
+        });
 
         const filterByClass = () => {
             router.get('/admin/analytics/students', {
@@ -80,7 +103,7 @@ export default {
             return 'text-danger fw-bold';
         };
 
-        return { selectedClass, filterByClass, gradeClass };
+        return { selectedClass, filterByClass, gradeClass, studentsData, startIndex };
     }
 }
 </script>
